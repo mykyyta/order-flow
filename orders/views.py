@@ -1,9 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.http import JsonResponse
-import json
 
-# Головна сторінка
 def custom_login_required(view_func):
     def wrapper(request, *args, **kwargs):
         if not request.user.is_authenticated:
@@ -16,9 +14,10 @@ def index(request):
     return render(request, 'index.html')
 
 
-# Аутентифікація
-
 def auth_login(request):
+    if request.user.is_authenticated:
+        return redirect('index')
+
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
@@ -29,7 +28,7 @@ def auth_login(request):
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
-            return redirect('/')  # Перенаправлення після входу
+            return redirect('index')
         else:
             return JsonResponse({'message': 'Invalid credentials'}, status=401)
 
@@ -43,8 +42,6 @@ def auth_user(request):
 def auth_logout(request):
     logout(request)
     return JsonResponse({'message': 'Logout successful'}, status=200)
-
-# Заглушки для замовлень
 
 @custom_login_required
 def order_list(request):
@@ -66,7 +63,6 @@ def order_update(request, order_id):
 def order_history(request, order_id):
     return JsonResponse({'message': f'Історія змін статусу замовлення {order_id} (заглушка)'})
 
-# Заглушки для моделей виробів
 
 @custom_login_required
 def model_list(request):
@@ -75,8 +71,6 @@ def model_list(request):
 @custom_login_required
 def model_detail(request, model_id):
     return JsonResponse({'message': f'Деталі моделі {model_id} (заглушка)'})
-
-# Заглушки для кольорів
 
 @custom_login_required
 def color_list(request):
