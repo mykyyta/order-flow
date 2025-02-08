@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вхід</title>
+</head>
+<body>
+    <h1>Вхід</h1>
+    <form method="post" action="/login/">
+        {% csrf_token %}
+        <label>Ім'я користувача: <input type="text" name="username"></label><br>
+        <label>Пароль: <input type="password" name="password"></label><br>
+        <button type="submit">Увійти</button>
+    </form>
+</body>
+</html>
