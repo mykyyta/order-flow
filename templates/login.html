@@ -1,17 +1,24 @@
 <!DOCTYPE html>
-<html lang="uk">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Вхід</title>
-</head>
-<body>
-    <h1>Вхід</h1>
-    <form method="post" action="/login/">
-        {% csrf_token %}
-        <label>Ім'я користувача: <input type="text" name="username"></label><br>
-        <label>Пароль: <input type="password" name="password"></label><br>
-        <button type="submit">Увійти</button>
-    </form>
-</body>
-</html>
+{% extends "base.html" %}
+
+{% block title %}Вхід{% endblock %}
+
+{% block content %}
+<div class="container d-flex justify-content-center align-items-center vh-100">
+    <div class="card p-4 shadow-lg" style="max-width: 400px; width: 100%;">
+        <h2 class="text-center">Вхід</h2>
+        <form method="post" action="/login/">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label class="form-label">Ім'я користувача</label>
+                <input type="text" name="username" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Пароль</label>
+                <input type="password" name="password" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Увійти</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
