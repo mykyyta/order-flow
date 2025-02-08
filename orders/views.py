@@ -1,6 +1,14 @@
-from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib.auth import authenticate, login, logout
+from django.db import models
 from django.http import JsonResponse
+from django.shortcuts import render, redirect
+from django.contrib.auth import authenticate, login
+from django.urls import reverse_lazy
+from django.views.generic import ListView, CreateView
+from .models import ProductModel, Color
+from .forms import ProductModelForm, ColorForm
+from orders.forms import OrderForm
+from orders.models import OrderStatusHistory
+
 
 def custom_login_required(view_func):
     def wrapper(request, *args, **kwargs):
@@ -47,9 +55,23 @@ def auth_logout(request):
 def order_list(request):
     return JsonResponse({'message': 'Список замовлень (заглушка)'})
 
+
 @custom_login_required
 def order_create(request):
-    return JsonResponse({'message': 'Створення замовлення (заглушка)'})
+    if request.method == 'POST':
+        form = OrderForm(request.POST)
+        if form.is_valid():
+            order = form.save()
+            OrderStatusHistory.objects.create(
+                order=order,
+                changed_by=request.user,
+                new_status='new'
+            )
+            return redirect('order_detail', order_id=order.id)
+    else:
+        form = OrderForm()
+
+    return render(request, 'order_create.html', {'form': form})
 
 @custom_login_required
 def order_detail(request, order_id):
@@ -79,3 +101,38 @@ def color_list(request):
 @custom_login_required
 def color_detail(request, color_id):
     return JsonResponse({'message': f'Деталі кольору {color_id} (заглушка)'})
+
+class ProductModelListCreateView(ListView, CreateView):
+    model = ProductModel
+    form_class = ProductModelForm
+    template_name = 'model_list_create.html'
+    success_url = reverse_lazy('model_list')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['models'] = ProductModel.objects.all()
+        context['form'] = self.get_form()
+        return context
+
+class ColorListCreateView(ListView, CreateView):
+    model = Color
+    form_class = ColorForm
+    template_name = 'color_list_create.html'
+    success_url = reverse_lazy('color_list')
+
+    def get_queryset(self):
+        return Color.objects.order_by(
+            models.Case(
+                models.When(availability_status='out_of_stock', then=0),
+                models.When(availability_status='low_stock', then=1),
+                models.When(availability_status='in_stock', then=2),
+                default=3,
+                output_field=models.IntegerField()
+            )
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['colors'] = self.get_queryset()
+        context['form'] = self.get_form()
+        return context

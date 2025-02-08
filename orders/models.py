@@ -43,8 +43,8 @@ class Order(models.Model):
 class OrderStatusHistory(models.Model):
     STATUS_CHOICES = [
         ('new', 'Нове'),
-        ('on embroidery', 'На вишивці'),
-        ('almost finished', 'Майже готове'),
+        ('embroidery', 'На вишивці'),
+        ('almost_finished', 'Майже готове'),
         ('finished', 'Готове'),
     ]
 
