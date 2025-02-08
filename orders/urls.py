@@ -1,5 +1,6 @@
 from django.urls import path
-from .views import *
+from .views import index, auth_login, auth_logout, auth_user, ProductModelListCreateView, ColorListCreateView, \
+    order_list, order_create, order_detail, order_history, order_update
 
 urlpatterns = [
     path('', index, name='index'),
@@ -9,11 +10,9 @@ urlpatterns = [
     path('orders/<uuid:order_id>/history/', order_history, name='order_history'),
     path('orders/<uuid:order_id>/update/', order_update, name='order_update'),
 
-    path('models/', model_list, name='model_list'),
-    path('models/<uuid:model_id>/', model_detail, name='model_detail'),
+    path('models/', ProductModelListCreateView.as_view(), name='model_list'),
 
-    path('colors/', color_list, name='color_list'),
-    path('colors/<uuid:color_id>/', color_detail, name='color_detail'),
+    path('colors/', ColorListCreateView.as_view(), name='color_list'),
 
     path('login/', auth_login, name='auth_login'),
     path('logout/', auth_logout, name='auth_logout'),
