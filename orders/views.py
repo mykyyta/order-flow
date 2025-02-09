@@ -1,7 +1,9 @@
 from django.contrib import messages
+from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
+from django.utils import timezone
 from django.views import View
 from django.views.generic import ListView, UpdateView
 from .models import ProductModel, Color, Order
@@ -21,8 +23,7 @@ def custom_login_required(view_func):
 
 @custom_login_required
 def index(request):
-    return render(request, 'index.html')
-
+    return redirect('current_orders_list')
 
 def auth_login(request):
     if request.user.is_authenticated:
@@ -54,39 +55,60 @@ def auth_logout(request):
     return JsonResponse({'message': 'Logout successful'}, status=200)
 
 @custom_login_required
-def order_list(request):
+def current_orders_list(request):
     if request.method == "POST":
-        # Отримання даних із форми
+        # Форма для зміни статусу
         form = OrderStatusUpdateForm(request.POST)
         if form.is_valid():
-            # Отримання вибраних замовлень із форми
             selected_orders = form.cleaned_data['orders']
-            # Отримання нового статусу
             new_status = form.cleaned_data['new_status']
 
-            # Створюємо новий запис у OrderStatusHistory для кожного вибраного замовлення
-            for order in selected_orders:
-                OrderStatusHistory.objects.create(
-                    order=order,
-                    new_status=new_status,
-                    changed_by=request.user  # Хто змінив статус
-                )
+            if selected_orders:  # Перевіряємо, чи є вибрані замовлення
+                # Створення запису в історії зміни статусу для кожного замовлення
+                for order in selected_orders:
+                    OrderStatusHistory.objects.create(
+                        order=order,
+                        new_status=new_status,
+                        changed_by=request.user
+                    )
 
-            # Успішне повідомлення
-            messages.success(request, "Статус оновлено для вибраних замовлень.")
-            return redirect("order_list")  # Перенаправлення назад до списку замовлень
+                    # Update the 'finished_at' field if status is 'finished'
+                    if new_status.lower() == "finished":
+                        order.finished_at = timezone.now()
+                        order.save()
 
+                messages.success(request, "Статус оновлено для вибраних замовлень.")
+            else:
+                messages.warning(request, "Не вибрано жодного замовлення для оновлення статусу.")
+            return redirect("current_orders_list")
         else:
-            # Якщо форма не валідна, передати помилки в шаблон
             messages.error(request, "Виникла помилка. Спробуйте ще раз.")
 
-    else:
-        # Якщо запит не POST — просто відображати порожню форму
-        form = OrderStatusUpdateForm()
 
-    # Відображення форми у шаблоні
-    return render(request, "order_list.html", {"form": form})
+    orders_queryset = Order.objects.filter(finished_at__isnull=True)
+    form = OrderStatusUpdateForm()
+    form.fields['orders'].queryset = orders_queryset
 
+
+    return render(request,
+                  "current_orders_list.html",
+                    {
+                        "form": form,
+                        "orders": orders_queryset,
+                             }
+                )
+
+
+@custom_login_required
+def finished_orders_list(request):
+    orders = Order.objects.filter(finished_at__isnull=False).order_by('-finished_at')  # Фільтруємо завершені
+    paginator = Paginator(orders, 20)  # 20 замовлень на сторінку
+
+    # Отримуємо номер сторінки із параметрів URL
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)  # Поточна сторінка
+
+    return render(request, 'finished_orders_list.html', {'page_obj': page_obj})
 
 
 @custom_login_required
@@ -100,10 +122,9 @@ def order_create(request):
                 changed_by=request.user,
                 new_status='new'
             )
-            return redirect('order_detail', order_id=order.id)
-    else:
-        form = OrderForm()
+            return redirect('current_orders_list')
 
+    form = OrderForm()
     return render(request, 'order_create.html', {'form': form})
 
 @custom_login_required

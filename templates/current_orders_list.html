@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}Поточні замовлення{% endblock %}
+
+
+{% block content %}
+<h1 class="mb-4">Поточні замовлення</h1>
+
+<!-- Повідомлення -->
+{% if messages %}
+    <div class="alert alert-info">
+        <ul class="mb-0">
+            {% for message in messages %}
+                <li>{{ message }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endif %}
+
+<!-- Кнопка для переходу до готових замовлень -->
+<div class="mb-4">
+    <a href="{% url 'finished_orders_list' %}" class="btn btn-secondary">Перейти до готових замовлень</a>
+</div>
+
+<!-- Форма для вибору та зміни статусу -->
+<form method="post" class="mb-4">
+    {% csrf_token %}
+
+    <!-- Вибір нового статусу -->
+    <div class="row g-2 align-items-end mb-3">
+        <div class="col-md-6">
+            <label for="new_status" class="form-label">Новий статус:</label>
+            <select class="form-select" id="new_status" name="new_status">
+                {% for value, label in form.fields.new_status.choices %}
+                <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-auto">
+            <button type="submit" class="btn btn-primary">Змінити статус</button>
+        </div>
+    </div>
+
+    <!-- Таблиця з замовленнями -->
+    <div class="table-responsive">
+        <table class="table table-hover table-bordered align-middle text-small">
+{#            <thead class="table-light">#}
+{#                <tr>#}
+{#                    <th scope="col">#</th> <!-- Чекбокси -->#}
+{#                    <th scope="col">Модель та Колір</th>#}
+{#                    <th scope="col">Поточний статус</th>#}
+{#                    <th scope="col">Бейджі</th#}
+{#                </tr>#}
+{#            </thead>#}
+            <tbody>
+                {% for order in form.fields.orders.queryset %}
+                <tr>
+                    <td class="fs-6">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="orders" value="{{ order.id }}">
+                        </div>
+                    </td>
+                    <td style="font-size: 12px;">{{ order.model.name }} - {{ order.color.name }}</td>
+                    <td style="font-size: 12px;">
+                        <span class="badge
+                            {% if order.get_status == 'new' %}bg-primary text-dark
+                            {% elif order.get_status == 'embroidery' %}bg-warning text-dark
+                            {% elif order.get_status == 'almost_finished' %}bg-info text-dark
+                            {% elif order.get_status == 'finished' %}bg-success text-dark
+                            {% else %}bg-secondary{% endif %}">
+                            {{ order.get_status_display }}
+                        </span>
+                        <!-- Badges column -->
+                        {% if order.etsy %}
+                        <span class="badge bg-info text-dark">В</span> <!-- Etsy badge -->
+                        {% endif %}
+                        {% if order.embroidery %}
+                        <span class="badge bg-success text-dark">Е</span> <!-- Embroidery badge -->
+                        {% endif %}
+                        {% if order.urgent %}
+                        <span class="badge bg-danger text-dark">Т</span> <!-- Urgent (Термінове) badge -->
+                        {% endif %}
+                    </td>
+
+
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="3">Поточних замовлень немає.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</form>
+
+{% endblock %}

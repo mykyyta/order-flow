@@ -7,15 +7,16 @@ class OrderForm(forms.ModelForm):
 
     class Meta:
         model = Order
-        fields = ['model', 'color', 'embroidery', 'urgent', 'comment']
+        fields = ['model', 'color', 'etsy', 'embroidery', 'urgent', 'comment']
         widgets = {
-            'model': forms.Select(attrs={'class': 'form-select'}),  # Bootstrap стиль для <select>
-            'color': forms.Select(attrs={'class': 'form-select'}),  # Теж Bootstrap <select>
-            'urgent': forms.CheckboxInput(attrs={'class': 'form-check-input'}),  # Checkbox стиль Bootstrap
-            'embroidery': forms.CheckboxInput(attrs={'class': 'form-check-input'}),  # Checkbox
+            'model': forms.Select(attrs={'class': 'form-select'}),
+            'color': forms.Select(attrs={'class': 'form-select'}),
+            'etsy': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'urgent': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'embroidery': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'comment': forms.Textarea(attrs={
-                'class': 'form-control',  # Bootstrap стиль для <textarea>
-                'rows': 2  # Стандартний розмір для поля коментарів
+                'class': 'form-control',
+                'rows': 2
             }),
         }
 
@@ -27,7 +28,7 @@ class ColorForm(forms.ModelForm):
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control'}),
             'code': forms.NumberInput(attrs={'class': 'form-control'}),
-            'availability_status': forms.Select(attrs={'class': 'form-control'}),
+            'availability_status': forms.Select(attrs={'class': 'form-select'}),
         }
 
 class ProductModelForm(forms.ModelForm):
