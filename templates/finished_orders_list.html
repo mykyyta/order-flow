@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Готові замовлення{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Готові замовлення</h1>
+
+<!-- Кнопка для переходу до поточних замовлень -->
+<div class="mb-4">
+    <a href="{% url 'current_orders_list' %}" class="btn btn-primary">Поточні замовлення</a>
+</div>
+
+<!-- Список замовлень -->
+<div id="order-list" class="table-responsive">
+    <table class="table table-hover table-bordered align-middle">
+        <thead class="table-light">
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">Модель та Колір</th>
+                <th scope="col">Дата завершення</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in page_obj.object_list %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ order.model.name }} - {{ order.color.name }}</td>
+                <td>{{ order.finished_at|date:"d.m.Y H:i" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3">Завершених замовлень немає.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Пагінація -->
+<nav class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Попередня</a>
+            </li>
+        {% else %}
+            <li class="page-item disabled">
+                <a class="page-link">Попередня</a>
+            </li>
+        {% endif %}
+        
+        <li class="page-item active">
+            <a class="page-link">{{ page_obj.number }}</a>
+        </li>
+        
+        {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}">Наступна</a>
+            </li>
+        {% else %}
+            <li class="page-item disabled">
+                <a class="page-link">Наступна</a>
+            </li>
+        {% endif %}
+    </ul>
+</nav>
+
+{% endblock %}

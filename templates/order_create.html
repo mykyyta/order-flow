@@ -37,19 +37,26 @@
                 {{ form.color }}
                 {{ form.color.errors }}
             </div>
-
-            <!-- Поле: термінове -->
+            
             <div class="mb-3 form-check">
-                {{ form.urgent }}
-                <label for="id_urgent">Терміново</label>
-                {{ form.urgent.errors }}
+                {{ form.etsy }}
+                <label for="id_etsy">Etsy</label>
+                {{ form.etsy.errors }}
             </div>
 
+            
             <!-- Поле: вишивка -->
             <div class="mb-3 form-check">
                 {{ form.embroidery }}
                 <label for="id_embroidery">Вишивка</label>
                 {{ form.embroidery.errors }}
+            </div>
+            
+            <!-- Поле: термінове -->
+            <div class="mb-3 form-check">
+                {{ form.urgent }}
+                <label for="id_urgent">Терміново</label>
+                {{ form.urgent.errors }}
             </div>
 
             <!-- Поле: коментар -->

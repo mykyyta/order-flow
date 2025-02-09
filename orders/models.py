@@ -3,7 +3,7 @@ from django.db import models
 from django.contrib.auth.models import User
 
 class ProductModel(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255, unique=True)
 
     def __str__(self):
@@ -16,7 +16,7 @@ class Color(models.Model):
         ('out_of_stock', 'Немає'),
     ]
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255, unique=True)
     code = models.IntegerField(unique=True)
     availability_status = models.CharField(max_length=20, choices=AVAILABILITY_CHOICES, default='in_stock')
@@ -25,13 +25,16 @@ class Color(models.Model):
         return f"{self.name}"
 
 class Order(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.AutoField(primary_key=True)
     model = models.ForeignKey(ProductModel, on_delete=models.CASCADE)
     color = models.ForeignKey(Color, on_delete=models.CASCADE)
     embroidery = models.BooleanField(default=False)
     comment = models.TextField(blank=True, null=True)
     urgent = models.BooleanField(default=False)
+    etsy = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    finished_at = models.DateTimeField(blank=True, null=True)
+
 
     def get_status(self):
         latest_status = self.history.order_by('-changed_at').first()
@@ -58,7 +61,7 @@ class OrderStatusHistory(models.Model):
         ('finished', 'Готове'),
     ]
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.AutoField(primary_key=True)
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="history")
     changed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     new_status = models.CharField(max_length=20, choices=STATUS_CHOICES)
