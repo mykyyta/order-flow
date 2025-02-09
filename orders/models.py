@@ -7,7 +7,7 @@ class ProductModel(models.Model):
     name = models.CharField(max_length=255, unique=True)
 
     def __str__(self):
-        return self.name
+        return f"{self.name}"
 
 class Color(models.Model):
     AVAILABILITY_CHOICES = [
@@ -22,7 +22,7 @@ class Color(models.Model):
     availability_status = models.CharField(max_length=20, choices=AVAILABILITY_CHOICES, default='in_stock')
 
     def __str__(self):
-        return f"{self.name} (Код: {self.code}, {self.get_availability_status_display()})"
+        return f"{self.name}"
 
 class Order(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -36,6 +36,16 @@ class Order(models.Model):
     def get_status(self):
         latest_status = self.history.order_by('-changed_at').first()
         return latest_status.new_status if latest_status else "Немає статусу"
+
+    def get_status_display(self):
+        # Отримуємо значення статусу
+        current_status = self.get_status()
+        # Знаходимо відображення статусу у STATUS_CHOICES
+        for value, label in OrderStatusHistory.STATUS_CHOICES:
+            if current_status == value:
+                return label
+        return "Невідомий статус"  # Значення за замовчуванням, якщо статус не знайдено
+
 
     def __str__(self):
         return f"{self.model.name} ({self.color.name}) - {self.get_status()}"

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% extends "base.html" %}
+
+{% block title %}Список та створення моделей продуктів{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Список моделей продуктів</h1>
+
+    <!-- Список існуючих моделей продуктів -->
+    <div class="card mb-4">
+        <ul class="list-group list-group-flush">
+            {% for model in models %}
+                <li class="list-group-item">
+                    <a href="/product/{{ model.id }}/" class="text-decoration-none"
+                       style="color: inherit;">
+                        {{ model.name }} ({{ model.code }})
+                    </a>
+                </li>
+            {% empty %}
+                <li class="list-group-item">Ще немає жодної моделі продукту.</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- Форма для додавання нової моделі продукту -->
+    <h2>Додати нову модель</h2>
+    <form method="post" class="mb-4">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary">Додати модель</button>
+    </form>
+</div>
+{% endblock %}</title>
+</head>
+<body>
+</body>
+</html>

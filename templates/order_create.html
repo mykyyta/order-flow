@@ -13,7 +13,6 @@
         max-height: 150px;
         resize: vertical;
     }
-
 </style>
 {% endblock %}
 
@@ -21,34 +20,43 @@
 
 <div class="container d-flex justify-content-center align-items-center vh-100">
     <div class="card p-4 shadow-lg" style="max-width: 600px; width: 100%;">
-        <h2 class="text-center mb-4">Створити нове замовлення</h2>
+        <h2 class="text-center mb-4">Нове замовлення</h2>
         <form method="post" action="{% url 'order_create' %}">
             {% csrf_token %}
+            
+            <!-- Поле: вибір моделі -->
             <div class="mb-3">
-                <label for="model" class="form-label">Модель</label>
-                <select id="model" name="model" class="form-select">
-                    <!-- options -->
-                </select>
+                <label for="id_model">Модель</label>
+                {{ form.model }}
+                {{ form.model.errors }}
             </div>
+            
+            <!-- Поле: вибір кольору -->
             <div class="mb-3">
-                <label for="color" class="form-label">Колір</label>
-                <select id="color" name="color" class="form-select">
-                    <!-- options -->
-                </select>
-            </div>
-            <div class="mb-3 form-check">
-                <input type="checkbox" class="form-check-input" id="urgent" name="urgent">
-                <label class="form-check-label" for="urgent">Термінове</label>
+                <label for="id_color">Колір</label>
+                {{ form.color }}
+                {{ form.color.errors }}
             </div>
 
+            <!-- Поле: термінове -->
             <div class="mb-3 form-check">
-                <input type="checkbox" class="form-check-input" id="embroidery" name="embroidery">
-                <label class="form-check-label" for="embroidery">Вишивка</label>
+                {{ form.urgent }}
+                <label for="id_urgent">Терміново</label>
+                {{ form.urgent.errors }}
             </div>
 
+            <!-- Поле: вишивка -->
+            <div class="mb-3 form-check">
+                {{ form.embroidery }}
+                <label for="id_embroidery">Вишивка</label>
+                {{ form.embroidery.errors }}
+            </div>
+
+            <!-- Поле: коментар -->
             <div class="mb-3">
-                <label for="comment" class="form-label">Коментар</label>
-                <textarea id="comment" name="comment" class="form-control"></textarea>
+                <label for="id_сomment">Коментар</label>
+                {{ form.comment }}
+                {{ form.comment.errors }}
             </div>
 
             <button type="submit" class="btn btn-primary w-100">Створити</button>
