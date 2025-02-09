@@ -1,13 +1,15 @@
-from django.db import models
+from django.contrib import messages
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
-from django.contrib.auth import authenticate, login
-from django.urls import reverse_lazy
-from django.views.generic import ListView, CreateView
-from .models import ProductModel, Color
-from .forms import ProductModelForm, ColorForm
+from django.contrib.auth import authenticate, login, logout
+from django.views import View
+from django.views.generic import ListView, UpdateView
+from .models import ProductModel, Color, Order
+from .forms import ProductModelForm, ColorForm, OrderStatusUpdateForm
 from orders.forms import OrderForm
 from orders.models import OrderStatusHistory
+from django.urls import reverse_lazy
+from django.db import models
 
 
 def custom_login_required(view_func):
@@ -53,7 +55,38 @@ def auth_logout(request):
 
 @custom_login_required
 def order_list(request):
-    return JsonResponse({'message': 'Список замовлень (заглушка)'})
+    if request.method == "POST":
+        # Отримання даних із форми
+        form = OrderStatusUpdateForm(request.POST)
+        if form.is_valid():
+            # Отримання вибраних замовлень із форми
+            selected_orders = form.cleaned_data['orders']
+            # Отримання нового статусу
+            new_status = form.cleaned_data['new_status']
+
+            # Створюємо новий запис у OrderStatusHistory для кожного вибраного замовлення
+            for order in selected_orders:
+                OrderStatusHistory.objects.create(
+                    order=order,
+                    new_status=new_status,
+                    changed_by=request.user  # Хто змінив статус
+                )
+
+            # Успішне повідомлення
+            messages.success(request, "Статус оновлено для вибраних замовлень.")
+            return redirect("order_list")  # Перенаправлення назад до списку замовлень
+
+        else:
+            # Якщо форма не валідна, передати помилки в шаблон
+            messages.error(request, "Виникла помилка. Спробуйте ще раз.")
+
+    else:
+        # Якщо запит не POST — просто відображати порожню форму
+        form = OrderStatusUpdateForm()
+
+    # Відображення форми у шаблоні
+    return render(request, "order_list.html", {"form": form})
+
 
 
 @custom_login_required
@@ -86,46 +119,38 @@ def order_history(request, order_id):
     return JsonResponse({'message': f'Історія змін статусу замовлення {order_id} (заглушка)'})
 
 
-@custom_login_required
-def model_list(request):
-    return JsonResponse({'message': 'Список моделей (заглушка)'})
-
-@custom_login_required
-def model_detail(request, model_id):
-    return JsonResponse({'message': f'Деталі моделі {model_id} (заглушка)'})
-
-@custom_login_required
-def color_list(request):
-    return JsonResponse({'message': 'Список кольорів (заглушка)'})
-
-@custom_login_required
-def color_detail(request, color_id):
-    return JsonResponse({'message': f'Деталі кольору {color_id} (заглушка)'})
-
-class ProductModelListCreateView(ListView, CreateView):
-    model = ProductModel
-    form_class = ProductModelForm
+class ProductModelListCreateView(View):
     template_name = 'model_list_create.html'
-    success_url = reverse_lazy('model_list')
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['models'] = ProductModel.objects.all()
-        context['form'] = self.get_form()
-        return context
+    def get(self, request, *args, **kwargs):
+        # Cписок об'єктів — логіка ListView
+        models = ProductModel.objects.all()
+        form = ProductModelForm()
+        return render(request, self.template_name, {'models': models, 'form': form})
 
-class ColorListCreateView(ListView, CreateView):
+    def post(self, request, *args, **kwargs):
+        # Форма для створення нового об'єкта — логіка CreateView
+        form = ProductModelForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect(reverse_lazy('model_list'))  # Перенаправлення після створення
+        # Якщо форма невалідна, знову відображаємо список і форму з помилками
+        models = ProductModel.objects.all()
+        return render(request, self.template_name, {'models': models, 'form': form})
+
+
+
+class ColorListCreateView(ListView):
     model = Color
-    form_class = ColorForm
     template_name = 'color_list_create.html'
-    success_url = reverse_lazy('color_list')
+    context_object_name = 'colors'
 
     def get_queryset(self):
         return Color.objects.order_by(
             models.Case(
-                models.When(availability_status='out_of_stock', then=0),
+                models.When(availability_status='out_of_stock', then=2),
                 models.When(availability_status='low_stock', then=1),
-                models.When(availability_status='in_stock', then=2),
+                models.When(availability_status='in_stock', then=0),
                 default=3,
                 output_field=models.IntegerField()
             )
@@ -133,6 +158,30 @@ class ColorListCreateView(ListView, CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['colors'] = self.get_queryset()
-        context['form'] = self.get_form()
+        context['color_form'] = ColorForm()
         return context
+
+    def post(self, request, *args, **kwargs):
+        form = ColorForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('color_list')  # Перенаправлення після додавання
+        return self.get(request, *args, **kwargs)  # Повернення на ту ж сторінку, якщо помилка
+
+class ColorDetailUpdateView(UpdateView):
+    model = Color
+    template_name = 'color_detail_update.html'
+    fields = ['name', 'code', 'availability_status']  # Поля, які можна редагувати
+    context_object_name = 'color'
+
+    def get_context_data(self, **kwargs):
+        # Додаємо контекст з поточними даними об’єкта
+        context = super().get_context_data(**kwargs)
+        context['color'] = self.object
+        return context
+
+    def get_success_url(self):
+        # Використовуємо цей метод, щоб перенаправити користувача на ту ж сторінку після оновлення
+        return reverse_lazy('color_detail_update', kwargs={'pk': self.object.pk})
+
+

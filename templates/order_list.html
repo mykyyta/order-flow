@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}Список замовлень{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Список замовлень</h1>
+
+<!-- Повідомлення -->
+{% if messages %}
+    <div class="alert alert-info">
+        <ul class="mb-0">
+            {% for message in messages %}
+                <li>{{ message }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endif %}
+
+<!-- Форма для вибору та зміни статусу -->
+<form method="post" class="mb-4">
+    {% csrf_token %}
+    
+    <div class="table-responsive">
+        <table class="table table-hover table-bordered align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th scope="col">#</th> <!-- Чекбокси -->
+                    <th scope="col">ID</th>
+                    <th scope="col">Модель</th>
+                    <th scope="col">Колір</th>
+                    <th scope="col">Поточний статус</th>
+                    <th scope="col">Дата створення</th>
+                    <th scope="col">Вишивка</th>
+                    <th scope="col">Терміновість</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in form.fields.orders.queryset %}
+                <tr>
+                    <td>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="orders" value="{{ order.id }}">
+                        </div>
+                    </td>
+                    <td>{{ order.id }}</td>
+                    <td>{{ order.model.name }}</td>
+                    <td>{{ order.color.name }}</td>
+                    <td>
+                    <span class="badge 
+                        {% if order.get_status == 'new' %}bg-primary
+                        {% elif order.get_status == 'embroidery' %}bg-warning text-dark
+                        {% elif order.get_status == 'almost_finished' %}bg-info
+                        {% elif order.get_status == 'finished' %}bg-success
+                        {% else %}bg-secondary{% endif %}">
+                        {{ order.get_status_display }}
+                    </span>
+                    </td>
+
+                    <td>{{ order.created_at|date:"d.m.Y H:i" }}</td>
+                    <td>
+                        {% if order.embroidery %}
+                        <span class="badge bg-success">Так</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Ні</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if order.urgent %}
+                        <span class="badge bg-danger">Термінове</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Вибір нового статусу -->
+    <div class="row g-2 align-items-end mt-3">
+        <div class="col-md-6">
+            <label for="new_status" class="form-label">Новий статус:</label>
+            <select class="form-select" id="new_status" name="new_status">
+                {% for value, label in form.fields.new_status.choices %}
+                <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-auto">
+            <button type="submit" class="btn btn-primary">Змінити статус</button>
+        </div>
+    </div>
+</form>
+
+{% endblock %}

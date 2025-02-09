@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <a href="/" class="btn btn-secondary mb-3">Повернутися до меню</a>
+    
+    <h2>Кольори</h2>
+    <ul class="list-group mb-4">
+        {% for color in colors %}
+            <li class="list-group-item"
+                style="color: 
+                    {% if color.availability_status == 'out_of_stock' %}red
+                    {% elif color.availability_status == 'low_stock' %}orange
+                    {% else %}green{% endif %};">
+                <a href="{% url 'color_detail_update' color.id %}" class="text-decoration-none"
+                   style="color: inherit;">{{ color.name }} ({{ color.code }})</a>
+            </li>
+        {% endfor %}
+    </ul>
+    
+    <h3>Додати новий колір</h3>
+    <form method="post">
+        {% csrf_token %}
+        {{ color_form.as_p }}
+        <button type="submit" class="btn btn-primary">Додати</button>
+    </form>
+</div>
+{% endblock %}
