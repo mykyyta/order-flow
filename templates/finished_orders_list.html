@@ -24,7 +24,7 @@
             {% for order in page_obj.object_list %}
             <tr>
                 <td>{{ forloop.counter }}</td>
-                <td>{{ order.model.name }} - {{ order.color.name }}</td>
+                <td><a href="{% url 'order_detail' order.id %}">{{ order.model.name }} - {{ order.color.name }}</a></td>
                 <td>{{ order.finished_at|date:"d.m.Y H:i" }}</td>
             </tr>
             {% empty %}

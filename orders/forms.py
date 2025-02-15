@@ -3,7 +3,6 @@ from .models import Order, OrderStatusHistory
 from .models import Color, ProductModel
 
 class OrderForm(forms.ModelForm):
-    #color = forms.ModelChoiceField(queryset=Color.objects.all(), label="Оберіть колір")
 
     class Meta:
         model = Order
@@ -19,6 +18,14 @@ class OrderForm(forms.ModelForm):
                 'rows': 2
             }),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Filter colors by availability status
+        self.fields['color'].queryset = Color.objects.filter(
+            availability_status__in=['in_stock', 'low_stock']
+        )
+
 
 
 class ColorForm(forms.ModelForm):
