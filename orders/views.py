@@ -1,7 +1,7 @@
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.http import JsonResponse
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.utils import timezone
 from django.views import View
@@ -129,15 +129,38 @@ def order_create(request):
 
 @custom_login_required
 def order_detail(request, order_id):
-    return JsonResponse({'message': f'Деталі замовлення {order_id} (заглушка)'})
+    # Fetch the order or return 404 if it doesn't exist
+    order = get_object_or_404(Order, id=order_id)
 
-@custom_login_required
-def order_update(request, order_id):
-    return JsonResponse({'message': f'Оновлення замовлення {order_id} (заглушка)'})
+    # Fetch the status history of the order
+    statuses = OrderStatusHistory.objects.filter(order=order).order_by('-changed_at')
 
-@custom_login_required
-def order_history(request, order_id):
-    return JsonResponse({'message': f'Історія змін статусу замовлення {order_id} (заглушка)'})
+    # Prepare the response data
+    order_data = {
+        'id': order.id,
+        'model': order.model.name,
+        'color': order.color.name,
+        'embroidery': order.embroidery,
+        'comment': order.comment,
+        'urgent': order.urgent,
+        'etsy': order.etsy,
+        'created_at': order.created_at.strftime('%Y-%m-%d %H:%M:%S') if order.created_at else None,
+        'finished_at': order.finished_at.strftime('%Y-%m-%d %H:%M:%S') if order.finished_at else None,
+        'current_status': order.get_status_display(),
+        'status_history': [
+            {
+                'id': status.id,
+                'new_status': status.new_status,
+                'new_status_display': dict(OrderStatusHistory.STATUS_CHOICES).get(status.new_status, 'Unknown'),
+                'changed_by': status.changed_by.username if status.changed_by else 'Unknown',
+                'changed_at': status.changed_at.strftime('%Y-%m-%d %H:%M:%S'),
+            }
+            for status in statuses
+        ]
+    }
+
+    return render(request, 'order_detail.html', {'order': order_data})
+
 
 
 class ProductModelListCreateView(View):

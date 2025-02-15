@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}Order Details{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">Order Details</h2>
+    </div>
+    <div class="card-body">
+        <table class="table table-bordered">
+            <tbody>
+            <tr>
+                <th>ID</th>
+                <td>{{ order.id }}</td>
+            </tr>
+            <tr>
+                <th>Model</th>
+                <td>{{ order.model }}</td>
+            </tr>
+            <tr>
+                <th>Color</th>
+                <td>{{ order.color }}</td>
+            </tr>
+            <tr>
+                <th>Embroidery</th>
+                <td>{{ order.embroidery }}</td>
+            </tr>
+            <tr>
+                <th>Comment</th>
+                <td>{{ order.comment }}</td>
+            </tr>
+            <tr>
+                <th>Urgent</th>
+                <td>{{ order.urgent|yesno:"Yes,No" }}</td>
+            </tr>
+            <tr>
+                <th>Etsy</th>
+                <td>{{ order.etsy }}</td>
+            </tr>
+            <tr>
+                <th>Created At</th>
+                <td>{{ order.created_at }}</td>
+            </tr>
+            <tr>
+                <th>Finished At</th>
+                <td>{{ order.finished_at }}</td>
+            </tr>
+            <tr>
+                <th>Current Status</th>
+                <td>{{ order.current_status }}</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header">
+        <h2 class="card-title">Status History</h2>
+    </div>
+    <div class="card-body">
+        <table class="table table-striped">
+            <thead>
+            <tr>
+                <th>Cтатус</th>
+                <th>Змінив</th>
+                <th>Час</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for status in order.status_history %}
+                <tr>
+                    <td>{{ status.new_status_display }}</td>
+                    <td>{{ status.changed_by }}</td>
+                    <td>{{ status.changed_at }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
