@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.contrib.auth.models import Group
 from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
@@ -12,6 +13,8 @@ from orders.forms import OrderForm
 from orders.models import OrderStatusHistory
 from django.urls import reverse_lazy
 from django.db import models
+from .utils import send_tg_message, get_telegram_ids_for_group, generate_order_details
+
 
 
 def custom_login_required(view_func):
@@ -76,6 +79,13 @@ def current_orders_list(request):
                     if new_status.lower() == "finished":
                         order.finished_at = timezone.now()
                         order.save()
+                        manager_telegram_ids = get_telegram_ids_for_group(Group.objects.get(name="Manager"))
+                        if manager_telegram_ids:
+                            message = (
+                                f"Замовлення завершено: {order.model.name}, {order.color.name}."
+                            )
+                            for telegram_id in manager_telegram_ids:
+                                send_tg_message(telegram_id, message)
 
                 messages.success(request, "Статус оновлено для вибраних замовлень.")
             else:
@@ -122,7 +132,19 @@ def order_create(request):
                 changed_by=request.user,
                 new_status='new'
             )
-            return redirect('current_orders_list')
+
+            telegram_ids = get_telegram_ids_for_group(Group.objects.get(name="Master"))
+
+            if telegram_ids:
+                order_details = generate_order_details(order)
+                message = (
+                    f"+ {order_details}"
+                    f"\n{request.build_absolute_uri(reverse_lazy('current_orders_list'))}\n"
+                )
+                for telegram_id in telegram_ids:
+                    send_tg_message(telegram_id, message)
+
+        return redirect('current_orders_list')
 
     form = OrderForm()
     return render(request, 'order_create.html', {'form': form})
