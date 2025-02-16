@@ -40,8 +40,7 @@
                             <input class="form-check-input" type="checkbox" name="orders" value="{{ order.id }}">
                         </div>
                     </td>
-                    <td style="font-size: 14px;"><a href="{% url 'order_detail' order.id %}">{{ order.model.name }}
-                        - {{ order.color.name }}</a></td>
+                    <td style="font-size: 14px;">{{ order.model.name }} - {{ order.color.name }}</td>
                     <td style="font-size: 14px;">
                         <span class="badge
                             {% if order.get_status == 'new' %}bg-primary text-dark
