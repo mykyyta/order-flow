@@ -4,19 +4,13 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="337a98d3-af5f-42ac-9306-1e3644424c96" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/templates/order_detail.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/dataSources/1c04968a-3d57-41c4-813c-d7eb7a97cd4a.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/dataSources/1c04968a-3d57-41c4-813c-d7eb7a97cd4a/storage_v2/_src_/schema/main.uQUzAA.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/dataSources/41cb6df7-7f2a-4517-8971-24475e2319b6.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources/41cb6df7-7f2a-4517-8971-24475e2319b6.xml" afterDir="false" />
+    <list default="true" id="337a98d3-af5f-42ac-9306-1e3644424c96" name="Changes" comment="gitignore add">
+      <change afterPath="$PROJECT_DIR$/Dockerfile" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docker-compose.yml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/OrderFlow/settings.py" beforeDir="false" afterPath="$PROJECT_DIR$/OrderFlow/settings.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/db.sqlite3" beforeDir="false" afterPath="$PROJECT_DIR$/db.sqlite3" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/orders/forms.py" beforeDir="false" afterPath="$PROJECT_DIR$/orders/forms.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/orders/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/orders/urls.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/orders/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/orders/views.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/templates/current_orders_list.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/current_orders_list.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/templates/finished_orders_list.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/finished_orders_list.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/templates/model_list_create.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/model_list_create.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/orders/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/orders/utils.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -31,6 +25,7 @@
       <list>
         <option value="Python Script" />
         <option value="HTML File" />
+        <option value="Dockerfile" />
       </list>
     </option>
   </component>
@@ -51,6 +46,8 @@
     "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "DefaultHtmlFileTemplate": "HTML File",
     "Django Server.OrderFlow.executor": "Run",
+    "Docker.Dockerfile.executor": "Run",
+    "Docker.docker-compose.yml: Compose Deployment.executor": "Run",
     "Notification.DisplayName-DoNotAsk-Database detector": "Database detector",
     "Notification.DoNotAsk-Database detector": "true",
     "RunOnceActivity.OpenDjangoStructureViewOnStart": "true",
@@ -71,10 +68,11 @@
 }]]></component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$" />
       <recent name="$PROJECT_DIR$/templates" />
     </key>
   </component>
-  <component name="RunManager">
+  <component name="RunManager" selected="Docker.docker-compose.yml: Compose Deployment">
     <configuration name="OrderFlow" type="Python.DjangoServer" factoryName="Django server">
       <module name="OrderFlow" />
       <option name="ENV_FILES" value="" />
@@ -100,6 +98,36 @@
       <option name="customRunCommand" value="" />
       <method v="2" />
     </configuration>
+    <configuration name="Dockerfile" type="docker-deploy" factoryName="dockerfile" temporary="true" server-name="Docker">
+      <deployment type="dockerfile">
+        <settings>
+          <option name="sourceFilePath" value="Dockerfile" />
+        </settings>
+      </deployment>
+      <method v="2" />
+    </configuration>
+    <configuration default="true" type="docker-deploy" factoryName="docker-compose.yml" temporary="true">
+      <deployment type="docker-compose.yml" />
+      <method v="2" />
+    </configuration>
+    <configuration default="true" type="docker-deploy" factoryName="dockerfile" temporary="true">
+      <deployment type="dockerfile" />
+      <method v="2" />
+    </configuration>
+    <configuration name="docker-compose.yml: Compose Deployment" type="docker-deploy" factoryName="docker-compose.yml" temporary="true" server-name="Docker">
+      <deployment type="docker-compose.yml">
+        <settings>
+          <option name="sourceFilePath" value="docker-compose.yml" />
+        </settings>
+      </deployment>
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Docker.docker-compose.yml: Compose Deployment" />
+        <item itemvalue="Docker.Dockerfile" />
+      </list>
+    </recent_temporary>
   </component>
   <component name="SharedIndexes">
     <attachedChunks>
@@ -124,9 +152,25 @@
       <workItem from="1739359738279" duration="3487000" />
       <workItem from="1739543790523" duration="4316000" />
     </task>
+    <task id="LOCAL-00001" summary="gitignore add">
+      <option name="closed" value="true" />
+      <created>1739800872574</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1739800872574</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="UnknownFeatures">
+    <option featureType="com.intellij.fileTypeFactory" implementationName=".env" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="gitignore add" />
+    <option name="LAST_COMMIT_MESSAGE" value="gitignore add" />
   </component>
 </project>
