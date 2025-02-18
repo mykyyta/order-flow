@@ -21,6 +21,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 import os
+from dotenv import load_dotenv
+load_dotenv()
 
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 
@@ -28,9 +30,13 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    os.getenv('ALLOWED_HOST'),
+]
 
-
+CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",")
 
 # Application definition
 
@@ -79,28 +85,21 @@ WSGI_APPLICATION = "OrderFlow.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-import os
 
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": "db-orderflow",  # Matches POSTGRES_DB
-        "USER": "admin",  # Matches POSTGRES_USER
-        "PASSWORD": "1111",  # Matches POSTGRES_PASSWORD
-        "HOST": "db",  # Docker service name for the DB
-        "PORT": "5432",  # Default PostgreSQL port
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',  # Database engine for PostgreSQL
+        'NAME': os.getenv('POSTGRES_DB', 'neondb'),  # Database name
+        'USER': os.getenv('POSTGRES_USER', 'neondb_owner'),  # Database username
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'default_password'),  # Database password
+        'HOST': os.getenv('POSTGRES_HOST', 'localhost'),  # Database host
+        'PORT': os.getenv('POSTGRES_PORT', '5432'),  # Default PostgreSQL port
+        'OPTIONS': {
+            'sslmode': 'require',  # SSL mode
+        },
     }
 }
 
-
-
-
-# DATABASES = {
-#     "default": {
-#         "ENGINE": "django.db.backends.sqlite3",
-#         "NAME": BASE_DIR / "db.sqlite3",
-#     }
-# }
 
 
 # Password validation

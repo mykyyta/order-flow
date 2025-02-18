@@ -60,14 +60,12 @@ def auth_logout(request):
 @custom_login_required
 def current_orders_list(request):
     if request.method == "POST":
-        # Форма для зміни статусу
         form = OrderStatusUpdateForm(request.POST)
         if form.is_valid():
             selected_orders = form.cleaned_data['orders']
             new_status = form.cleaned_data['new_status']
 
-            if selected_orders:  # Перевіряємо, чи є вибрані замовлення
-                # Створення запису в історії зміни статусу для кожного замовлення
+            if selected_orders:
                 for order in selected_orders:
                     OrderStatusHistory.objects.create(
                         order=order,
@@ -75,7 +73,6 @@ def current_orders_list(request):
                         changed_by=request.user
                     )
 
-                    # Update the 'finished_at' field if status is 'finished'
                     if new_status.lower() == "finished":
                         order.finished_at = timezone.now()
                         order.save()
@@ -112,11 +109,9 @@ def current_orders_list(request):
 @custom_login_required
 def finished_orders_list(request):
     orders = Order.objects.filter(finished_at__isnull=False).order_by('-finished_at')  # Фільтруємо завершені
-    paginator = Paginator(orders, 20)  # 20 замовлень на сторінку
-
-    # Отримуємо номер сторінки із параметрів URL
+    paginator = Paginator(orders, 20)
     page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)  # Поточна сторінка
+    page_obj = paginator.get_page(page_number)
 
     return render(request, 'finished_orders_list.html', {'page_obj': page_obj})
 
@@ -151,13 +146,9 @@ def order_create(request):
 
 @custom_login_required
 def order_detail(request, order_id):
-    # Fetch the order or return 404 if it doesn't exist
     order = get_object_or_404(Order, id=order_id)
-
-    # Fetch the status history of the order
     statuses = OrderStatusHistory.objects.filter(order=order).order_by('-changed_at')
 
-    # Prepare the response data
     order_data = {
         'id': order.id,
         'model': order.model.name,
@@ -189,18 +180,15 @@ class ProductModelListCreateView(View):
     template_name = 'model_list_create.html'
 
     def get(self, request, *args, **kwargs):
-        # Cписок об'єктів — логіка ListView
         models = ProductModel.objects.all()
         form = ProductModelForm()
         return render(request, self.template_name, {'models': models, 'form': form})
 
     def post(self, request, *args, **kwargs):
-        # Форма для створення нового об'єкта — логіка CreateView
         form = ProductModelForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect(reverse_lazy('model_list'))  # Перенаправлення після створення
-        # Якщо форма невалідна, знову відображаємо список і форму з помилками
+            return redirect(reverse_lazy('model_list'))
         models = ProductModel.objects.all()
         return render(request, self.template_name, {'models': models, 'form': form})
 
@@ -231,23 +219,21 @@ class ColorListCreateView(ListView):
         form = ColorForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('color_list')  # Перенаправлення після додавання
-        return self.get(request, *args, **kwargs)  # Повернення на ту ж сторінку, якщо помилка
+            return redirect('color_list')
+        return self.get(request, *args, **kwargs)
 
 class ColorDetailUpdateView(UpdateView):
     model = Color
     template_name = 'color_detail_update.html'
-    fields = ['name', 'code', 'availability_status']  # Поля, які можна редагувати
+    fields = ['name', 'code', 'availability_status']
     context_object_name = 'color'
 
     def get_context_data(self, **kwargs):
-        # Додаємо контекст з поточними даними об’єкта
         context = super().get_context_data(**kwargs)
         context['color'] = self.object
         return context
 
     def get_success_url(self):
-        # Використовуємо цей метод, щоб перенаправити користувача на ту ж сторінку після оновлення
         return reverse_lazy('color_detail_update', kwargs={'pk': self.object.pk})
 
 
