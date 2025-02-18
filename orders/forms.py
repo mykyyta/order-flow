@@ -48,12 +48,12 @@ class ProductModelForm(forms.ModelForm):
 
 class OrderStatusUpdateForm(forms.Form):
     orders = forms.ModelMultipleChoiceField(
-        queryset=Order.objects.all(),  # Всі замовлення
-        widget=forms.CheckboxSelectMultiple,  # Вибір через чекбокси
+        queryset=Order.objects.all(),
+        widget=forms.CheckboxSelectMultiple,
         label="Вибрати замовлення"
     )
     new_status = forms.ChoiceField(
-        choices=OrderStatusHistory.STATUS_CHOICES,  # Список статусів
+        choices=OrderStatusHistory.STATUS_CHOICES,
         label="Новий статус"
     )
 

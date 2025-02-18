@@ -54,13 +54,11 @@ class Order(models.Model):
         return latest_status.new_status if latest_status else "Немає статусу"
 
     def get_status_display(self):
-        # Отримуємо значення статусу
         current_status = self.get_status()
-        # Знаходимо відображення статусу у STATUS_CHOICES
         for value, label in OrderStatusHistory.STATUS_CHOICES:
             if current_status == value:
                 return label
-        return "Невідомий статус"  # Значення за замовчуванням, якщо статус не знайдено
+        return "Невідомий статус"
 
 
     def __str__(self):

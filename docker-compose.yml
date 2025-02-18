@@ -1,4 +1,3 @@
-
 services:
   web:  # Django app (web service)
     build:  # Build the Docker image
