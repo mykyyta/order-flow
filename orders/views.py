@@ -12,7 +12,7 @@ from .forms import ProductModelForm, ColorForm, OrderStatusUpdateForm
 from orders.forms import OrderForm
 from orders.models import OrderStatusHistory
 from django.urls import reverse_lazy
-from django.db import models
+from django.db import models, transaction
 from .utils import send_tg_message, get_telegram_ids_for_group, generate_order_details
 
 
@@ -66,23 +66,32 @@ def current_orders_list(request):
             new_status = form.cleaned_data['new_status']
 
             if selected_orders:
-                for order in selected_orders:
-                    OrderStatusHistory.objects.create(
-                        order=order,
-                        new_status=new_status,
-                        changed_by=request.user
-                    )
+                with transaction.atomic():
+                    for order in selected_orders:
+                        latest_status_history = (
+                            OrderStatusHistory.objects.filter(order=order)
+                            .order_by('-id')  # Assuming 'id' is sequential
+                            .first()
+                        )
+                        if latest_status_history and latest_status_history.new_status == new_status: continue
 
-                    if new_status.lower() == "finished":
-                        order.finished_at = timezone.now()
-                        order.save()
-                        manager_telegram_ids = get_telegram_ids_for_group(Group.objects.get(name="Manager"))
-                        if manager_telegram_ids:
-                            message = (
-                                f"Замовлення завершено: {order.model.name}, {order.color.name}."
-                            )
-                            for telegram_id in manager_telegram_ids:
-                                send_tg_message(telegram_id, message)
+
+                        OrderStatusHistory.objects.create(
+                            order=order,
+                            new_status=new_status,
+                            changed_by=request.user
+                        )
+
+                        if new_status.lower() == "finished":
+                            order.finished_at = timezone.now()
+                            order.save()
+                            manager_telegram_ids = get_telegram_ids_for_group(Group.objects.get(name="Manager"))
+                            if manager_telegram_ids:
+                                message = (
+                                    f"Замовлення завершено: {order.model.name}, {order.color.name}."
+                                )
+                                for telegram_id in manager_telegram_ids:
+                                    send_tg_message(telegram_id, message)
 
                 messages.success(request, "Статус оновлено для вибраних замовлень.")
             else:

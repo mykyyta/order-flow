@@ -4,13 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="337a98d3-af5f-42ac-9306-1e3644424c96" name="Changes" comment="gitignore add">
-      <change afterPath="$PROJECT_DIR$/Dockerfile" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docker-compose.yml" afterDir="false" />
+    <list default="true" id="337a98d3-af5f-42ac-9306-1e3644424c96" name="Changes" comment="Remove redundant comments and improve environment variable usage&#10;&#10;Cleaned up unnecessary or redundant comments across the codebase for better maintainability and readability. Improved environment variable handling by standardizing usage with `dotenv`. Updated Docker-related files for compatibility with dynamic ports and Cloud Run configurations, and added `.dockerignore` for better file management.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/OrderFlow/settings.py" beforeDir="false" afterPath="$PROJECT_DIR$/OrderFlow/settings.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/db.sqlite3" beforeDir="false" afterPath="$PROJECT_DIR$/db.sqlite3" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/orders/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/orders/utils.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/orders/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/orders/views.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -72,7 +69,7 @@
       <recent name="$PROJECT_DIR$/templates" />
     </key>
   </component>
-  <component name="RunManager" selected="Docker.docker-compose.yml: Compose Deployment">
+  <component name="RunManager" selected="Django Server.OrderFlow">
     <configuration name="OrderFlow" type="Python.DjangoServer" factoryName="Django server">
       <module name="OrderFlow" />
       <option name="ENV_FILES" value="" />
@@ -160,7 +157,23 @@
       <option name="project" value="LOCAL" />
       <updated>1739800872574</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="Add Docker support with Dockerfile and docker-compose setup&#10;&#10;This commit introduces a Dockerfile and a docker-compose.yml to containerize the application, enabling easier deployment and local development. Additionally, database configuration was updated to use PostgreSQL, and environment variables were integrated for sensitive settings such as the secret key and Telegram bot token.">
+      <option name="closed" value="true" />
+      <created>1739812486819</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1739812486819</updated>
+    </task>
+    <task id="LOCAL-00003" summary="Remove redundant comments and improve environment variable usage&#10;&#10;Cleaned up unnecessary or redundant comments across the codebase for better maintainability and readability. Improved environment variable handling by standardizing usage with `dotenv`. Updated Docker-related files for compatibility with dynamic ports and Cloud Run configurations, and added `.dockerignore` for better file management.">
+      <option name="closed" value="true" />
+      <created>1739876040971</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1739876040971</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -171,6 +184,8 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="gitignore add" />
-    <option name="LAST_COMMIT_MESSAGE" value="gitignore add" />
+    <MESSAGE value="Add Docker support with Dockerfile and docker-compose setup&#10;&#10;This commit introduces a Dockerfile and a docker-compose.yml to containerize the application, enabling easier deployment and local development. Additionally, database configuration was updated to use PostgreSQL, and environment variables were integrated for sensitive settings such as the secret key and Telegram bot token." />
+    <MESSAGE value="Remove redundant comments and improve environment variable usage&#10;&#10;Cleaned up unnecessary or redundant comments across the codebase for better maintainability and readability. Improved environment variable handling by standardizing usage with `dotenv`. Updated Docker-related files for compatibility with dynamic ports and Cloud Run configurations, and added `.dockerignore` for better file management." />
+    <option name="LAST_COMMIT_MESSAGE" value="Remove redundant comments and improve environment variable usage&#10;&#10;Cleaned up unnecessary or redundant comments across the codebase for better maintainability and readability. Improved environment variable handling by standardizing usage with `dotenv`. Updated Docker-related files for compatibility with dynamic ports and Cloud Run configurations, and added `.dockerignore` for better file management." />
   </component>
 </project>
