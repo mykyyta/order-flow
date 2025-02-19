@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="container mt-4">
-    <h1>Список моделей продуктів</h1>
+    <h2>Список моделей</h2>
 
     <!-- Список існуючих моделей продуктів -->
     <div class="card mb-4">
@@ -23,15 +23,11 @@
     </div>
 
     <!-- Форма для додавання нової моделі продукту -->
-    <h2>Додати нову модель</h2>
+    <h3>Додати нову модель</h3>
     <form method="post" class="mb-4">
         {% csrf_token %}
         {{ form.as_p }}
         <button type="submit" class="btn btn-primary">Додати модель</button>
     </form>
 </div>
-{% endblock %}</title>
-</head>
-<body>
-</body>
-</html>
+{% endblock %}

@@ -5,6 +5,7 @@ from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.utils import timezone
+from django.utils.timezone import localtime
 from django.views import View
 from django.views.generic import ListView, UpdateView
 from .models import ProductModel, Color, Order
@@ -55,7 +56,7 @@ def auth_user(request):
 
 def auth_logout(request):
     logout(request)
-    return JsonResponse({'message': 'Logout successful'}, status=200)
+    return redirect('auth_login')
 
 @custom_login_required
 def current_orders_list(request):
@@ -166,8 +167,8 @@ def order_detail(request, order_id):
         'comment': order.comment,
         'urgent': order.urgent,
         'etsy': order.etsy,
-        'created_at': order.created_at.strftime('%Y-%m-%d %H:%M:%S') if order.created_at else None,
-        'finished_at': order.finished_at.strftime('%Y-%m-%d %H:%M:%S') if order.finished_at else None,
+        'created_at': localtime(order.created_at) if order.created_at else None,
+        'finished_at': localtime(order.finished_at) if order.finished_at else None,
         'current_status': order.get_status_display(),
         'status_history': [
             {
@@ -175,7 +176,7 @@ def order_detail(request, order_id):
                 'new_status': status.new_status,
                 'new_status_display': dict(OrderStatusHistory.STATUS_CHOICES).get(status.new_status, 'Unknown'),
                 'changed_by': status.changed_by.username if status.changed_by else 'Unknown',
-                'changed_at': status.changed_at.strftime('%Y-%m-%d %H:%M:%S'),
+                'changed_at': localtime(status.changed_at) if status.changed_at else None,
             }
             for status in statuses
         ]
@@ -233,8 +234,8 @@ class ColorListCreateView(ListView):
 
 class ColorDetailUpdateView(UpdateView):
     model = Color
+    form_class = ColorForm
     template_name = 'color_detail_update.html'
-    fields = ['name', 'code', 'availability_status']
     context_object_name = 'color'
 
     def get_context_data(self, **kwargs):

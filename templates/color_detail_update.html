@@ -1,25 +1,29 @@
 {% extends "base.html" %}
 
-{% block title %}Деталі та редагування кольору - {{ color.name }}{% endblock %}
+{% block title %}Деталі кольору{% endblock %}
 
 {% block content %}
 
-<div class="container mt-4">
-    <h1>Редагувати дані кольору</h1>
+<div class="container">
+    <h2>Редагувати дані кольору</h2>
 
-    <!-- Відображення даних кольору -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <p><strong>Назва:</strong> {{ color.name }}</p>
-            <p><strong>Код:</strong> {{ color.code }}</p>
-            <p><strong>Наявність:</strong> {{ color.get_availability_status_display }}</p>
-        </div>
-    </div>
-
-    <!-- Форма для оновлення -->
     <form method="post">
         {% csrf_token %}
-        {{ form.as_p }}
+        <div class="mb-3">
+            <label for="id_name">Назва</label>
+                {{ form.name }}
+                {{ form.name.errors }}
+        </div>
+        <div class="mb-3">
+            <label for="id_codel">Код</label>
+                {{ form.code }}
+                {{ form.code.errors }}
+        </div>
+        <div class="mb-3">
+            <label for="id_availability_status">Наявність</label>
+                {{ form.availability_status }}
+                {{ form.availability_status.errors }}
+        </div>
         <button type="submit" class="btn btn-primary">Оновити</button>
         <a href="{% url 'color_list' %}" class="btn btn-secondary">Назад</a>
     </form>
