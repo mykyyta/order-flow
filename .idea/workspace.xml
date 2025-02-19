@@ -4,10 +4,21 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="337a98d3-af5f-42ac-9306-1e3644424c96" name="Changes" comment="Remove redundant comments and improve environment variable usage&#10;&#10;Cleaned up unnecessary or redundant comments across the codebase for better maintainability and readability. Improved environment variable handling by standardizing usage with `dotenv`. Updated Docker-related files for compatibility with dynamic ports and Cloud Run configurations, and added `.dockerignore` for better file management.">
+    <list default="true" id="337a98d3-af5f-42ac-9306-1e3644424c96" name="Changes" comment="Refactor timezone handling and improve UI localization.&#10;&#10;Replaced `strftime` with `localtime` for consistent timezone handling. Updated UI texts, formatting, and labels for better localization, primarily in Ukrainian. Refactored minor template structures, enhanced user navigation, and optimized environment configuration for `ALLOWED_HOSTS`.">
+      <change afterPath="$PROJECT_DIR$/orders/signals.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/templates/change_password.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/templates/notification_settings.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/templates/profile.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/OrderFlow/settings.py" beforeDir="false" afterPath="$PROJECT_DIR$/OrderFlow/settings.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/orders/apps.py" beforeDir="false" afterPath="$PROJECT_DIR$/orders/apps.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/orders/forms.py" beforeDir="false" afterPath="$PROJECT_DIR$/orders/forms.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/orders/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/orders/models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/orders/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/orders/urls.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/orders/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/orders/views.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/base.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/base.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/login.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/login.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/model_list_create.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/model_list_create.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/order_create.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/order_create.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -20,9 +31,9 @@
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
-        <option value="Python Script" />
-        <option value="HTML File" />
         <option value="Dockerfile" />
+        <option value="HTML File" />
+        <option value="Python Script" />
       </list>
     </option>
   </component>
@@ -173,7 +184,23 @@
       <option name="project" value="LOCAL" />
       <updated>1739876040971</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="Optimize order status update handling with transaction control&#10;&#10;Added transaction.atomic to ensure atomicity during bulk order status updates. Prevented duplicate status updates by checking the latest status before creating a new history record. Minor settings adjustments and enhancements to environment variable handling included.">
+      <option name="closed" value="true" />
+      <created>1739913784014</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1739913784014</updated>
+    </task>
+    <task id="LOCAL-00005" summary="Refactor timezone handling and improve UI localization.&#10;&#10;Replaced `strftime` with `localtime` for consistent timezone handling. Updated UI texts, formatting, and labels for better localization, primarily in Ukrainian. Refactored minor template structures, enhanced user navigation, and optimized environment configuration for `ALLOWED_HOSTS`.">
+      <option name="closed" value="true" />
+      <created>1739967370361</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1739967370361</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -186,6 +213,8 @@
     <MESSAGE value="gitignore add" />
     <MESSAGE value="Add Docker support with Dockerfile and docker-compose setup&#10;&#10;This commit introduces a Dockerfile and a docker-compose.yml to containerize the application, enabling easier deployment and local development. Additionally, database configuration was updated to use PostgreSQL, and environment variables were integrated for sensitive settings such as the secret key and Telegram bot token." />
     <MESSAGE value="Remove redundant comments and improve environment variable usage&#10;&#10;Cleaned up unnecessary or redundant comments across the codebase for better maintainability and readability. Improved environment variable handling by standardizing usage with `dotenv`. Updated Docker-related files for compatibility with dynamic ports and Cloud Run configurations, and added `.dockerignore` for better file management." />
-    <option name="LAST_COMMIT_MESSAGE" value="Remove redundant comments and improve environment variable usage&#10;&#10;Cleaned up unnecessary or redundant comments across the codebase for better maintainability and readability. Improved environment variable handling by standardizing usage with `dotenv`. Updated Docker-related files for compatibility with dynamic ports and Cloud Run configurations, and added `.dockerignore` for better file management." />
+    <MESSAGE value="Optimize order status update handling with transaction control&#10;&#10;Added transaction.atomic to ensure atomicity during bulk order status updates. Prevented duplicate status updates by checking the latest status before creating a new history record. Minor settings adjustments and enhancements to environment variable handling included." />
+    <MESSAGE value="Refactor timezone handling and improve UI localization.&#10;&#10;Replaced `strftime` with `localtime` for consistent timezone handling. Updated UI texts, formatting, and labels for better localization, primarily in Ukrainian. Refactored minor template structures, enhanced user navigation, and optimized environment configuration for `ALLOWED_HOSTS`." />
+    <option name="LAST_COMMIT_MESSAGE" value="Refactor timezone handling and improve UI localization.&#10;&#10;Replaced `strftime` with `localtime` for consistent timezone handling. Updated UI texts, formatting, and labels for better localization, primarily in Ukrainian. Refactored minor template structures, enhanced user navigation, and optimized environment configuration for `ALLOWED_HOSTS`." />
   </component>
 </project>
