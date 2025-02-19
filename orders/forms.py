@@ -21,7 +21,6 @@ class OrderForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Filter colors by availability status
         self.fields['color'].queryset = Color.objects.filter(
             availability_status__in=['in_stock', 'low_stock']
         )
@@ -38,6 +37,11 @@ class ColorForm(forms.ModelForm):
             'availability_status': forms.Select(attrs={'class': 'form-select'}),
         }
 
+    def clean_name(self):
+        name = self.cleaned_data['name']
+        return name.capitalize()
+
+
 class ProductModelForm(forms.ModelForm):
     class Meta:
         model = ProductModel
@@ -45,6 +49,11 @@ class ProductModelForm(forms.ModelForm):
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control'}),
         }
+
+    def clean_name(self):
+        name = self.cleaned_data['name']
+        return name.capitalize()
+
 
 class OrderStatusUpdateForm(forms.Form):
     orders = forms.ModelMultipleChoiceField(

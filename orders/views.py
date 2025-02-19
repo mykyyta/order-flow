@@ -3,12 +3,12 @@ from django.contrib.auth.models import Group
 from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.utils import timezone
 from django.utils.timezone import localtime
 from django.views import View
 from django.views.generic import ListView, UpdateView
-from .models import ProductModel, Color, Order
+from .models import ProductModel, Color, Order, NotificationSetting
 from .forms import ProductModelForm, ColorForm, OrderStatusUpdateForm
 from orders.forms import OrderForm
 from orders.models import OrderStatusHistory
@@ -43,6 +43,7 @@ def auth_login(request):
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
+
             return redirect('index')
         else:
             return JsonResponse({'message': 'Invalid credentials'}, status=401)
@@ -50,9 +51,6 @@ def auth_login(request):
     else:
         return render(request, 'login.html')
 
-@custom_login_required
-def auth_user(request):
-    return JsonResponse({'username': request.user.username})
 
 def auth_logout(request):
     logout(request)
@@ -71,7 +69,7 @@ def current_orders_list(request):
                     for order in selected_orders:
                         latest_status_history = (
                             OrderStatusHistory.objects.filter(order=order)
-                            .order_by('-id')  # Assuming 'id' is sequential
+                            .order_by('-id')
                             .first()
                         )
                         if latest_status_history and latest_status_history.new_status == new_status: continue
@@ -86,20 +84,21 @@ def current_orders_list(request):
                         if new_status.lower() == "finished":
                             order.finished_at = timezone.now()
                             order.save()
-                            manager_telegram_ids = get_telegram_ids_for_group(Group.objects.get(name="Manager"))
-                            if manager_telegram_ids:
-                                message = (
-                                    f"Замовлення завершено: {order.model.name}, {order.color.name}."
-                                )
-                                for telegram_id in manager_telegram_ids:
-                                    send_tg_message(telegram_id, message)
+                            users_to_notify = NotificationSetting.objects.filter(
+                                notify_order_finished=True).select_related('user')
+
+                            for setting in users_to_notify:
+                                user = setting.user
+                                if user.telegram_id:
+                                    message = f"Замовлення завершено: {order.model.name}, {order.color.name}."
+                                    send_tg_message(user.telegram_id, message)
 
                 messages.success(request, "Статус оновлено для вибраних замовлень.")
             else:
                 messages.warning(request, "Не вибрано жодного замовлення для оновлення статусу.")
             return redirect("current_orders_list")
         else:
-            messages.error(request, "Виникла помилка. Спробуйте ще раз.")
+            messages.error(request, "Виникла помилка. Зробіть ще одну спробу.")
 
 
     orders_queryset = Order.objects.filter(finished_at__isnull=True)
@@ -138,16 +137,20 @@ def order_create(request):
                 new_status='new'
             )
 
-            telegram_ids = get_telegram_ids_for_group(Group.objects.get(name="Master"))
+            users_to_notify = NotificationSetting.objects.filter(
+                notify_order_created=True,
+                user__telegram_id__isnull=False
+            ).select_related('user')
 
-            if telegram_ids:
+            if users_to_notify:
                 order_details = generate_order_details(order)
                 message = (
                     f"+ {order_details}"
                     f"\n{request.build_absolute_uri(reverse_lazy('current_orders_list'))}\n"
                 )
-                for telegram_id in telegram_ids:
-                    send_tg_message(telegram_id, message)
+
+                for setting in users_to_notify:
+                    send_tg_message(setting.user.telegram_id, message)
 
         return redirect('current_orders_list')
 
@@ -245,5 +248,65 @@ class ColorDetailUpdateView(UpdateView):
 
     def get_success_url(self):
         return reverse_lazy('color_detail_update', kwargs={'pk': self.object.pk})
+
+@custom_login_required
+def profile_view(request):
+    user = request.user
+
+    if request.method == 'POST':
+        new_username = request.POST.get('username')
+
+        if new_username:
+            user.username = new_username
+            user.save()
+            messages.success(request, 'Ім’я користувача оновлено.')
+
+        return redirect('profile')
+
+    return render(request, 'profile.html', {'user': user})
+
+@custom_login_required
+def notification_settings(request):
+    settings = request.user.notification_settings
+
+    if request.method == 'POST':
+        settings.notify_order_created = request.POST.get('notify_order_created') == 'on'
+        settings.notify_order_finished = request.POST.get('notify_order_finished') == 'on'
+        settings.save()
+
+        return redirect('notification_settings')
+
+    return render(request, 'notification_settings.html', {'settings': settings})
+
+
+@custom_login_required
+def change_password(request):
+    if request.method == 'POST':
+        current_password = request.POST.get('current_password')
+        new_password = request.POST.get('new_password')
+        confirm_password = request.POST.get('confirm_password')
+
+        if not current_password or not new_password or not confirm_password:
+            messages.error(request, 'Будь ласка, заповніть всі поля.')
+            return redirect('change_password')
+
+        if new_password != confirm_password:
+            messages.error(request, 'Нові паролі не співпадають.')
+            return redirect('change_password')
+
+        if not request.user.check_password(current_password):
+            messages.error(request, 'Поточний пароль невірний.')
+            return redirect('change_password')
+
+        request.user.set_password(new_password)
+        request.user.save()
+
+        update_session_auth_hash(request, request.user)
+
+        messages.success(request, 'Пароль успішно змінено.')
+        return redirect('profile')
+
+    return render(request, 'change_password.html')
+
 
 

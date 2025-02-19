@@ -10,8 +10,10 @@ urlpatterns = [
     path('models/', ProductModelListCreateView.as_view(), name='model_list'),
     path('colors/', ColorListCreateView.as_view(), name='color_list'),
     path('color/<int:pk>/', ColorDetailUpdateView.as_view(), name='color_detail_update'),
-
     path('login/', auth_login, name='auth_login'),
     path('logout/', auth_logout, name='auth_logout'),
-    path('users/me/', auth_user, name='auth_user'),
+    path('profile/', profile_view, name='profile'),
+    path('profile/change-password/', change_password, name='change_password'),
+    path('profile/settings/', notification_settings, name='notification_settings'),
+
 ]

@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User, AbstractUser
 
+from OrderFlow import settings
+
 
 class CustomUser(AbstractUser):
     telegram_id = models.CharField(
@@ -80,3 +82,12 @@ class OrderStatusHistory(models.Model):
 
     def __str__(self):
         return f"{self.order.id} → {self.new_status} ({self.changed_at})"
+
+class NotificationSetting(models.Model):
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='notification_settings'
+    )
+    notify_order_created = models.BooleanField(default=True)
+    notify_order_finished = models.BooleanField(default=True)

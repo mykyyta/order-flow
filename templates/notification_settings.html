@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block title %}Налаштування сповіщень - OrderFlow{% endblock %}
+
+{% block content %}
+    <h2>Налаштування сповіщень</h2>
+    <form method="post" class="mt-3">
+        {% csrf_token %}
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="notify_order_created" id="notify_order_created" {% if settings.notify_order_created %}checked{% endif %}>
+            <label class="form-check-label" for="notify_order_created">
+                Повідомляти про створення нового замовлення
+            </label>
+        </div>
+
+        <div class="form-check mt-2">
+            <input class="form-check-input" type="checkbox" name="notify_order_finished" id="notify_order_finished" {% if settings.notify_order_finished %}checked{% endif %}>
+            <label class="form-check-label" for="notify_order_finished">
+                Повідомляти про готовність замовлення
+            </label>
+        </div>
+
+        <button type="submit" class="btn btn-primary mt-3">Зберегти</button>
+    </form>
+{% endblock %}
