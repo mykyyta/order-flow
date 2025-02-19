@@ -1,11 +1,12 @@
 {% extends "base.html" %}
+{% load tz %}
 
-{% block title %}Order Details{% endblock %}
+{% block title %}Деталі замовлення{% endblock %}
 
 {% block content %}
 <div class="card">
     <div class="card-header">
-        <h2 class="card-title">Order Details</h2>
+        <h2 class="card-title">Деталі замовлення</h2>
     </div>
     <div class="card-body">
         <table class="table table-bordered">
@@ -15,39 +16,39 @@
                 <td>{{ order.id }}</td>
             </tr>
             <tr>
-                <th>Model</th>
+                <th>Модель</th>
                 <td>{{ order.model }}</td>
             </tr>
             <tr>
-                <th>Color</th>
+                <th>Колір</th>
                 <td>{{ order.color }}</td>
             </tr>
             <tr>
-                <th>Embroidery</th>
-                <td>{{ order.embroidery }}</td>
+                <th>Вишивка</th>
+                <td>{{ order.embroidery|yesno:"Так,Ні" }}</td>
             </tr>
             <tr>
-                <th>Comment</th>
+                <th>Коментар</th>
                 <td>{{ order.comment }}</td>
             </tr>
             <tr>
-                <th>Urgent</th>
-                <td>{{ order.urgent|yesno:"Yes,No" }}</td>
+                <th>Терміново</th>
+                <td>{{ order.urgent|yesno:"Так,Ні" }}</td>
             </tr>
             <tr>
                 <th>Etsy</th>
-                <td>{{ order.etsy }}</td>
+                <td>{{ order.etsy|yesno:"Так,Ні" }}</td>
             </tr>
             <tr>
-                <th>Created At</th>
-                <td>{{ order.created_at }}</td>
+                <th>Створено</th>
+                <td>{{ order.created_at|date:"d.m.Y H:i" }}</td>
             </tr>
             <tr>
-                <th>Finished At</th>
-                <td>{{ order.finished_at }}</td>
+                <th>Закінчено</th>
+                <td>{{ order.finished_at|date:"d.m.Y H:i" }}</td>
             </tr>
             <tr>
-                <th>Current Status</th>
+                <th>Поточний статус</th>
                 <td>{{ order.current_status }}</td>
             </tr>
             </tbody>
@@ -55,9 +56,10 @@
     </div>
 </div>
 
+
 <div class="card mt-4">
     <div class="card-header">
-        <h2 class="card-title">Status History</h2>
+        <h2 class="card-title">Історія статусів</h2>
     </div>
     <div class="card-body">
         <table class="table table-striped">
