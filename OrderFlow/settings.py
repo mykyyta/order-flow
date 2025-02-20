@@ -94,10 +94,9 @@ DATABASES = {
         'OPTIONS': {
             'sslmode': 'require',  # SSL mode
         },
+        'CONN_MAX_AGE': 60,
     }
 }
-
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -144,3 +143,5 @@ AUTH_USER_MODEL = 'orders.CustomUser'
 
 CSRF_COOKIE_SAMESITE = None
 SESSION_COOKIE_SAMESITE = None
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True

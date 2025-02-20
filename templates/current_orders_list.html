@@ -2,10 +2,9 @@
 
 {% block title %}Поточні замовлення{% endblock %}
 
-
 {% block content %}
 
-<h1 class="mb-4" style="font-size: 20px;">Поточні замовлення</h1>
+<h3>Поточні замовлення</h3>
 
 <!-- Повідомлення -->
 {% if messages %}
@@ -40,26 +39,28 @@
                             <input class="form-check-input" type="checkbox" name="orders" value="{{ order.id }}">
                         </div>
                     </td>
-                    <td style="font-size: 14px;"><a href="{% url 'order_detail' order.id %}">{{ order.model.name }} - {{ order.color.name }}</a></td>
                     <td style="font-size: 14px;">
-                        <span class="badge
-                            {% if order.get_status == 'new' %}bg-primary text-dark
-                            {% elif order.get_status == 'embroidery' %}bg-warning text-dark
-                            {% elif order.get_status == 'almost_finished' %}bg-info text-dark
-                            {% elif order.get_status == 'finished' %}bg-success text-dark
-                            {% else %}bg-secondary{% endif %}">
-                            {{ order.get_status_display }}
-                        </span>
-{#                        <!-- Badges column -->#}
-{#                        {% if order.etsy %}#}
-{#                        <span class="badge bg-info text-dark">В</span> <!-- Etsy badge -->#}
-{#                        {% endif %}#}
-{#                        {% if order.embroidery %}#}
-{#                        <span class="badge bg-success text-dark">Е</span> <!-- Embroidery badge -->#}
-{#                        {% endif %}#}
-{#                        {% if order.urgent %}#}
-{#                        <span class="badge bg-danger text-dark">Т</span> <!-- Urgent (Термінове) badge -->#}
-{#                        {% endif %}#}
+                        <a href="{% url 'order_detail' order.id %}" style="text-decoration: none; color: #6c757d;">{{ order.model.name }} - {{ order.color.name }}</a>
+                    </td>
+                    <td style="font-size: 14px;">
+                            <span class="badge
+                                {% if order.get_status == 'new' %} bg-success
+                                {% elif order.get_status == 'embroidery' %} bg-warning
+                                {% elif order.get_status == 'almost_finished' %} bg-primary
+                                {% elif order.get_status == 'finished' %} bg-info
+                                {% endif %}">
+                                {{ order.get_status_display }}
+                            </span>
+                            <!-- Badges column -->
+                            {% if order.etsy %}
+                            <span class="badge bg-secondary">Е</span> <!-- Etsy badge -->
+                            {% endif %}
+                            {% if order.embroidery %}
+                            <span class="badge bg-warning">В</span> <!-- Embroidery badge -->
+                            {% endif %}
+                            {% if order.urgent %}
+                            <span class="badge bg-danger">Т</span> <!-- Urgent (Термінове) badge -->
+                            {% endif %}
                     </td>
 
 

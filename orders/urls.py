@@ -15,5 +15,6 @@ urlpatterns = [
     path('profile/', profile_view, name='profile'),
     path('profile/change-password/', change_password, name='change_password'),
     path('profile/settings/', notification_settings, name='notification_settings'),
+    path('cron/send-delayed-notifications/', send_delayed_notifications, name='send_delayed_notifications')
 
 ]

@@ -91,3 +91,4 @@ class NotificationSetting(models.Model):
     )
     notify_order_created = models.BooleanField(default=True)
     notify_order_finished = models.BooleanField(default=True)
+    notify_order_created_pause = models.BooleanField(default=True)
