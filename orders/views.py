@@ -1,11 +1,8 @@
 from django.contrib import messages
-from django.contrib.auth.models import Group
 from django.core.paginator import Paginator
-from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.utils import timezone
-from django.utils.timezone import localtime, now
 from django.views import View
 from django.views.generic import ListView, UpdateView
 from .models import ProductModel, Color, Order, NotificationSetting
@@ -14,7 +11,10 @@ from orders.forms import OrderForm
 from orders.models import OrderStatusHistory
 from django.urls import reverse_lazy
 from django.db import models, transaction
-from .utils import send_tg_message, get_telegram_ids_for_group, generate_order_details
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.timezone import localtime, now, timedelta, make_aware, datetime
+from orders.utils import send_tg_message, generate_order_details
 
 
 
@@ -317,11 +317,6 @@ def change_password(request):
 
     return render(request, 'change_password.html')
 
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.timezone import localtime, now, timedelta, make_aware, datetime
-from orders.models import Order, NotificationSetting
-from orders.utils import send_tg_message, generate_order_details
 
 @csrf_exempt
 def send_delayed_notifications(request):
@@ -344,7 +339,6 @@ def send_delayed_notifications(request):
     if not orders_to_notify.exists():
         return JsonResponse({'status': 'no orders to notify'})
 
-    # Беремо користувачів, які хочуть отримувати відкладені сповіщення
     users_to_notify = NotificationSetting.objects.filter(
         notify_order_created=True,
         notify_order_created_pause=True,
@@ -354,7 +348,6 @@ def send_delayed_notifications(request):
     if not users_to_notify.exists():
         return JsonResponse({'status': 'no users to notify'})
 
-    # Групуємо замовлення для кожного користувача
     for setting in users_to_notify:
         user_orders = []
         for order in orders_to_notify:
