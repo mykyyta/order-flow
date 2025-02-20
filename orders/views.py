@@ -5,7 +5,7 @@ from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.utils import timezone
-from django.utils.timezone import localtime
+from django.utils.timezone import localtime, now
 from django.views import View
 from django.views.generic import ListView, UpdateView
 from .models import ProductModel, Color, Order, NotificationSetting
@@ -150,6 +150,14 @@ def order_create(request):
                 )
 
                 for setting in users_to_notify:
+
+                    if setting.notify_order_created_pause:
+                        current_time = localtime(now())
+                        current_hour = current_time.hour
+                        WORKING_HOURS_START = 8
+                        WORKING_HOURS_END = 18
+                        if current_hour < WORKING_HOURS_START or current_hour >= WORKING_HOURS_END:
+                            continue
                     send_tg_message(setting.user.telegram_id, message)
 
         return redirect('current_orders_list')
@@ -272,6 +280,7 @@ def notification_settings(request):
     if request.method == 'POST':
         settings.notify_order_created = request.POST.get('notify_order_created') == 'on'
         settings.notify_order_finished = request.POST.get('notify_order_finished') == 'on'
+        settings.notify_order_created_pause = request.POST.get('notify_order_created_pause') == 'on'
         settings.save()
 
         return redirect('notification_settings')
@@ -307,6 +316,57 @@ def change_password(request):
         return redirect('profile')
 
     return render(request, 'change_password.html')
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.timezone import localtime, now, timedelta, make_aware, datetime
+from orders.models import Order, NotificationSetting
+from orders.utils import send_tg_message, generate_order_details
+
+@csrf_exempt
+def send_delayed_notifications(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'invalid method'}, status=405)
+
+    current_time = localtime(now())
+    today = current_time.date()
+
+    yesterday_18 = make_aware(datetime.combine(today - timedelta(days=1), datetime.min.time().replace(hour=18)))
+
+    today_08 = make_aware(datetime.combine(today, datetime.min.time().replace(hour=8)))
+
+    # Замовлення, створені після 18:00 до 08:00
+    orders_to_notify = Order.objects.filter(
+        created_at__gte=yesterday_18,
+        created_at__lt=today_08
+    )
+
+    if not orders_to_notify.exists():
+        return JsonResponse({'status': 'no orders to notify'})
+
+    # Беремо користувачів, які хочуть отримувати відкладені сповіщення
+    users_to_notify = NotificationSetting.objects.filter(
+        notify_order_created=True,
+        notify_order_created_pause=True,
+        user__telegram_id__isnull=False
+    ).select_related('user')
+
+    if not users_to_notify.exists():
+        return JsonResponse({'status': 'no users to notify'})
+
+    # Групуємо замовлення для кожного користувача
+    for setting in users_to_notify:
+        user_orders = []
+        for order in orders_to_notify:
+            order_details = generate_order_details(order)
+            user_orders.append(f"+ {order_details}")
+
+        if user_orders:
+            message = "\n".join(user_orders)
+            send_tg_message(setting.user.telegram_id, message)
+
+    return JsonResponse({'status': 'delayed notifications sent'})
+
 
 
 
