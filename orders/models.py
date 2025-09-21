@@ -1,6 +1,5 @@
 from django.db import models
 from django.contrib.auth.models import User, AbstractUser
-
 from OrderFlow import settings
 
 
@@ -72,6 +71,7 @@ class OrderStatusHistory(models.Model):
         ('embroidery', 'На вишивці'),
         ('almost_finished', 'Майже готове'),
         ('finished', 'Готове'),
+        ('on_hold', 'Призупинено'),
     ]
 
     id = models.AutoField(primary_key=True)
