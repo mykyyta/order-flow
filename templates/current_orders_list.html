@@ -48,6 +48,7 @@
                                 {% elif order.get_status == 'embroidery' %} bg-warning
                                 {% elif order.get_status == 'almost_finished' %} bg-primary
                                 {% elif order.get_status == 'finished' %} bg-info
+                                {% elif order.get_status == 'on_hold' %} bg-info
                                 {% endif %}">
                                 {{ order.get_status_display }}
                             </span>
