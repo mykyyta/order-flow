@@ -31,6 +31,40 @@
     background-repeat: no-repeat;
     background-size: 1.25rem 1.25rem;
   }
+  /* Custom dropdown panel (replaces native options list) */
+  .form-select-wrap {
+    @apply relative w-full;
+  }
+  .form-select-wrap .form-select-native {
+    @apply absolute inset-0 w-full opacity-0 pointer-events-none;
+    z-index: 0;
+  }
+  .form-select-trigger {
+    @apply flex items-center justify-between w-full rounded-md border border-slate-300 bg-white px-3 py-2 pr-8 text-left text-sm text-slate-900 cursor-pointer;
+    @apply focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:ring-offset-0;
+    @apply transition-[border-color,box-shadow];
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 0.5rem center;
+    background-repeat: no-repeat;
+    background-size: 1.25rem 1.25rem;
+    z-index: 1;
+  }
+  .form-select-trigger[aria-expanded="true"] {
+    @apply border-teal-500 ring-2 ring-teal-500/20;
+  }
+  .form-select-dropdown {
+    @apply absolute left-0 right-0 top-full z-50 mt-1 max-h-60 overflow-auto rounded-md border border-slate-200 bg-white py-1 shadow-lg;
+  }
+  .form-select-option {
+    @apply block w-full px-3 py-2 text-left text-sm text-slate-900 cursor-pointer;
+    @apply hover:bg-slate-50;
+  }
+  .form-select-option[aria-selected="true"] {
+    @apply bg-teal-50 text-teal-700;
+  }
+  .form-select-option.disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
   .form-textarea {
     @apply block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 min-h-[88px] resize-y;
     @apply focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:ring-offset-0;

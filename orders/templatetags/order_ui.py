@@ -25,13 +25,14 @@ _DEFAULT_STATUS = {"dot_class": "bg-slate-400", "icon": "dot", "text_class": "te
 
 
 @register.inclusion_tag("partials/status_indicator.html")
-def status_indicator(status_value, label=""):
-    """Render a status indicator: colored dot (or icon) + label text."""
+def status_indicator(status_value, label="", muted=False):
+    """Render a status indicator: label text + colored dot (or icon). muted=True for list context (lighter text)."""
     config = STATUS_CONFIG.get(status_value, _DEFAULT_STATUS)
+    text_class = "text-slate-500" if muted else config["text_class"]
     return {
         "dot_class": config["dot_class"],
         "icon": config["icon"],
-        "text_class": config["text_class"],
+        "text_class": text_class,
         "label": label,
     }
 
@@ -53,3 +54,15 @@ def message_alert_class(message_tags: str) -> str:
         if tag in tag_to_class:
             return tag_to_class[tag]
     return tag_to_class["info"]
+
+
+@register.filter
+def status_badge_class(status_value: str) -> str:
+    status_to_class = {
+        "new": "bg-emerald-100 text-emerald-800",
+        "embroidery": "bg-amber-100 text-amber-800",
+        "almost_finished": "bg-sky-100 text-sky-800",
+        "finished": "bg-slate-100 text-slate-700",
+        "on_hold": "bg-red-100 text-red-800",
+    }
+    return status_to_class.get(status_value, "bg-slate-100 text-slate-700")

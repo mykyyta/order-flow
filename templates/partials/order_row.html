@@ -3,13 +3,11 @@
     <input class="form-checkbox flex-shrink-0 js-order-checkbox" type="checkbox" name="orders" value="{{ order.id }}" data-current-status="{{ order.current_status }}">
     <div class="flex flex-1 items-center justify-between gap-3 min-w-0">
         <div class="flex items-center gap-1.5 min-w-0">
-            {% if order.urgent %}<span class="h-2 w-2 flex-shrink-0 rounded-full bg-rose-500" title="Терміново"></span>{% endif %}
             <a href="{% url 'order_detail' order.id %}" class="truncate text-sm font-medium text-slate-800 hover:text-teal-600 transition-colors">{{ order.model.name }} — {{ order.color.name }}</a>
-            {% if order.etsy %}<span class="flex-shrink-0 rounded bg-violet-50 px-1 py-px text-[10px] font-semibold text-violet-600 ring-1 ring-inset ring-violet-500/20">E</span>{% endif %}
-            {% if order.embroidery %}<span class="flex-shrink-0 rounded bg-amber-50 px-1 py-px text-[10px] font-semibold text-amber-600 ring-1 ring-inset ring-amber-500/20">В</span>{% endif %}
+            {% include "partials/order_tags_icons.html" with order=order %}
         </div>
         <div class="flex-shrink-0">
-            {% status_indicator order.current_status order.get_current_status_display %}
+            {% status_indicator order.current_status order.get_current_status_display muted=1 %}
         </div>
     </div>
 </div>
