@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from django.core.exceptions import ImproperlyConfigured
 
+from .base import ALLOWED_HOSTS, MIDDLEWARE, SECRET_KEY, env_bool, env_int
 from .base import *  # noqa: F401,F403
 
 DEBUG = False

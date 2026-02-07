@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import User, AbstractUser
+from django.contrib.auth.models import AbstractUser
 from OrderFlow import settings
 from orders.domain.status import (
     STATUS_ALMOST_FINISHED,

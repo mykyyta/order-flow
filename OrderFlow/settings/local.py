@@ -1,3 +1,4 @@
+from .base import ALLOWED_HOSTS, SECRET_KEY, env_bool
 from .base import *  # noqa: F401,F403
 
 DEBUG = env_bool("DJANGO_DEBUG", True)

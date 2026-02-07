@@ -1,5 +1,20 @@
 from django.urls import path
-from .views import *
+from .views import (
+    ColorDetailUpdateView,
+    ColorListCreateView,
+    ProductModelListCreateView,
+    auth_login,
+    auth_logout,
+    change_password,
+    current_orders_list,
+    finished_orders_list,
+    index,
+    notification_settings,
+    order_create,
+    order_detail,
+    profile_view,
+    send_delayed_notifications,
+)
 
 urlpatterns = [
     path('', index, name='index'),
