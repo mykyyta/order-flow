@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Створити нове замовлення{% endblock %}
+
+{% block content %}
+
+{% include "partials/messages.html" %}
+
+<div class="mx-auto max-w-xl">
+    <div class="overflow-hidden rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+        <h1 class="mb-6 text-center text-lg font-semibold text-slate-900">Нове замовлення</h1>
+        <form method="post" action="{% url 'orders_create' %}">
+            {% csrf_token %}
+
+            <div class="space-y-4">
+                <div>
+                    <label for="id_model" class="block text-sm font-medium text-slate-700">Модель</label>
+                    {{ form.model }}
+                    {% if form.model.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.model.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label for="id_color" class="block text-sm font-medium text-slate-700">Колір</label>
+                    {{ form.color }}
+                    {% if form.color.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.color.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="flex items-center gap-2">
+                    {{ form.etsy }}
+                    <label for="id_etsy" class="text-sm font-medium text-slate-700">Etsy</label>
+                    {% if form.etsy.errors %}
+                    <p class="text-sm text-red-600">{{ form.etsy.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="flex items-center gap-2">
+                    {{ form.embroidery }}
+                    <label for="id_embroidery" class="text-sm font-medium text-slate-700">Вишивка</label>
+                    {% if form.embroidery.errors %}
+                    <p class="text-sm text-red-600">{{ form.embroidery.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="flex items-center gap-2">
+                    {{ form.urgent }}
+                    <label for="id_urgent" class="text-sm font-medium text-slate-700">Терміново</label>
+                    {% if form.urgent.errors %}
+                    <p class="text-sm text-red-600">{{ form.urgent.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label for="id_comment" class="block text-sm font-medium text-slate-700">Коментар</label>
+                    {{ form.comment }}
+                    {% if form.comment.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.comment.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <button type="submit" class="w-full min-h-[44px] rounded-md border border-transparent bg-teal-700 px-4 py-2 text-sm font-medium text-white hover:bg-teal-800 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                    Створити
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="mt-4">
+        <a href="{% url 'orders_active' %}" class="text-sm font-medium text-teal-700 hover:text-teal-800">← До поточних замовлень</a>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/orders_create.js' %}"></script>
+{% endblock %}

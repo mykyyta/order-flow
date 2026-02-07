@@ -580,7 +580,7 @@ class FinishedOrdersSearchTests(TestCase):
             current_status=STATUS_NEW,
         )
 
-        response = self.client.get(reverse("finished_orders_list"), {"q": "special"})
+        response = self.client.get(reverse("orders_completed"), {"q": "special"})
         self.assertEqual(response.status_code, 200)
         orders = list(response.context["page_obj"].object_list)
         self.assertEqual(len(orders), 1)
@@ -595,13 +595,13 @@ class FinishedOrdersSearchTests(TestCase):
                 current_status=STATUS_FINISHED,
             )
 
-        response = self.client.get(reverse("finished_orders_list"), {"q": "archive"})
+        response = self.client.get(reverse("orders_completed"), {"q": "archive"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["page_obj"].paginator.count, 21)
         self.assertEqual(len(response.context["page_obj"].object_list), 20)
         self.assertContains(response, "?page=2&q=archive")
 
-        second_page = self.client.get(reverse("finished_orders_list"), {"q": "archive", "page": 2})
+        second_page = self.client.get(reverse("orders_completed"), {"q": "archive", "page": 2})
         self.assertEqual(second_page.status_code, 200)
         self.assertEqual(len(second_page.context["page_obj"].object_list), 1)
 
