@@ -33,11 +33,7 @@ class DjangoOrderRepository:
         )
 
     def get_latest_status(self, *, order: Order) -> Optional[str]:
-        latest_status = (
-            OrderStatusHistory.objects.filter(order=order)
-            .order_by("-id")
-            .first()
-        )
+        latest_status = OrderStatusHistory.objects.filter(order=order).order_by("-id").first()
         return latest_status.new_status if latest_status else None
 
     def set_finished_at(self, *, order: Order, finished_at) -> None:

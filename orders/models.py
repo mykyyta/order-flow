@@ -11,11 +11,7 @@ STATUS_CHOICES = status_choices(include_legacy=True, include_terminal=True)
 
 class CustomUser(AbstractUser):
     telegram_id = models.CharField(
-        max_length=50,
-        blank=True,
-        null=True,
-        unique=True,
-        verbose_name="Telegram ID"
+        max_length=50, blank=True, null=True, unique=True, verbose_name="Telegram ID"
     )
 
     def __str__(self):
@@ -29,20 +25,24 @@ class ProductModel(models.Model):
     def __str__(self):
         return f"{self.name}"
 
+
 class Color(models.Model):
     AVAILABILITY_CHOICES = [
-        ('in_stock', 'В наявності'),
-        ('low_stock', 'Закінчується'),
-        ('out_of_stock', 'Немає'),
+        ("in_stock", "В наявності"),
+        ("low_stock", "Закінчується"),
+        ("out_of_stock", "Немає"),
     ]
 
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255, unique=True)
     code = models.IntegerField(unique=True)
-    availability_status = models.CharField(max_length=20, choices=AVAILABILITY_CHOICES, default='in_stock')
+    availability_status = models.CharField(
+        max_length=20, choices=AVAILABILITY_CHOICES, default="in_stock"
+    )
 
     def __str__(self):
         return f"{self.name}"
+
 
 class Order(models.Model):
     id = models.AutoField(primary_key=True)
@@ -67,9 +67,9 @@ class Order(models.Model):
     def get_status_display(self):
         return self.get_current_status_display()
 
-
     def __str__(self):
         return f"{self.model.name} ({self.color.name}) - {self.get_status()}"
+
 
 class OrderStatusHistory(models.Model):
     STATUS_CHOICES = STATUS_CHOICES
@@ -88,11 +88,10 @@ class OrderStatusHistory(models.Model):
             models.Index(fields=["order", "changed_at"]),
         ]
 
+
 class NotificationSetting(models.Model):
     user = models.OneToOneField(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name='notification_settings'
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="notification_settings"
     )
     notify_order_created = models.BooleanField(default=True)
     notify_order_finished = models.BooleanField(default=True)

@@ -4,19 +4,29 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('orders', '0005_order_current_status'),
+        ("orders", "0005_order_current_status"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='orderstatushistory',
-            name='new_status',
-            field=models.CharField(choices=[('new', 'Нове'), ('embroidery', 'На вишивці'), ('almost_finished', 'Майже готове'), ('finished', 'Готове'), ('on_hold', 'Призупинено')], max_length=20),
+            model_name="orderstatushistory",
+            name="new_status",
+            field=models.CharField(
+                choices=[
+                    ("new", "Нове"),
+                    ("embroidery", "На вишивці"),
+                    ("almost_finished", "Майже готове"),
+                    ("finished", "Готове"),
+                    ("on_hold", "Призупинено"),
+                ],
+                max_length=20,
+            ),
         ),
         migrations.AddIndex(
-            model_name='orderstatushistory',
-            index=models.Index(fields=['order', 'changed_at'], name='orders_orde_order_i_7978aa_idx'),
+            model_name="orderstatushistory",
+            index=models.Index(
+                fields=["order", "changed_at"], name="orders_orde_order_i_7978aa_idx"
+            ),
         ),
     ]

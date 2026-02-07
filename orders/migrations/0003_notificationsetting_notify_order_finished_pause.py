@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('orders', '0002_notificationsetting'),
+        ("orders", "0002_notificationsetting"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='notificationsetting',
-            name='notify_order_finished_pause',
+            model_name="notificationsetting",
+            name="notify_order_finished_pause",
             field=models.BooleanField(default=True),
         ),
     ]

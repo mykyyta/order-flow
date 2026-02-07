@@ -33,9 +33,9 @@ class Command(BaseCommand):
             .values("new_status")[:1]
         )
 
-        orders = Order.objects.annotate(
-            latest_status=Subquery(latest_status_subq)
-        ).only("id", "current_status", "finished_at")
+        orders = Order.objects.annotate(latest_status=Subquery(latest_status_subq)).only(
+            "id", "current_status", "finished_at"
+        )
 
         if limit:
             orders = orders[:limit]

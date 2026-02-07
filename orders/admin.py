@@ -5,9 +5,5 @@ from .models import CustomUser
 
 @admin.register(CustomUser)
 class CustomUserAdmin(UserAdmin):
-    fieldsets = UserAdmin.fieldsets + (
-        (None, {'fields': ('telegram_id',)}),
-    )
-    add_fieldsets = UserAdmin.add_fieldsets + (
-        (None, {'fields': ('telegram_id',)}),
-    )
+    fieldsets = UserAdmin.fieldsets + ((None, {"fields": ("telegram_id",)}),)
+    add_fieldsets = UserAdmin.add_fieldsets + ((None, {"fields": ("telegram_id",)}),)

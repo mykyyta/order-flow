@@ -10,7 +10,6 @@
         document.getElementById("select-all-orders"),
         document.getElementById("select-all-orders-mobile"),
     ].filter(Boolean);
-    var actionBar = document.getElementById("bulk-action-bar");
     var selectedLength = 0;
 
     if (!transitionDataEl || !bulkStatusForm || !select || !applyStatusButton || !clearSelectionButton) {
@@ -57,12 +56,6 @@
         applyStatusButton.disabled = selectedLength === 0;
         clearSelectionButton.disabled = selectedLength === 0;
         syncSelectAll();
-
-        // Show the bulk actions inline only when there is a selection.
-        if (actionBar) {
-            if (selectedLength > 0) actionBar.classList.remove("hidden");
-            else actionBar.classList.add("hidden");
-        }
 
         if (options.every(function (option) { return option.disabled; })) {
             hint.textContent = "Немає спільного дозволеного переходу для обраних замовлень.";

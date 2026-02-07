@@ -28,11 +28,14 @@ urlpatterns = [
     path("models/", ProductModelListCreateView.as_view(), name="product_models"),
     path("colors/", ColorListCreateView.as_view(), name="colors"),
     path("color/<int:pk>/", ColorDetailUpdateView.as_view(), name="color_edit"),
-    path('login/', auth_login, name='auth_login'),
-    path('logout/', auth_logout, name='auth_logout'),
-    path('profile/', profile_view, name='profile'),
-    path('profile/change-password/', change_password, name='change_password'),
-    path('profile/settings/', notification_settings, name='notification_settings'),
-    path('cron/send-delayed-notifications/', send_delayed_notifications, name='send_delayed_notifications')
-
+    path("login/", auth_login, name="auth_login"),
+    path("logout/", auth_logout, name="auth_logout"),
+    path("profile/", profile_view, name="profile"),
+    path("profile/change-password/", change_password, name="change_password"),
+    path("profile/settings/", notification_settings, name="notification_settings"),
+    path(
+        "cron/send-delayed-notifications/",
+        send_delayed_notifications,
+        name="send_delayed_notifications",
+    ),
 ]

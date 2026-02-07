@@ -7,7 +7,7 @@ register = template.Library()
 # Status indicator: dot/icon + text (no background fill)
 # ---------------------------------------------------------------------------
 # Each status maps to:
-#   dot_class  – Tailwind class for the indicator color (bg-* for dots, text-* for SVG icons)
+#   dot_class  – Tailwind class for the indicator color (text-* used for dots and SVG icons)
 #   icon       – "dot", "play", "pause", "none"
 #   text_class – Tailwind class for the label text color
 #
@@ -16,7 +16,7 @@ register = template.Library()
 
 STATUS_CONFIG = status_ui_map(include_legacy=True)
 
-_DEFAULT_STATUS = {"dot_class": "bg-slate-400", "icon": "dot", "text_class": "text-slate-500"}
+_DEFAULT_STATUS = {"dot_class": "text-slate-400", "icon": "dot", "text_class": "text-slate-500"}
 
 
 @register.inclusion_tag("partials/status_indicator.html")
@@ -35,6 +35,7 @@ def status_indicator(status_value, label="", muted=False):
 # ---------------------------------------------------------------------------
 # Message alerts (Django messages framework)
 # ---------------------------------------------------------------------------
+
 
 @register.filter
 def message_alert_class(message_tags: str) -> str:

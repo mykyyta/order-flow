@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from orders.domain.order_statuses import (
+from orders.domain.order_statuses import (  # noqa: F401
     ACTIVE_STATUS_CODES,
     STATUS_ALMOST_FINISHED,
     STATUS_DECIDING,
