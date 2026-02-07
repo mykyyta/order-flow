@@ -26,6 +26,7 @@ from orders.models import (
     Color,
     CustomUser,
     DelayedNotificationLog,
+    NotificationSetting,
     Order,
     OrderStatusHistory,
     ProductModel,
@@ -367,6 +368,15 @@ class AuthAndSecurityFlowTests(TestCase):
         self.user.refresh_from_db()
         self.assertTrue(self.user.check_password("ValidPass123!"))
 
+    def test_logout_requires_post(self):
+        self.client.force_login(self.user)
+        get_response = self.client.get(reverse("auth_logout"))
+        self.assertEqual(get_response.status_code, 405)
+
+        post_response = self.client.post(reverse("auth_logout"), follow=True)
+        self.assertEqual(post_response.status_code, 200)
+        self.assertNotIn("_auth_user_id", self.client.session)
+
     @patch.dict(os.environ, {"DELAYED_NOTIFICATIONS_TOKEN": "secret-token"}, clear=False)
     def test_delayed_notifications_token_allowed_only_in_header(self):
         response_with_query = self.client.post(
@@ -379,6 +389,39 @@ class AuthAndSecurityFlowTests(TestCase):
             HTTP_X_INTERNAL_TOKEN="secret-token",
         )
         self.assertEqual(response_with_header.status_code, 200)
+
+    def test_profile_rejects_duplicate_username(self):
+        CustomUser.objects.create_user(username="taken_name", password="pass12345")
+        self.client.force_login(self.user)
+
+        response = self.client.post(
+            reverse("profile"),
+            {"username": "taken_name"},
+            follow=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.username, "operator")
+        self.assertContains(response, "Користувач з таким")
+
+    def test_profile_rejects_blank_username(self):
+        self.client.force_login(self.user)
+
+        response = self.client.post(
+            reverse("profile"),
+            {"username": "   "},
+            follow=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "не може бути порожнім")
+
+    def test_notification_settings_get_or_create_for_existing_user(self):
+        NotificationSetting.objects.filter(user=self.user).delete()
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("notification_settings"))
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(NotificationSetting.objects.filter(user=self.user).exists())
 
 
 class DelayedNotificationsAdapterTests(TestCase):
