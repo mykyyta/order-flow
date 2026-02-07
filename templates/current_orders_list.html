@@ -55,7 +55,7 @@
                         <a href="{% url 'order_detail' order.id %}" class="order-link">{{ order.model.name }} - {{ order.color.name }}</a>
                     </td>
                     <td style="font-size: 14px;">
-                            <span class="badge {{ order.current_status|status_badge_class }}">
+                            <span class="{{ order.current_status|status_badge_class }}">
                                 {{ order.get_current_status_display }}
                             </span>
                             {% if order.etsy %}

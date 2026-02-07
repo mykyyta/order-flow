@@ -6,7 +6,9 @@ REGION ?= us-central1
 IMAGE ?= us-central1-docker.pkg.dev/$(PROJECT_ID)/$(REPO)/$(APP_NAME)
 PYTHON ?= ./.venv/bin/python
 
-.PHONY: dev dev-detached down logs migrate shell test check lint format build push deploy
+TAILWIND ?= bin/tailwindcss
+
+.PHONY: dev dev-detached down logs migrate shell test check lint format build push deploy tw-install tw-watch tw-build
 
 dev:
 	docker compose up --build
@@ -49,3 +51,24 @@ deploy: push
 		--image=$(IMAGE) \
 		--region=$(REGION) \
 		--allow-unauthenticated
+
+# Tailwind CSS (standalone CLI). Run make tw-install once to download the binary.
+TAILWIND_VERSION ?= v4.1.18
+tw-install:
+	@mkdir -p bin && \
+	U=$$(uname -s) && A=$$(uname -m) && \
+	if [ "$$U" = "Darwin" ]; then \
+		[ "$$A" = "arm64" ] && F=tailwindcss-macos-arm64 || F=tailwindcss-macos-x64; \
+	elif [ "$$U" = "Linux" ]; then \
+		[ "$$A" = "aarch64" ] || [ "$$A" = "arm64" ] && F=tailwindcss-linux-arm64 || F=tailwindcss-linux-x64; \
+	else echo "Unsupported OS: $$U"; exit 1; fi && \
+	echo "Downloading $$F..." && \
+	curl -fsSL "https://github.com/tailwindlabs/tailwindcss/releases/download/$(TAILWIND_VERSION)/$$F" -o $(TAILWIND) && \
+	chmod +x $(TAILWIND) && echo "Installed $(TAILWIND)"
+
+tw-watch: tw-build
+	$(TAILWIND) -i static/css/input.css -o static/css/app.css --watch
+
+tw-build:
+	@test -f $(TAILWIND) || (echo "Run: make tw-install" && exit 1)
+	$(TAILWIND) -i static/css/input.css -o static/css/app.css --minify

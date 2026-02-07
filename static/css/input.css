@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.order-link {
+  text-decoration: none;
+  color: #64748b;
+}
+.order-link:hover {
+  color: #334155;
+}

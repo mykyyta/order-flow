@@ -8,14 +8,24 @@ class OrderForm(forms.ModelForm):
         model = Order
         fields = ['model', 'color', 'etsy', 'embroidery', 'urgent', 'comment']
         widgets = {
-            'model': forms.Select(attrs={'class': 'form-select'}),
-            'color': forms.Select(attrs={'class': 'form-select'}),
-            'etsy': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-            'urgent': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-            'embroidery': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'model': forms.Select(attrs={
+                'class': 'block w-full rounded-md border border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm',
+            }),
+            'color': forms.Select(attrs={
+                'class': 'block w-full rounded-md border border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm',
+            }),
+            'etsy': forms.CheckboxInput(attrs={
+                'class': 'h-4 w-4 rounded border border-slate-300 text-teal-600 focus:ring-teal-500',
+            }),
+            'urgent': forms.CheckboxInput(attrs={
+                'class': 'h-4 w-4 rounded border border-slate-300 text-teal-600 focus:ring-teal-500',
+            }),
+            'embroidery': forms.CheckboxInput(attrs={
+                'class': 'h-4 w-4 rounded border border-slate-300 text-teal-600 focus:ring-teal-500',
+            }),
             'comment': forms.Textarea(attrs={
-                'class': 'form-control',
-                'rows': 2
+                'class': 'block w-full rounded-md border border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm',
+                'rows': 2,
             }),
         }
 
@@ -32,9 +42,15 @@ class ColorForm(forms.ModelForm):
         model = Color
         fields = ['name', 'code', 'availability_status']
         widgets = {
-            'name': forms.TextInput(attrs={'class': 'form-control'}),
-            'code': forms.NumberInput(attrs={'class': 'form-control'}),
-            'availability_status': forms.Select(attrs={'class': 'form-select'}),
+            'name': forms.TextInput(attrs={
+                'class': 'block w-full rounded-md border border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm',
+            }),
+            'code': forms.NumberInput(attrs={
+                'class': 'block w-full rounded-md border border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm',
+            }),
+            'availability_status': forms.Select(attrs={
+                'class': 'block w-full rounded-md border border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm',
+            }),
         }
 
     def clean_name(self):
@@ -47,7 +63,9 @@ class ProductModelForm(forms.ModelForm):
         model = ProductModel
         fields = ['name']
         widgets = {
-            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'name': forms.TextInput(attrs={
+                'class': 'block w-full rounded-md border border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm',
+            }),
         }
 
     def clean_name(self):
