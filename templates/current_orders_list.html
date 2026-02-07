@@ -31,7 +31,7 @@
                 <tr>
                     <td class="fs-6">
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="orders" value="{{ order.id }}">
+                            <input class="form-check-input js-order-checkbox" type="checkbox" name="orders" value="{{ order.id }}" data-current-status="{{ order.current_status }}">
                         </div>
                     </td>
                     <td style="font-size: 14px;">
@@ -39,13 +39,13 @@
                     </td>
                     <td style="font-size: 14px;">
                             <span class="badge
-                                {% if order.get_status == 'new' %} bg-success
-                                {% elif order.get_status == 'embroidery' %} bg-warning
-                                {% elif order.get_status == 'almost_finished' %} bg-primary
-                                {% elif order.get_status == 'finished' %} bg-info
-                                {% elif order.get_status == 'on_hold' %} bg-secondary
+                                {% if order.current_status == 'new' %} bg-success
+                                {% elif order.current_status == 'embroidery' %} bg-warning
+                                {% elif order.current_status == 'almost_finished' %} bg-primary
+                                {% elif order.current_status == 'finished' %} bg-info
+                                {% elif order.current_status == 'on_hold' %} bg-secondary
                                 {% endif %}">
-                                {{ order.get_status_display }}
+                                {{ order.get_current_status_display }}
                             </span>
                             {% if order.etsy %}
                             <span class="badge bg-secondary">Е</span>
@@ -74,6 +74,7 @@
                 <option value="{{ value }}">{{ label }}</option>
                 {% endfor %}
             </select>
+            <small class="text-muted" id="status-transition-hint"></small>
         </div>
         <div class="col-md-auto">
             <button type="submit" class="btn btn-primary">Змінити статус</button>
@@ -85,6 +86,70 @@
     <a href="{% url 'finished_orders_list' %}" class="btn btn-secondary">Готові замовлення</a>
 </div>
 
+{{ transition_map|json_script:"transition-map-data" }}
 
+<script>
+    (function () {
+        const transitionDataEl = document.getElementById("transition-map-data");
+        const select = document.getElementById("new_status");
+        const hint = document.getElementById("status-transition-hint");
+        const checkboxes = Array.from(document.querySelectorAll(".js-order-checkbox"));
+
+        if (!transitionDataEl || !select || checkboxes.length === 0) {
+            return;
+        }
+
+        const transitionMap = JSON.parse(transitionDataEl.textContent);
+        const options = Array.from(select.options);
+        const initialOptions = options.map((option) => option.value);
+
+        function intersectSets(statuses) {
+            if (statuses.length === 0) {
+                return new Set(initialOptions);
+            }
+
+            let allowed = null;
+            statuses.forEach((status) => {
+                const currentAllowed = new Set(transitionMap[status] || []);
+                if (allowed === null) {
+                    allowed = currentAllowed;
+                    return;
+                }
+                allowed = new Set([...allowed].filter((value) => currentAllowed.has(value)));
+            });
+            return allowed || new Set();
+        }
+
+        function updateAllowedTransitions() {
+            const selectedStatuses = checkboxes
+                .filter((checkbox) => checkbox.checked)
+                .map((checkbox) => checkbox.dataset.currentStatus);
+            const allowed = intersectSets(selectedStatuses);
+
+            options.forEach((option) => {
+                option.disabled = !allowed.has(option.value);
+            });
+
+            if (options.every((option) => option.disabled)) {
+                hint.textContent = "Немає спільного дозволеного переходу для обраних замовлень.";
+                return;
+            }
+
+            hint.textContent = "";
+            if (select.selectedOptions.length === 0 || select.selectedOptions[0].disabled) {
+                const firstEnabled = options.find((option) => !option.disabled);
+                if (firstEnabled) {
+                    select.value = firstEnabled.value;
+                }
+            }
+        }
+
+        checkboxes.forEach((checkbox) => {
+            checkbox.addEventListener("change", updateAllowedTransitions);
+        });
+
+        updateAllowedTransitions();
+    })();
+</script>
 
 {% endblock %}

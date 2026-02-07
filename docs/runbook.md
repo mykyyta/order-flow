@@ -23,6 +23,11 @@ python manage.py check_order_statuses
 
 ## Health check
 ```bash
+python manage.py healthcheck_app --require-telegram-token --require-delayed-token
+```
+
+External check:
+```bash
 SERVICE_URL="$(gcloud run services describe orderflow-app --region us-central1 --project orderflow-451220 --format='value(status.url)')"
 curl -fSsL "$SERVICE_URL/" >/dev/null && echo "OK"
 ```

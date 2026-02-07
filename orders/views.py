@@ -27,6 +27,7 @@ from orders.application.notification_service import DelayedNotificationService
 from orders.application.order_service import OrderService
 from orders.application.exceptions import InvalidStatusTransition
 from orders.domain.status import STATUS_FINISHED
+from orders.domain.transitions import get_allowed_transitions
 
 
 def _validate_internal_token(request):
@@ -141,6 +142,10 @@ def current_orders_list(request):
     )
     form = OrderStatusUpdateForm()
     form.fields['orders'].queryset = orders_queryset
+    transition_map = {
+        status: sorted(get_allowed_transitions(status))
+        for status, _label in STATUS_CHOICES
+    }
 
 
     return render(request,
@@ -148,6 +153,7 @@ def current_orders_list(request):
                     {
                         "form": form,
                         "orders": orders_queryset,
+                        "transition_map": transition_map,
                              }
                 )
 

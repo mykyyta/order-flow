@@ -41,3 +41,7 @@ def is_transition_allowed(current_status: str, next_status: str) -> bool:
     if allowed is None:
         return False
     return next_status in allowed
+
+
+def get_allowed_transitions(current_status: str) -> Set[str]:
+    return set(_ALLOWED_TRANSITIONS.get(current_status, set()))
