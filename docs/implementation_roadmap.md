@@ -9,7 +9,7 @@
 
 1. Встановити Tailwind standalone CLI (`bin/tailwindcss`, додати в `.gitignore`).
 2. Створити `tailwind.config.js` — content: `./templates/**/*.html`, custom theme (палітра, system fonts).
-3. Створити `static/css/input.css` з Tailwind directives.
+3. Створити `assets/tailwind/input.css` з Tailwind directives.
 4. Додати `STATICFILES_DIRS = [BASE_DIR / "static"]` в `settings/base.py`.
 5. Додати Makefile targets: `tw-watch` (dev), `tw-build` (prod minified).
 6. Мігрувати `base.html` — layout, навігація на Tailwind. Bootstrap CDN лишається тимчасово.

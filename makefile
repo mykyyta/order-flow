@@ -74,8 +74,8 @@ tw-install:
 	chmod +x $(TAILWIND) && echo "Installed $(TAILWIND)"
 
 tw-watch: tw-build
-	$(TAILWIND) -i static/css/input.css -o static/css/app.css --watch
+	$(TAILWIND) -i assets/tailwind/input.css -o static/css/app.css --watch
 
 tw-build:
 	@test -f $(TAILWIND) || (echo "Run: make tw-install" && exit 1)
-	$(TAILWIND) -i static/css/input.css -o static/css/app.css --minify
+	$(TAILWIND) -i assets/tailwind/input.css -o static/css/app.css --minify

@@ -36,7 +36,7 @@ Target URL names (поточне → target):
 - Tailwind CSS (standalone CLI, без Node).
 - Жодної робочої логіки в inline `<script>`.
 - Жодних постійних стилів в inline `style=""`.
-- Tailwind input: `static/css/input.css`. Output: `static/css/app.css`.
+- Tailwind input: `assets/tailwind/input.css`. Output: `static/css/app.css`.
 - Сторінковий JS: `static/js/<page_name>.js`.
 - Кольори, шрифти, кастомні токени — в `tailwind.config.js`.
 - Template tags повертають Tailwind utility-класи, а не Bootstrap-специфічні (`bg-success`).

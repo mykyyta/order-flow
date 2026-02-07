@@ -62,7 +62,7 @@
 ## 8) Міграція з Bootstrap
 
 1. Додати Tailwind CLI і `tailwind.config.js`.
-2. Створити `static/css/input.css` з Tailwind directives.
+2. Створити `assets/tailwind/input.css` з Tailwind directives.
 3. Мігрувати шаблони по одному: `base.html` → `orders_active` → `orders_completed` → `order_detail` → решта.
 4. Оновити `forms.py` — замінити Bootstrap widget classes на Tailwind.
 5. Оновити template tags — замінити Bootstrap badge/alert класи на Tailwind.
