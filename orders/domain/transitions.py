@@ -1,47 +1,13 @@
 from __future__ import annotations
 
-from typing import Dict, Set
+from typing import Set
 
-from orders.domain.status import (
-    STATUS_ALMOST_FINISHED,
-    STATUS_EMBROIDERY,
-    STATUS_FINISHED,
-    STATUS_NEW,
-    STATUS_ON_HOLD,
-)
-
-_ALLOWED_TRANSITIONS: Dict[str, Set[str]] = {
-    STATUS_NEW: {
-        STATUS_EMBROIDERY,
-        STATUS_ALMOST_FINISHED,
-        STATUS_FINISHED,
-        STATUS_ON_HOLD,
-    },
-    STATUS_EMBROIDERY: {
-        STATUS_ALMOST_FINISHED,
-        STATUS_FINISHED,
-        STATUS_ON_HOLD,
-    },
-    STATUS_ALMOST_FINISHED: {
-        STATUS_FINISHED,
-        STATUS_ON_HOLD,
-    },
-    STATUS_ON_HOLD: {
-        STATUS_NEW,
-        STATUS_EMBROIDERY,
-        STATUS_ALMOST_FINISHED,
-        STATUS_FINISHED,
-    },
-    STATUS_FINISHED: set(),
-}
+from orders.domain.order_statuses import get_allowed_transitions as _get_allowed_transitions
 
 
 def is_transition_allowed(current_status: str, next_status: str) -> bool:
-    allowed = _ALLOWED_TRANSITIONS.get(current_status)
-    if allowed is None:
-        return False
-    return next_status in allowed
+    return next_status in _get_allowed_transitions(current_status)
 
 
 def get_allowed_transitions(current_status: str) -> Set[str]:
-    return set(_ALLOWED_TRANSITIONS.get(current_status, set()))
+    return set(_get_allowed_transitions(current_status))
