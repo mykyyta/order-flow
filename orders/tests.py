@@ -553,6 +553,59 @@ class CurrentOrdersFilteringTests(TestCase):
         self.assertEqual(orders[0].id, target.id)
 
 
+class FinishedOrdersSearchTests(TestCase):
+    def setUp(self) -> None:
+        self.user = CustomUser.objects.create_user(username="history_user", password="pass12345")
+        self.client.force_login(self.user)
+        self.model = ProductModel.objects.create(name="Model History")
+        self.color = Color.objects.create(name="Navy", code=7, availability_status="in_stock")
+
+    def test_finished_orders_search_filters_across_all_finished(self):
+        target = Order.objects.create(
+            model=self.model,
+            color=self.color,
+            comment="special archive order",
+            current_status=STATUS_FINISHED,
+        )
+        Order.objects.create(
+            model=self.model,
+            color=self.color,
+            comment="other archive order",
+            current_status=STATUS_FINISHED,
+        )
+        Order.objects.create(
+            model=self.model,
+            color=self.color,
+            comment="special archive order",
+            current_status=STATUS_NEW,
+        )
+
+        response = self.client.get(reverse("finished_orders_list"), {"q": "special"})
+        self.assertEqual(response.status_code, 200)
+        orders = list(response.context["page_obj"].object_list)
+        self.assertEqual(len(orders), 1)
+        self.assertEqual(orders[0].id, target.id)
+
+    def test_finished_orders_search_preserves_query_params_for_pagination(self):
+        for _ in range(21):
+            Order.objects.create(
+                model=self.model,
+                color=self.color,
+                comment="archive",
+                current_status=STATUS_FINISHED,
+            )
+
+        response = self.client.get(reverse("finished_orders_list"), {"q": "archive"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["page_obj"].paginator.count, 21)
+        self.assertEqual(len(response.context["page_obj"].object_list), 20)
+        self.assertContains(response, "?page=2&q=archive")
+
+        second_page = self.client.get(reverse("finished_orders_list"), {"q": "archive", "page": 2})
+        self.assertEqual(second_page.status_code, 200)
+        self.assertEqual(len(second_page.context["page_obj"].object_list), 1)
+
+
 class OrderDetailViewTests(TestCase):
     def setUp(self) -> None:
         self.user = CustomUser.objects.create_user(username="detail_user", password="pass12345")

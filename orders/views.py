@@ -15,6 +15,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db import models, transaction
+from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
@@ -199,16 +200,38 @@ def current_orders_list(request):
 
 @custom_login_required
 def finished_orders_list(request):
+    search_query = (request.GET.get("q") or "").strip()
     orders = (
         Order.objects.select_related("model", "color")
         .filter(current_status=STATUS_FINISHED)
         .order_by('-finished_at')
     )
+    if search_query:
+        search_filters = (
+            Q(model__name__icontains=search_query)
+            | Q(color__name__icontains=search_query)
+            | Q(comment__icontains=search_query)
+        )
+        if search_query.isdigit():
+            search_filters |= Q(id=int(search_query))
+        orders = orders.filter(search_filters)
+
     paginator = Paginator(orders, 20)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
+    query_params = request.GET.copy()
+    query_params.pop("page", None)
+    query_string = query_params.urlencode()
 
-    return render(request, 'finished_orders_list.html', {'page_obj': page_obj})
+    return render(
+        request,
+        'finished_orders_list.html',
+        {
+            'page_obj': page_obj,
+            'search_query': search_query,
+            'query_string': query_string,
+        },
+    )
 
 
 @custom_login_required
