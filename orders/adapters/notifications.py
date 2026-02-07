@@ -5,7 +5,7 @@ from typing import Optional
 
 from django.utils.timezone import localtime, now
 
-from orders.models import NotificationSetting
+from orders.models import DelayedNotificationLog, NotificationSetting
 from orders.utils import generate_order_details, send_tg_message
 
 logger = logging.getLogger(__name__)
@@ -90,9 +90,25 @@ class DjangoNotificationSender:
             logger.info("Delayed notifications skipped: no users")
             return False
 
+        order_ids = [order.id for order in orders]
         for setting in users_to_notify:
+            notified_order_ids = set(
+                DelayedNotificationLog.objects.filter(
+                    user_id=setting.user_id,
+                    order_id__in=order_ids,
+                ).values_list("order_id", flat=True)
+            )
+            pending_orders = [order for order in orders if order.id not in notified_order_ids]
+            if not pending_orders:
+                logger.info(
+                    "Delayed notifications skipped (already sent) user_id=%s orders=%s",
+                    setting.user_id,
+                    len(orders),
+                )
+                continue
+
             user_orders = []
-            for order in orders:
+            for order in pending_orders:
                 order_details = generate_order_details(order)
                 user_orders.append(f"+ {order_details}")
 
@@ -100,6 +116,16 @@ class DjangoNotificationSender:
                 message = "\n".join(user_orders)
                 sent = send_tg_message(setting.user.telegram_id, message)
                 if sent:
+                    DelayedNotificationLog.objects.bulk_create(
+                        [
+                            DelayedNotificationLog(
+                                user_id=setting.user_id,
+                                order_id=order.id,
+                            )
+                            for order in pending_orders
+                        ],
+                        ignore_conflicts=True,
+                    )
                     logger.info(
                         "Delayed notifications sent user_id=%s orders=%s",
                         setting.user_id,

@@ -16,7 +16,7 @@ TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 if not TELEGRAM_BOT_TOKEN:
     raise RuntimeError("TELEGRAM_BOT_TOKEN is not set. Please define it in your .env file.")
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "OrderFlow.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "OrderFlow.settings.local")
 django.setup()
 
 from orders.domain.status import STATUS_FINISHED  # noqa: E402

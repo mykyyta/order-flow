@@ -1,17 +1,28 @@
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from datetime import datetime, timezone as dt_timezone
 from typing import Optional
+from unittest.mock import patch
 
 from django.test import SimpleTestCase, TestCase
+from django.urls import reverse
 
+from orders.adapters.notifications import DjangoNotificationSender
 from orders.application.exceptions import InvalidStatusTransition
 from orders.application.notification_service import DelayedNotificationService
 from orders.application.order_service import OrderService
 from orders.adapters.orders_repository import DjangoOrderRepository
 from orders.domain.status import STATUS_EMBROIDERY, STATUS_FINISHED, STATUS_NEW
-from orders.models import Color, CustomUser, OrderStatusHistory, ProductModel
+from orders.models import (
+    Color,
+    CustomUser,
+    DelayedNotificationLog,
+    Order,
+    OrderStatusHistory,
+    ProductModel,
+)
 
 
 @dataclass(eq=False)
@@ -304,3 +315,83 @@ class OrderServiceIntegrationTests(TestCase):
         order.refresh_from_db()
         self.assertEqual(order.finished_at, self.fixed_now)
         self.assertEqual(order.current_status, STATUS_FINISHED)
+
+
+class AccessControlTests(TestCase):
+    def setUp(self) -> None:
+        self.user = CustomUser.objects.create_user(username="viewer", password="pass12345")
+        self.model = ProductModel.objects.create(name="Model B")
+        self.color = Color.objects.create(name="Blue", code=2, availability_status="in_stock")
+
+    def test_models_and_colors_views_require_authentication(self):
+        self.assertEqual(self.client.get(reverse("model_list")).status_code, 302)
+        self.assertEqual(self.client.get(reverse("color_list")).status_code, 302)
+        self.assertEqual(
+            self.client.get(reverse("color_detail_update", kwargs={"pk": self.color.pk})).status_code,
+            302,
+        )
+
+
+class AuthAndSecurityFlowTests(TestCase):
+    def setUp(self) -> None:
+        self.user = CustomUser.objects.create_user(username="operator", password="ValidPass123!")
+
+    def test_login_invalid_credentials_renders_form_error(self):
+        response = self.client.post(
+            reverse("auth_login"),
+            {"username": "operator", "password": "wrong"},
+        )
+        self.assertEqual(response.status_code, 401)
+        self.assertContains(response, "Невірні облікові дані.", status_code=401)
+
+    def test_change_password_uses_django_password_validation(self):
+        self.client.force_login(self.user)
+        response = self.client.post(
+            reverse("change_password"),
+            {
+                "current_password": "ValidPass123!",
+                "new_password": "123",
+                "confirm_password": "123",
+            },
+            follow=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password("ValidPass123!"))
+
+    @patch.dict(os.environ, {"DELAYED_NOTIFICATIONS_TOKEN": "secret-token"}, clear=False)
+    def test_delayed_notifications_token_allowed_only_in_header(self):
+        response_with_query = self.client.post(
+            f"{reverse('send_delayed_notifications')}?token=secret-token",
+        )
+        self.assertEqual(response_with_query.status_code, 403)
+
+        response_with_header = self.client.post(
+            reverse("send_delayed_notifications"),
+            HTTP_X_INTERNAL_TOKEN="secret-token",
+        )
+        self.assertEqual(response_with_header.status_code, 200)
+
+
+class DelayedNotificationsAdapterTests(TestCase):
+    def setUp(self) -> None:
+        self.user = CustomUser.objects.create_user(
+            username="notify_user",
+            password="ValidPass123!",
+            telegram_id="12345",
+        )
+        self.model = ProductModel.objects.create(name="Model C")
+        self.color = Color.objects.create(name="Green", code=3, availability_status="in_stock")
+        self.order = Order.objects.create(model=self.model, color=self.color)
+        self.sender = DjangoNotificationSender()
+
+    @patch("orders.adapters.notifications.send_tg_message", return_value=True)
+    def test_orders_created_delayed_is_idempotent_per_user_and_order(self, mocked_send):
+        self.assertTrue(self.sender.orders_created_delayed(orders=[self.order]))
+        self.assertTrue(self.sender.orders_created_delayed(orders=[self.order]))
+
+        self.assertEqual(mocked_send.call_count, 1)
+        self.assertEqual(
+            DelayedNotificationLog.objects.filter(user=self.user, order=self.order).count(),
+            1,
+        )

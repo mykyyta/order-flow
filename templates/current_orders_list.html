@@ -6,33 +6,28 @@
 
 <h3>Поточні замовлення</h3>
 
-<!-- Повідомлення -->
 {% if messages %}
-    <div class="alert alert-info">
-        <ul class="mb-5">
-            {% for message in messages %}
-                <li>{{ message }}</li>
-            {% endfor %}
-        </ul>
+    <div class="mb-3">
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }}" role="alert">{{ message }}</div>
+        {% endfor %}
     </div>
 {% endif %}
-<!-- Форма для вибору та зміни статусу -->
+
 <form method="post" class="mb-4">
     {% csrf_token %}
 
-    <!-- Таблиця з замовленнями -->
     <div class="table-responsive">
         <table class="table table-hover table-bordered align-middle text-small">
-{#            <thead class="table-light">#}
-{#                <tr>#}
-{#                    <th scope="col">#</th> <!-- Чекбокси -->#}
-{#                    <th scope="col">Модель та Колір</th>#}
-{#                    <th scope="col">Поточний статус</th>#}
-{#                    <th scope="col">Бейджі</th#}
-{#                </tr>#}
-{#            </thead>#}
+            <thead class="table-light">
+                <tr>
+                    <th scope="col" style="width: 56px;">#</th>
+                    <th scope="col">Модель та Колір</th>
+                    <th scope="col">Статус та мітки</th>
+                </tr>
+            </thead>
             <tbody>
-                {% for order in form.fields.orders.queryset %}
+                {% for order in orders %}
                 <tr>
                     <td class="fs-6">
                         <div class="form-check">
@@ -48,23 +43,20 @@
                                 {% elif order.get_status == 'embroidery' %} bg-warning
                                 {% elif order.get_status == 'almost_finished' %} bg-primary
                                 {% elif order.get_status == 'finished' %} bg-info
-                                {% elif order.get_status == 'on_hold' %} bg-info
+                                {% elif order.get_status == 'on_hold' %} bg-secondary
                                 {% endif %}">
                                 {{ order.get_status_display }}
                             </span>
-                            <!-- Badges column -->
                             {% if order.etsy %}
-                            <span class="badge bg-secondary">Е</span> <!-- Etsy badge -->
+                            <span class="badge bg-secondary">Е</span>
                             {% endif %}
                             {% if order.embroidery %}
-                            <span class="badge bg-warning">В</span> <!-- Embroidery badge -->
+                            <span class="badge bg-warning">В</span>
                             {% endif %}
                             {% if order.urgent %}
-                            <span class="badge bg-danger">Т</span> <!-- Urgent (Термінове) badge -->
+                            <span class="badge bg-danger">Т</span>
                             {% endif %}
                     </td>
-
-
                 </tr>
                 {% empty %}
                 <tr>
@@ -74,7 +66,7 @@
             </tbody>
         </table>
     </div>
-    <!-- Вибір нового статусу -->
+
     <div class="row g-2 align-items-end mb-3">
         <div class="col-md-6">
             <select class="form-select" id="new_status" name="new_status">
@@ -89,7 +81,6 @@
     </div>
 </form>
 
-<!-- Кнопка для переходу до готових замовлень -->
 <div class="mb-4">
     <a href="{% url 'finished_orders_list' %}" class="btn btn-secondary">Готові замовлення</a>
 </div>
