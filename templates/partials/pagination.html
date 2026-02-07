@@ -1,0 +1,19 @@
+{% comment %}
+Pagination: prev/next arrows + "N / M". Pass: page_obj, query_string (optional).
+Optional: aria_label (default "Пагінація").
+{% endcomment %}
+{% if page_obj.paginator.num_pages > 1 %}
+<nav aria-label="{{ aria_label|default:'Пагінація' }}" class="mt-4 flex items-center justify-center gap-1">
+    {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}{% if query_string %}&{{ query_string }}{% endif %}" class="btn-secondary px-2.5 py-1">&larr;</a>
+    {% else %}
+    <span class="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 text-sm text-slate-400">&larr;</span>
+    {% endif %}
+    <span class="px-3 text-sm text-slate-600">{{ page_obj.number }}<span class="text-slate-400"> / {{ page_obj.paginator.num_pages }}</span></span>
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}{% if query_string %}&{{ query_string }}{% endif %}" class="btn-secondary px-2.5 py-1">&rarr;</a>
+    {% else %}
+    <span class="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 text-sm text-slate-400">&rarr;</span>
+    {% endif %}
+</nav>
+{% endif %}

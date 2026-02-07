@@ -1,20 +1,26 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="uk">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{% block title %}OrderFlow{% endblock %}</title>
-    <link href="{% static 'css/app.css' %}" rel="stylesheet">
-    {% block extra_head %}{% endblock %}
-</head>
+	<head>
+	    <meta charset="UTF-8">
+	    <meta name="viewport" content="width=device-width, initial-scale=1">
+	    <title>{% block title %}OrderFlow{% endblock %}</title>
+	    <link href="{% static 'css/app.css' %}" rel="stylesheet">
+	    <link href="{% static 'css/theme_preview.css' %}" rel="stylesheet">
+	    {% block extra_head %}{% endblock %}
+	</head>
 <body class="bg-slate-50 font-sans text-slate-800 antialiased">
     {% if request.user.is_authenticated %}
     {% with current_url=request.resolver_match.url_name %}
     <nav class="bg-white border-b border-slate-200">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div class="flex h-14 items-center justify-between">
-                <a href="{% url 'index' %}" class="text-lg font-semibold tracking-tight text-teal-600">OrderFlow</a>
+            <div class="flex h-14 items-center justify-between gap-2">
+                <a href="{% url 'index' %}" class="shrink-0 text-lg font-semibold tracking-tight text-teal-600">OrderFlow</a>
+
+                <!-- Page title: between logo and nav (desktop) or hamburger (mobile) -->
+                <div class="min-w-0 flex-1 px-2">
+                    {% if page_title %}<h1 class="nav-page-title">{{ page_title }}</h1>{% endif %}
+                </div>
 
                 <!-- Desktop navigation -->
                 <div class="hidden md:flex md:items-center md:gap-0.5">
@@ -37,7 +43,7 @@
                 </div>
 
                 <!-- Mobile hamburger -->
-                <button type="button" id="nav-toggle" class="inline-flex items-center justify-center rounded-md p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 md:hidden" aria-expanded="false" aria-controls="nav-menu">
+                <button type="button" id="nav-toggle" class="shrink-0 inline-flex items-center justify-center rounded-md p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 md:hidden" aria-expanded="false" aria-controls="nav-menu">
                     <span class="sr-only">Меню</span>
                     <svg id="icon-menu" class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
                     <svg id="icon-close" class="hidden h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>

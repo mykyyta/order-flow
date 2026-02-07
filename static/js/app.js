@@ -1,4 +1,35 @@
 document.addEventListener("DOMContentLoaded", function () {
+  // Theme preview: set ?theme=dune_lite (or theme=default to clear).
+  // Persists in localStorage to make iteration easy without refactoring templates.
+  (function () {
+    var params = new URLSearchParams(window.location.search);
+    var themeParam = params.get("theme");
+    var stored = null;
+    try {
+      stored = window.localStorage.getItem("theme");
+    } catch (_err) {
+      stored = null;
+    }
+
+    var theme = themeParam || stored;
+    if (!theme) return;
+
+    if (theme === "default" || theme === "none") {
+      document.documentElement.removeAttribute("data-theme");
+      try {
+        window.localStorage.removeItem("theme");
+      } catch (_err) {}
+      return;
+    }
+
+    document.documentElement.setAttribute("data-theme", theme);
+    if (themeParam) {
+      try {
+        window.localStorage.setItem("theme", themeParam);
+      } catch (_err) {}
+    }
+  })();
+
   var toggle = document.getElementById("nav-toggle");
   var menu = document.getElementById("nav-menu");
   var iconMenu = document.getElementById("icon-menu");

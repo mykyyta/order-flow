@@ -4,8 +4,6 @@
 
 {% block content %}
 
-<h1 class="text-lg font-semibold text-slate-900">Налаштування сповіщень</h1>
-
 {% include "partials/messages.html" %}
 
 <div class="mt-4 max-w-xl">
@@ -26,10 +24,10 @@
             </div>
         </div>
         <div class="flex items-center gap-3">
-            <button type="submit" class="rounded-md border border-transparent bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 transition-colors">
+            <button type="submit" class="btn-primary">
                 Зберегти
             </button>
-            <a href="{% url 'profile' %}" class="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">Скасувати</a>
+            <a href="{% url 'profile' %}" class="btn-secondary">Скасувати</a>
         </div>
     </form>
 </div>

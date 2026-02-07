@@ -3,7 +3,7 @@
     <input class="form-checkbox flex-shrink-0 js-order-checkbox" type="checkbox" name="orders" value="{{ order.id }}" data-current-status="{{ order.current_status }}">
     <div class="flex flex-1 items-center justify-between gap-3 min-w-0">
         <div class="flex items-center gap-1.5 min-w-0">
-            <a href="{% url 'order_detail' order.id %}" class="truncate text-sm font-medium text-slate-800 hover:text-teal-600 transition-colors">{{ order.model.name }} — {{ order.color.name }}</a>
+            <a href="{% url 'order_detail' order.id %}" class="truncate text-sm font-medium text-slate-800 hover:text-teal-600 transition-colors">{{ order.model.name }} · {{ order.color.name }}</a>
             {% include "partials/order_tags_icons.html" with order=order %}
         </div>
         <div class="flex-shrink-0">

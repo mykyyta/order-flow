@@ -4,16 +4,14 @@
 
 {% block content %}
 
-<h1 class="text-lg font-semibold text-slate-900">Кольори</h1>
-
 {% include "partials/messages.html" %}
 
 <div class="mt-4 space-y-6">
-    <div class="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+    <div class="card">
         <ul class="divide-y divide-slate-100">
             {% for color in colors %}
             <li class="px-4 py-2.5">
-                <a href="{% url 'color_edit' color.id %}" class="text-sm font-medium transition-colors {% if color.availability_status == 'out_of_stock' %}text-rose-600 hover:text-rose-700{% elif color.availability_status == 'low_stock' %}text-amber-600 hover:text-amber-700{% else %}text-emerald-600 hover:text-emerald-700{% endif %}">
+                <a href="{% url 'color_edit' color.id %}" class="{% if color.availability_status == 'out_of_stock' %}link-availability-out{% elif color.availability_status == 'low_stock' %}link-availability-low{% else %}link-availability-in{% endif %}">
                     {{ color.name }} ({{ color.code }})
                 </a>
             </li>
@@ -23,8 +21,8 @@
         </ul>
     </div>
 
-    <div class="overflow-hidden rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 class="mb-4 text-sm font-semibold text-slate-900">Додати новий колір</h2>
+    <div class="card form-card-body">
+        <h2 class="section-title mb-4">Додати новий колір</h2>
         <form method="post" class="space-y-4">
             {% csrf_token %}
             <div>
@@ -48,7 +46,7 @@
                 <p class="form-error">{{ color_form.availability_status.errors.0 }}</p>
                 {% endif %}
             </div>
-            <button type="submit" class="rounded-md border border-transparent bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 transition-colors">
+            <button type="submit" class="btn-primary">
                 Додати
             </button>
         </form>
