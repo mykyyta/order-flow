@@ -1,0 +1,62 @@
+/*
+Theme preview overrides.
+This file is intentionally small and low-specificity, scoped under [data-theme].
+Use: add ?theme=<name> to the URL (e.g. ?theme=dune_lite).
+*/
+
+/* Dune-lite: warm neutrals + spice replaces teal (statuses keep their safety colors) */
+html[data-theme="dune_lite"] {
+  /* Replace teal tokens globally to remove "green" accents in focus states/components. */
+  --color-teal-50: #f7efe5;
+  --color-teal-500: #c2410c;
+  --color-teal-600: #9a3412;
+  --color-teal-700: #7c2d12;
+}
+
+[data-theme="dune_lite"] body {
+  background-color: #f2f1ee; /* cooler sand */
+  color: #1f1a14; /* ink */
+}
+
+[data-theme="dune_lite"] nav {
+  background-color: rgba(255, 255, 255, 0.85);
+  border-bottom-color: #e2ddd3;
+  backdrop-filter: saturate(1.2) blur(10px);
+}
+
+/* Neutralize slate slightly warmer */
+[data-theme="dune_lite"] .bg-slate-50 {
+  background-color: #f2f1ee;
+}
+[data-theme="dune_lite"] .border-slate-200 {
+  border-color: #e2ddd3;
+}
+[data-theme="dune_lite"] .border-slate-100 {
+  border-color: #ece7df;
+}
+
+/* Links/active accents: replace teal tokens with "spice" */
+[data-theme="dune_lite"] .bg-teal-600 {
+  /* Primary buttons: contrasty "ink" without reading as black. */
+  background-color: #1f2937;
+}
+[data-theme="dune_lite"] .hover\\:bg-teal-700:hover {
+  background-color: #111827;
+}
+[data-theme="dune_lite"] .text-teal-600 {
+  color: #c2410c;
+}
+[data-theme="dune_lite"] .text-teal-700 {
+  color: #9a3412;
+}
+[data-theme="dune_lite"] .bg-teal-50 {
+  background-color: #f7efe5;
+}
+
+/* Focus rings */
+[data-theme="dune_lite"] .focus\\:ring-teal-500:focus {
+  --tw-ring-color: rgba(194, 65, 12, 0.22);
+}
+[data-theme="dune_lite"] .ring-teal-500\\/30 {
+  --tw-ring-color: rgba(194, 65, 12, 0.18);
+}
