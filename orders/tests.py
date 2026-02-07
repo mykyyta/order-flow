@@ -30,6 +30,7 @@ from orders.models import (
     OrderStatusHistory,
     ProductModel,
 )
+from orders.templatetags.order_ui import status_badge_class
 
 
 @dataclass(eq=False)
@@ -414,6 +415,13 @@ class OrderModelStatusTests(TestCase):
         self.assertEqual(order.get_status(), STATUS_NEW)
 
 
+class OrderUiTemplateFilterTests(SimpleTestCase):
+    def test_status_badge_class_mapping(self):
+        self.assertEqual(status_badge_class("new"), "bg-success")
+        self.assertEqual(status_badge_class("on_hold"), "bg-secondary")
+        self.assertEqual(status_badge_class("unknown"), "bg-light text-dark")
+
+
 class CurrentOrdersViewTests(TestCase):
     def setUp(self) -> None:
         self.user = CustomUser.objects.create_user(username="planner", password="pass12345")
@@ -478,6 +486,26 @@ class CurrentOrdersFilteringTests(TestCase):
         orders = list(response.context["orders"])
         self.assertEqual(len(orders), 1)
         self.assertEqual(orders[0].id, target.id)
+
+
+class OrderDetailViewTests(TestCase):
+    def setUp(self) -> None:
+        self.user = CustomUser.objects.create_user(username="detail_user", password="pass12345")
+        self.client.force_login(self.user)
+        self.model = ProductModel.objects.create(name="Model F")
+        self.color = Color.objects.create(name="Cyan", code=6, availability_status="in_stock")
+
+    def test_order_detail_renders_status_badge(self):
+        order = Order.objects.create(
+            model=self.model,
+            color=self.color,
+            current_status=STATUS_ON_HOLD,
+        )
+
+        response = self.client.get(reverse("order_detail", kwargs={"order_id": order.id}))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "badge bg-secondary")
+        self.assertContains(response, "Призупинено")
 
 
 class HealthcheckCommandTests(TestCase):
