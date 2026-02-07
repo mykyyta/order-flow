@@ -1,10 +1,40 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="uk">
+<html lang="uk" data-theme="lumen_subtle">
 	<head>
 	    <meta charset="UTF-8">
 	    <meta name="viewport" content="width=device-width, initial-scale=1">
 	    <title>{% block title %}OrderFlow{% endblock %}</title>
+	    <script>
+	      (function () {
+	        // Theme preview: set ?theme=lumen_subtle (or theme=default to clear).
+	        // Stored in localStorage; default is lumen_subtle for a subtle backdrop.
+	        var params = new URLSearchParams(window.location.search);
+	        var themeParam = params.get("theme");
+	        var stored = null;
+	        try {
+	          stored = window.localStorage.getItem("theme");
+	        } catch (_err) {
+	          stored = null;
+	        }
+	        var theme = themeParam || stored || "lumen_subtle";
+
+	        if (theme === "default" || theme === "none") {
+	          document.documentElement.removeAttribute("data-theme");
+	          try {
+	            window.localStorage.removeItem("theme");
+	          } catch (_err) {}
+	          return;
+	        }
+
+	        document.documentElement.setAttribute("data-theme", theme);
+	        if (themeParam) {
+	          try {
+	            window.localStorage.setItem("theme", themeParam);
+	          } catch (_err) {}
+	        }
+	      })();
+	    </script>
 	    <link href="{% static 'css/app.css' %}" rel="stylesheet">
 	    <link href="{% static 'css/theme_preview.css' %}" rel="stylesheet">
 	    {% block extra_head %}{% endblock %}
