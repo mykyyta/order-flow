@@ -395,7 +395,7 @@ class AuthAndSecurityFlowTests(TestCase):
             {"username": "operator", "password": "wrong"},
         )
         self.assertEqual(response.status_code, 401)
-        self.assertContains(response, "Невірні облікові дані.", status_code=401)
+        self.assertContains(response, "Логін або пароль не збігаються.", status_code=401)
 
     def test_change_password_uses_django_password_validation(self):
         self.client.force_login(self.user)
@@ -446,7 +446,7 @@ class AuthAndSecurityFlowTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.user.refresh_from_db()
         self.assertEqual(self.user.username, "operator")
-        self.assertContains(response, "Користувач з таким")
+        self.assertContains(response, "Такий логін вже зайнятий.")
 
     def test_profile_rejects_blank_username(self):
         self.client.force_login(self.user)
@@ -479,7 +479,7 @@ class AuthAndSecurityFlowTests(TestCase):
             follow=True,
         )
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Налаштування сповіщень оновлено.")
+        self.assertContains(response, "Готово! Сповіщення оновлено.")
 
 
 class DelayedNotificationsAdapterTests(TestCase):
@@ -584,7 +584,7 @@ class CurrentOrdersFilteringTests(TestCase):
 
         response = self.client.get(
             reverse("orders_active"),
-            {"status": STATUS_ON_HOLD},
+            {"filter": STATUS_ON_HOLD},
         )
         self.assertEqual(response.status_code, 200)
         orders = list(response.context["orders"])
@@ -661,7 +661,7 @@ class OrderDetailViewTests(TestCase):
 
         response = self.client.get(reverse("order_detail", kwargs={"order_id": order.id}))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "text-yellow-500")
+        self.assertContains(response, "text-orange-500")
         self.assertContains(response, order.get_current_status_display())
 
 

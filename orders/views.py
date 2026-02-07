@@ -15,7 +15,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db import models, transaction
-from django.db.models import Q
+from django.db.models import Case, IntegerField, Q, Value, When
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -33,7 +33,9 @@ from orders.application.exceptions import InvalidStatusTransition
 from orders.application.notification_service import DelayedNotificationService
 from orders.application.order_service import OrderService
 from orders.domain.order_statuses import (
+    ACTIVE_LIST_ORDER,
     status_choices,
+    status_choices_for_active_page,
     status_label_map,
     transition_map as build_transition_map,
 )
@@ -83,18 +85,32 @@ def _get_delayed_notification_service() -> DelayedNotificationService:
     )
 
 
-def _filtered_current_orders_queryset(*, status_filter: str):
+def _filtered_current_orders_queryset(*, filter_value: str):
+    status_rank = Case(
+        *[When(current_status=code, then=Value(i)) for i, code in enumerate(ACTIVE_LIST_ORDER)],
+        default=Value(999),
+        output_field=IntegerField(),
+    )
     queryset = (
         Order.objects.select_related("model", "color")
         .exclude(current_status=STATUS_FINISHED)
-        .order_by("-created_at", "-id")
+        .annotate(_status_rank=status_rank)
+        .order_by("_status_rank", "-created_at", "-id")
     )
 
     status_values = {value for value, _ in CURRENT_STATUS_OPTIONS}
-    if status_filter in status_values:
-        queryset = queryset.filter(current_status=status_filter)
-        return queryset, status_filter
-    return queryset, ""
+    if filter_value.startswith("tag:"):
+        tag = filter_value[4:]
+        if tag == "etsy":
+            queryset = queryset.filter(etsy=True)
+        elif tag == "embroidery":
+            queryset = queryset.filter(embroidery=True)
+        elif tag == "urgent":
+            queryset = queryset.filter(urgent=True)
+    elif filter_value in status_values:
+        queryset = queryset.filter(current_status=filter_value)
+
+    return queryset, filter_value
 
 
 def custom_login_required(view_func):
@@ -111,12 +127,15 @@ def auth_login(request):
     if request.user.is_authenticated:
         return redirect("index")
 
+    if request.GET.get("logout"):
+        messages.info(request, "До зустрічі! Ви вийшли з системи.")
+
     if request.method == "POST":
         username = (request.POST.get("username") or "").strip()
         password = request.POST.get("password") or ""
 
         if not username or not password:
-            messages.error(request, "Вкажіть ім'я користувача і пароль.")
+            messages.error(request, "Вкажіть логін і пароль — і вперед.")
             return render(
                 request,
                 "account/login.html",
@@ -129,7 +148,7 @@ def auth_login(request):
             login(request, user)
 
             return redirect("index")
-        messages.error(request, "Невірні облікові дані.")
+        messages.error(request, "Логін або пароль не збігаються.")
         return render(
             request,
             "account/login.html",
@@ -147,18 +166,34 @@ def auth_login(request):
 @require_POST
 def auth_logout(request):
     logout(request)
-    return redirect("auth_login")
+    return redirect(reverse("auth_login") + "?logout=1")
+
+
+COMBINED_FILTER_OPTIONS = (
+    [
+        ("", "Усі"),
+    ]
+    + list(CURRENT_STATUS_OPTIONS)
+    + [
+        ("tag:etsy", "Etsy"),
+        ("tag:embroidery", "Вишивка"),
+        ("tag:urgent", "Терміново"),
+    ]
+)
 
 
 @custom_login_required
 def orders_active(request):
-    status_filter = (request.GET.get("status") or "").strip()
-    orders_queryset, status_filter = _filtered_current_orders_queryset(
-        status_filter=status_filter,
+    filter_value = (request.GET.get("filter") or "").strip()
+    orders_queryset, filter_value = _filtered_current_orders_queryset(
+        filter_value=filter_value,
     )
 
     form = OrderStatusUpdateForm()
     form.fields["orders"].queryset = orders_queryset
+    form.fields["new_status"].choices = [("", "Новий статус")] + list(
+        status_choices_for_active_page()
+    )
     paginator = Paginator(orders_queryset, 50)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
@@ -170,12 +205,12 @@ def orders_active(request):
         request,
         "orders/active.html",
         {
-            "page_title": "Поточні замовлення",
+            "page_title": "У роботі",
             "form": form,
             "orders": page_obj.object_list,
             "page_obj": page_obj,
-            "status_filter": status_filter,
-            "status_options": CURRENT_STATUS_OPTIONS,
+            "filter_value": filter_value,
+            "filter_options": COMBINED_FILTER_OPTIONS,
             "query_string": query_string,
             "transition_map": TRANSITION_MAP,
         },
@@ -183,27 +218,45 @@ def orders_active(request):
 
 
 @custom_login_required
+def palette_lab(request):
+    return render(
+        request,
+        "orders/palette_lab.html",
+        {
+            "page_title": "Палітра",
+        },
+    )
+
+
+@custom_login_required
 @require_POST
 def orders_bulk_status(request):
-    status_filter = (request.GET.get("status") or "").strip()
-    orders_queryset, status_filter = _filtered_current_orders_queryset(
-        status_filter=status_filter,
+    filter_value = (request.GET.get("filter") or "").strip()
+    orders_queryset, filter_value = _filtered_current_orders_queryset(
+        filter_value=filter_value,
     )
 
     form = OrderStatusUpdateForm(request.POST)
     form.fields["orders"].queryset = orders_queryset
     if not form.is_valid():
-        messages.error(request, "Виникла помилка. Зробіть ще одну спробу.")
+        messages.error(request, "Упс. Щось пішло не так — спробуй ще раз.")
         url = reverse("orders_active")
         if request.GET:
             url += "?" + request.GET.urlencode()
         return redirect(url)
 
     selected_orders = form.cleaned_data["orders"]
-    new_status = form.cleaned_data["new_status"]
+    new_status = (form.cleaned_data.get("new_status") or "").strip()
 
     if not selected_orders:
-        messages.warning(request, "Не вибрано жодного замовлення для оновлення статусу.")
+        messages.warning(request, "Спочатку познач хоча б одне замовлення.")
+        url = reverse("orders_active")
+        if request.GET:
+            url += "?" + request.GET.urlencode()
+        return redirect(url)
+
+    if not new_status:
+        messages.warning(request, "Обери новий статус.")
         url = reverse("orders_active")
         if request.GET:
             url += "?" + request.GET.urlencode()
@@ -222,14 +275,14 @@ def orders_bulk_status(request):
             next_label = STATUS_LABELS.get(exc.next_status, exc.next_status)
             messages.error(
                 request,
-                f"Недопустимий перехід статусу: {current_label} → {next_label}.",
+                f"Так не можна: {current_label} → {next_label}.",
             )
             url = reverse("orders_active")
             if request.GET:
                 url += "?" + request.GET.urlencode()
             return redirect(url)
 
-    messages.success(request, "Статус оновлено для вибраних замовлень.")
+    messages.success(request, "Готово! Статус оновлено для вибраних замовлень.")
     url = reverse("orders_active")
     if request.GET:
         url += "?" + request.GET.urlencode()
@@ -265,7 +318,7 @@ def orders_completed(request):
         request,
         "orders/completed.html",
         {
-            "page_title": "Готові замовлення",
+            "page_title": "Завершені",
             "page_obj": page_obj,
             "search_query": search_query,
             "query_string": query_string,
@@ -290,6 +343,7 @@ def orders_create(request):
                 created_by=request.user,
                 orders_url=orders_url,
             )
+            messages.success(request, "Готово! Замовлення створено.")
             return redirect("orders_active")
         return render(
             request,
@@ -354,7 +408,7 @@ def order_edit(request, order_id):
         form = OrderForm(request.POST, instance=order)
         if form.is_valid():
             form.save()
-            messages.success(request, "Замовлення оновлено.")
+            messages.success(request, "Готово! Замовлення оновлено.")
             return redirect("order_detail", order_id=order.id)
     else:
         form = OrderForm(instance=order)
@@ -368,7 +422,7 @@ def order_edit(request, order_id):
         {
             "form": form,
             "order": order,
-            "page_title": f"Редагувати замовлення #{order.id}",
+            "page_title": f"Підправити замовлення #{order.id}",
         },
     )
 
@@ -383,7 +437,7 @@ class ProductModelListCreateView(LoginRequiredMixin, View):
         return render(
             request,
             self.template_name,
-            {"page_title": "Моделі продуктів", "models": models, "form": form},
+            {"page_title": "Моделі", "models": models, "form": form},
         )
 
     def post(self, request, *args, **kwargs):
@@ -395,7 +449,7 @@ class ProductModelListCreateView(LoginRequiredMixin, View):
         return render(
             request,
             self.template_name,
-            {"page_title": "Моделі продуктів", "models": models, "form": form},
+            {"page_title": "Моделі", "models": models, "form": form},
         )
 
 
@@ -439,12 +493,12 @@ class ColorDetailUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["page_title"] = "Редагувати дані кольору"
+        context["page_title"] = "Підправити колір"
         context["color"] = self.object
         return context
 
     def form_valid(self, form):
-        messages.success(self.request, "Дані кольору оновлено.")
+        messages.success(self.request, "Готово! Колір оновлено.")
         return super().form_valid(form)
 
     def get_success_url(self):
@@ -459,27 +513,25 @@ def profile_view(request):
         new_username = (request.POST.get("username") or "").strip()
 
         if not new_username:
-            messages.error(request, "Ім'я користувача не може бути порожнім.")
+            messages.error(request, "Логін не може бути порожнім.")
             return redirect("profile")
 
         if new_username == user.username:
-            messages.info(request, "Змін не виявлено.")
+            messages.info(request, "Змін немає — усе як було.")
             return redirect("profile")
 
         user_model = get_user_model()
         if user_model.objects.filter(username__iexact=new_username).exclude(pk=user.pk).exists():
-            messages.error(request, "Користувач з таким ім'ям вже існує.")
+            messages.error(request, "Такий логін вже зайнятий.")
             return redirect("profile")
 
         user.username = new_username
         user.save(update_fields=["username"])
-        messages.success(request, "Ім’я користувача оновлено.")
+        messages.success(request, "Готово! Логін оновлено.")
 
         return redirect("profile")
 
-    return render(
-        request, "account/profile.html", {"page_title": "Профіль користувача", "user": user}
-    )
+    return render(request, "account/profile.html", {"page_title": "Профіль", "user": user})
 
 
 @custom_login_required
@@ -491,14 +543,14 @@ def notification_settings(request):
         settings.notify_order_finished = request.POST.get("notify_order_finished") == "on"
         settings.notify_order_created_pause = request.POST.get("notify_order_created_pause") == "on"
         settings.save()
-        messages.success(request, "Налаштування сповіщень оновлено.")
+        messages.success(request, "Готово! Сповіщення оновлено.")
 
         return redirect("notification_settings")
 
     return render(
         request,
         "account/notification_settings.html",
-        {"page_title": "Налаштування сповіщень", "settings": settings},
+        {"page_title": "Сповіщення", "settings": settings},
     )
 
 
@@ -510,15 +562,15 @@ def change_password(request):
         confirm_password = request.POST.get("confirm_password")
 
         if not current_password or not new_password or not confirm_password:
-            messages.error(request, "Будь ласка, заповніть всі поля.")
+            messages.error(request, "Заповни всі поля.")
             return redirect("change_password")
 
         if new_password != confirm_password:
-            messages.error(request, "Нові паролі не співпадають.")
+            messages.error(request, "Нові паролі не збігаються.")
             return redirect("change_password")
 
         if not request.user.check_password(current_password):
-            messages.error(request, "Поточний пароль невірний.")
+            messages.error(request, "Поточний пароль неправильний.")
             return redirect("change_password")
 
         try:
@@ -533,7 +585,7 @@ def change_password(request):
 
         update_session_auth_hash(request, request.user)
 
-        messages.success(request, "Пароль успішно змінено.")
+        messages.success(request, "Готово! Пароль змінено.")
         return redirect("profile")
 
     return render(request, "account/change_password.html", {"page_title": "Зміна пароля"})

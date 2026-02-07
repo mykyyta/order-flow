@@ -1,30 +1,30 @@
 {% extends "base.html" %}
 
-{% block title %}Редагувати колір{% endblock %}
+{% block title %}Підправити колір{% endblock %}
 
 {% block content %}
 
 {% include "partials/messages.html" %}
 
-<div class="mt-4 max-w-xl">
+<div class="max-w-xl">
     <form method="post" class="space-y-4">
         {% csrf_token %}
         <div>
-            <label for="id_name" class="form-label">Назва</label>
+            <label for="id_name" class="sr-only">Назва кольору</label>
             {{ form.name }}
             {% if form.name.errors %}
             <p class="form-error">{{ form.name.errors.0 }}</p>
             {% endif %}
         </div>
         <div>
-            <label for="id_code" class="form-label">Код</label>
+            <label for="id_code" class="sr-only">Код кольору</label>
             {{ form.code }}
             {% if form.code.errors %}
             <p class="form-error">{{ form.code.errors.0 }}</p>
             {% endif %}
         </div>
         <div>
-            <label for="id_availability_status" class="form-label">Наявність</label>
+            <label for="id_availability_status" class="sr-only">Наявність</label>
             {{ form.availability_status }}
             {% if form.availability_status.errors %}
             <p class="form-error">{{ form.availability_status.errors.0 }}</p>
@@ -32,7 +32,7 @@
         </div>
         <div class="flex items-center gap-3">
             <button type="submit" class="btn-primary">
-                Оновити
+                Зберегти
             </button>
             <a href="{% url 'colors' %}" class="btn-secondary">Скасувати</a>
         </div>

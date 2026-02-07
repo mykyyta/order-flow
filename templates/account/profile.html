@@ -7,21 +7,21 @@
 
 {% include "partials/messages.html" %}
 
-<div class="mt-4 max-w-xl">
+<div class="max-w-xl">
     <form method="post" id="profileForm" class="space-y-4">
         {% csrf_token %}
         <div>
-            <label for="username" class="form-label">Ім'я користувача</label>
-            <input type="text" id="username" name="username" value="{{ user.username }}" required class="form-input">
+            <label for="username" class="sr-only">Логін</label>
+            <input type="text" id="username" name="username" value="{{ user.username }}" required class="form-input" placeholder="Логін">
         </div>
         <button type="submit" id="saveButton" disabled class="btn-primary">
-            Зберегти зміни
+            Зберегти
         </button>
     </form>
 
     <div class="mt-6 flex flex-wrap gap-3 border-t border-slate-200 pt-6">
         <a href="{% url 'change_password' %}" class="btn-secondary">Змінити пароль</a>
-        <a href="{% url 'notification_settings' %}" class="btn-secondary">Налаштування сповіщень</a>
+        <a href="{% url 'notification_settings' %}" class="btn-secondary">Сповіщення</a>
     </div>
 </div>
 

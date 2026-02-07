@@ -1,26 +1,26 @@
 {% extends "base.html" %}
 
-{% block title %}Налаштування сповіщень{% endblock %}
+{% block title %}Сповіщення{% endblock %}
 
 {% block content %}
 
 {% include "partials/messages.html" %}
 
-<div class="mt-4 max-w-xl">
+<div class="max-w-xl">
     <form method="post" class="space-y-4">
         {% csrf_token %}
         <div class="space-y-3">
             <div class="flex items-center gap-2">
                 <input type="checkbox" name="notify_order_created" id="notify_order_created" {% if settings.notify_order_created %}checked{% endif %} class="form-checkbox">
-                <label for="notify_order_created" class="text-sm font-medium text-slate-700">Повідомляти про створення нового замовлення</label>
+                <label for="notify_order_created" class="text-sm font-medium text-slate-700">Сповіщати, коли є нове замовлення</label>
             </div>
             <div class="flex items-center gap-2">
                 <input type="checkbox" name="notify_order_created_pause" id="notify_order_created_pause" {% if settings.notify_order_created_pause %}checked{% endif %} class="form-checkbox">
-                <label for="notify_order_created_pause" class="text-sm font-medium text-slate-700">Повідомляти про створення тільки в робочі години</label>
+                <label for="notify_order_created_pause" class="text-sm font-medium text-slate-700">Нові — лише в робочі години</label>
             </div>
             <div class="flex items-center gap-2">
                 <input type="checkbox" name="notify_order_finished" id="notify_order_finished" {% if settings.notify_order_finished %}checked{% endif %} class="form-checkbox">
-                <label for="notify_order_finished" class="text-sm font-medium text-slate-700">Повідомляти про готовність замовлення</label>
+                <label for="notify_order_finished" class="text-sm font-medium text-slate-700">Сповіщати, коли замовлення готове</label>
             </div>
         </div>
         <div class="flex items-center gap-3">

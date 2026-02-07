@@ -18,7 +18,8 @@
 
     var transitionMap = JSON.parse(transitionDataEl.textContent);
     var options = Array.from(select.options);
-    var initialOptions = options.map(function (option) { return option.value; });
+    var initialOptions = options.map(function (option) { return option.value; }).filter(function (v) { return v !== ""; });
+    var bulkActionBar = document.getElementById("bulk-action-bar");
 
     function intersectSets(statuses) {
         if (statuses.length === 0) {
@@ -49,27 +50,31 @@
             .map(function (cb) { return cb.dataset.currentStatus; });
         var allowed = intersectSets(selectedStatuses);
         selectedLength = selectedStatuses.length;
+
+        if (bulkActionBar) {
+            bulkActionBar.classList.toggle("hidden", selectedLength === 0);
+        }
+        select.disabled = selectedLength === 0;
+
         options.forEach(function (option) {
+            if (option.value === "") return;
             option.disabled = !allowed.has(option.value);
         });
 
-        applyStatusButton.disabled = selectedLength === 0;
+        applyStatusButton.disabled = selectedLength === 0 || select.value === "";
         clearSelectionButton.disabled = selectedLength === 0;
         syncSelectAll();
 
-        if (options.every(function (option) { return option.disabled; })) {
-            hint.textContent = "Немає спільного дозволеного переходу для обраних замовлень.";
-            return;
-        }
-
-        hint.textContent = "";
-        if (select.selectedOptions.length === 0 || select.selectedOptions[0].disabled) {
-            var firstEnabled = options.find(function (option) { return !option.disabled; });
-            if (firstEnabled) {
-                select.value = firstEnabled.value;
-            }
+        if (selectedLength > 0 && options.filter(function (o) { return o.value !== ""; }).every(function (option) { return option.disabled; })) {
+            hint.textContent = "Для обраних замовлень немає спільного наступного статусу.";
+        } else {
+            hint.textContent = "";
         }
     }
+
+    select.addEventListener("change", function () {
+        applyStatusButton.disabled = selectedLength === 0 || select.value === "";
+    });
 
     checkboxes.forEach(function (checkbox) {
         checkbox.addEventListener("change", updateAllowedTransitions);
@@ -128,7 +133,7 @@
     }
 
     bulkStatusForm.addEventListener("submit", function (event) {
-        if (selectedLength === 0) {
+        if (selectedLength === 0 || select.value === "") {
             event.preventDefault();
             return;
         }
@@ -140,7 +145,7 @@
         var selectedStatusLabel = select.selectedOptions[0]
             ? select.selectedOptions[0].textContent.trim()
             : "";
-        var message = 'Змінити статус на "' + selectedStatusLabel + '" для ' + selectedLength + " замовлень?";
+        var message = 'Міняємо статус на "' + selectedStatusLabel + '" для ' + selectedLength + " замовлень?";
         openModal(message);
     });
 
