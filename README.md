@@ -1,137 +1,101 @@
 # OrderFlow
 
-Система управління замовленнями з інтеграцією Telegram для відстеження та керування замовленнями продуктів з повідомленнями в реальному часі.
+OrderFlow is an order management system for small production workflows with Telegram notifications.
 
-> **Примітка:** Це мій перший навчальний проєкт, але він досі працює та використовується в продакшені. 🚀
+## What It Does
+- Creates and tracks orders through a fixed status flow.
+- Stores full status history for audit.
+- Supports bulk status updates.
+- Separates active vs finished orders.
+- Sends Telegram notifications for order created and finished events.
+- Supports delayed notifications for after-hours orders.
 
----
+## Architecture
+Core app: `orders`
 
-Order management system with Telegram integration for tracking and managing product orders with real-time notifications.
+- `orders/domain`: domain rules (statuses, transitions, policies)
+- `orders/application`: use-cases and ports
+- `orders/adapters`: ORM, notifications, and clock adapters
+- `orders/views.py`: HTTP layer
 
-## 🚀 Technologies
+Status model:
+- `Order.current_status` is the source of truth for the current state.
+- `OrderStatusHistory` is the audit trail.
 
-### Backend
-- **Django 5.1.6** - Web framework
-- **PostgreSQL** - Primary database (with psycopg2-binary)
-- **SQLite** - Test database
-- **Python 3.x** - Programming language
+## Tech Stack
+- Python 3.12+
+- Django 5.1
+- PostgreSQL
+- SQLite for tests
+- Telegram Bot API
+- Docker + Docker Compose
 
-### Frontend
-- **HTML5** - Markup
-- **CSS3** - Styling
-- **JavaScript** - Client-side functionality
-- **Bootstrap** - UI framework
-
-### Integrations
-- **Telegram Bot API** - Real-time notifications
-- **Docker** - Containerization
-- **Docker Compose** - Multi-container orchestration
-
-### Additional Libraries
-- **python-dotenv** - Environment variable management
-- **requests** - HTTP library for API calls
-- **asgiref** - ASGI support
-
-## 📋 Features
-
-### Order Management
-- **Create Orders** - Add new product orders with detailed specifications
-- **Order Tracking** - Track order status through multiple stages:
-  - New (Нове)
-  - Embroidery (На вишивці)
-  - Almost Finished (Майже готове)
-  - Finished (Готове)
-  - On Hold (Призупинено)
-- **Order History** - Complete audit trail of status changes
-- **Bulk Status Updates** - Update multiple orders simultaneously
-
-### Product Management
-- **Product Models** - Manage different product types
-- **Color Management** - Track available colors with:
-  - Color codes
-  - Availability status (In Stock, Low Stock, Out of Stock)
-  - Real-time inventory tracking
-
-### User Management
-- **Custom User Model** - Extended user model with Telegram integration
-- **Authentication** - Secure login/logout system
-- **Profile Management** - User profile customization
-- **Password Management** - Secure password change functionality
-
-### Notification System
-- **Telegram Integration** - Real-time notifications via Telegram bot
-- **Smart Notifications** - Configurable notification settings:
-  - Order creation notifications
-  - Order completion notifications
-  - Working hours pause (8:00 - 18:00)
-  - Delayed notification system for after-hours orders
-- **User Preferences** - Individual notification settings per user
-
-### Order Features
-- **Order Details** - Comprehensive order information:
-  - Product model and color
-  - Embroidery option
-  - Comments and notes
-  - Urgent flag
-  - Etsy integration flag
-  - Creation and completion timestamps
-- **Order Filtering** - Separate views for current and finished orders
-- **Pagination** - Efficient handling of large order lists
-
-## ⚡ Local Development
-
-### Docker Compose (recommended)
+## Quick Start (Docker)
 ```bash
 cp .env.example .env
 docker compose up --build
 ```
 
-Apply migrations in another terminal:
+Run migrations in a separate terminal:
 ```bash
 docker compose run --rm web python manage.py migrate
 ```
 
-Open app:
-```text
-http://localhost:8000
-```
+Open:
+- `http://localhost:8000`
 
-### Local quality checks
+## Quick Start (Local Python)
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements-dev.txt
-make check
+python manage.py migrate
+python manage.py runserver
+```
+
+## Quality Checks
+```bash
 make test
+make check
 make lint
 ```
 
-## 🏗️ Project Structure
-
-```
-OrderFlow/
-├── OrderFlow/           # Django project settings
-│   ├── settings/        # Configuration by environment
-│   │   ├── base.py
-│   │   ├── local.py
-│   │   └── prod.py
-│   ├── urls.py         # URL routing
-│   └── wsgi.py         # WSGI configuration
-├── orders/             # Main application
-│   ├── models.py       # Database models
-│   ├── views.py        # View logic
-│   ├── forms.py        # Form definitions
-│   ├── urls.py         # App URL routing
-│   ├── telegram_bot.py # Telegram bot integration
-│   └── utils.py        # Utility functions
-├── templates/          # HTML templates
-├── static/            # Static files (CSS, JS, images)
-├── requirements.txt   # Python dependencies
-├── Dockerfile        # Docker configuration
-├── docker-compose.yml # Multi-container setup
-└── manage.py         # Django management script
+## Useful Commands
+Data consistency check:
+```bash
+python manage.py check_order_statuses
 ```
 
----
+Application healthcheck (DB + required tokens):
+```bash
+python manage.py healthcheck_app --require-telegram-token --require-delayed-token
+```
 
-**OrderFlow** - Streamlining order management with modern web technologies and real-time notifications.
+Send delayed notifications manually:
+```bash
+python manage.py send_delayed_notifications
+```
+
+## Environment Variables
+Main variables used by the app:
+- `DJANGO_SETTINGS_MODULE`
+- `DJANGO_SECRET_KEY`
+- `POSTGRES_HOST`
+- `POSTGRES_PORT`
+- `POSTGRES_DB`
+- `POSTGRES_USER`
+- `POSTGRES_PASSWORD`
+- `TELEGRAM_BOT_TOKEN`
+- `DELAYED_NOTIFICATIONS_TOKEN`
+
+See `.env.example` for local defaults.
+
+## Deployment
+Single-container deployment to Google Cloud Run.
+
+Build and deploy helpers:
+```bash
+make build
+make push
+make deploy
+```
