@@ -3,32 +3,41 @@ import secrets
 from functools import wraps
 
 from django.contrib import messages
+from django.contrib.auth import (
+    authenticate,
+    get_user_model,
+    login,
+    logout,
+    update_session_auth_hash,
+)
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.password_validation import validate_password
-from django.core.paginator import Paginator
 from django.core.exceptions import ValidationError
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
-from django.views import View
-from django.views.generic import ListView, UpdateView
-from .models import ProductModel, Color, Order, STATUS_CHOICES
-from .forms import ProductModelForm, ColorForm, OrderStatusUpdateForm
-from orders.forms import OrderForm
-from orders.models import OrderStatusHistory
-from django.urls import reverse_lazy
+from django.core.paginator import Paginator
 from django.db import models, transaction
 from django.db.models import Q
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse_lazy
 from django.utils.timezone import localtime
+from django.views import View
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+from django.views.generic import ListView, UpdateView
+
 from orders.adapters.clock import DjangoClock
 from orders.adapters.notifications import DjangoNotificationSender
 from orders.adapters.orders_repository import DjangoOrderRepository
+from orders.application.exceptions import InvalidStatusTransition
 from orders.application.notification_service import DelayedNotificationService
 from orders.application.order_service import OrderService
-from orders.application.exceptions import InvalidStatusTransition
 from orders.domain.status import STATUS_FINISHED
 from orders.domain.transitions import get_allowed_transitions
+from orders.forms import OrderForm
+from orders.models import NotificationSetting, OrderStatusHistory
+
+from .forms import ColorForm, OrderStatusUpdateForm, ProductModelForm
+from .models import Color, Order, ProductModel, STATUS_CHOICES
 
 
 def _validate_internal_token(request):
@@ -98,6 +107,7 @@ def auth_login(request):
     return render(request, 'login.html', {'username': ''})
 
 
+@require_POST
 def auth_logout(request):
     logout(request)
     return redirect('auth_login')
@@ -331,12 +341,24 @@ def profile_view(request):
     user = request.user
 
     if request.method == 'POST':
-        new_username = request.POST.get('username')
+        new_username = (request.POST.get('username') or '').strip()
 
-        if new_username:
-            user.username = new_username
-            user.save()
-            messages.success(request, 'Ім’я користувача оновлено.')
+        if not new_username:
+            messages.error(request, "Ім'я користувача не може бути порожнім.")
+            return redirect('profile')
+
+        if new_username == user.username:
+            messages.info(request, 'Змін не виявлено.')
+            return redirect('profile')
+
+        user_model = get_user_model()
+        if user_model.objects.filter(username__iexact=new_username).exclude(pk=user.pk).exists():
+            messages.error(request, "Користувач з таким ім'ям вже існує.")
+            return redirect('profile')
+
+        user.username = new_username
+        user.save(update_fields=['username'])
+        messages.success(request, 'Ім’я користувача оновлено.')
 
         return redirect('profile')
 
@@ -344,7 +366,7 @@ def profile_view(request):
 
 @custom_login_required
 def notification_settings(request):
-    settings = request.user.notification_settings
+    settings, _created = NotificationSetting.objects.get_or_create(user=request.user)
 
     if request.method == 'POST':
         settings.notify_order_created = request.POST.get('notify_order_created') == 'on'
