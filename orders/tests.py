@@ -88,7 +88,8 @@ class FakeRepo:
 
     def list_orders_created_between(self, *, start: datetime, end: datetime):
         return [
-            order for order in self.orders
+            order
+            for order in self.orders
             if order.created_at is not None and start <= order.created_at < end
         ]
 
@@ -660,7 +661,7 @@ class OrderDetailViewTests(TestCase):
 
         response = self.client.get(reverse("order_detail", kwargs={"order_id": order.id}))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "text-rose-500")
+        self.assertContains(response, "text-yellow-500")
         self.assertContains(response, order.get_current_status_display())
 
 

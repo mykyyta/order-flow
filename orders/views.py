@@ -97,42 +97,58 @@ def _filtered_current_orders_queryset(*, status_filter: str):
     return queryset, ""
 
 
-
 def custom_login_required(view_func):
     @wraps(view_func)
     def wrapper(request, *args, **kwargs):
         if not request.user.is_authenticated:
-            return redirect('auth_login')
+            return redirect("auth_login")
         return view_func(request, *args, **kwargs)
+
     return wrapper
+
 
 def auth_login(request):
     if request.user.is_authenticated:
-        return redirect('index')
+        return redirect("index")
 
-    if request.method == 'POST':
-        username = (request.POST.get('username') or '').strip()
-        password = request.POST.get('password') or ''
+    if request.method == "POST":
+        username = (request.POST.get("username") or "").strip()
+        password = request.POST.get("password") or ""
 
         if not username or not password:
             messages.error(request, "Вкажіть ім'я користувача і пароль.")
-            return render(request, "account/login.html", {"username": username, "page_title": "Вхід", "page_title_center": True}, status=400)
+            return render(
+                request,
+                "account/login.html",
+                {"username": username, "page_title": "Вхід", "page_title_center": True},
+                status=400,
+            )
 
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
 
-            return redirect('index')
-        messages.error(request, 'Невірні облікові дані.')
-        return render(request, "account/login.html", {"username": username, "page_title": "Вхід", "page_title_center": True}, status=401)
+            return redirect("index")
+        messages.error(request, "Невірні облікові дані.")
+        return render(
+            request,
+            "account/login.html",
+            {"username": username, "page_title": "Вхід", "page_title_center": True},
+            status=401,
+        )
 
-    return render(request, "account/login.html", {"username": "", "page_title": "Вхід", "page_title_center": True})
+    return render(
+        request,
+        "account/login.html",
+        {"username": "", "page_title": "Вхід", "page_title_center": True},
+    )
 
 
 @require_POST
 def auth_logout(request):
     logout(request)
-    return redirect('auth_login')
+    return redirect("auth_login")
+
 
 @custom_login_required
 def orders_active(request):
@@ -226,7 +242,7 @@ def orders_completed(request):
     orders = (
         Order.objects.select_related("model", "color")
         .filter(current_status=STATUS_FINISHED)
-        .order_by('-finished_at')
+        .order_by("-finished_at")
     )
     if search_query:
         search_filters = (
@@ -239,7 +255,7 @@ def orders_completed(request):
         orders = orders.filter(search_filters)
 
     paginator = Paginator(orders, 20)
-    page_number = request.GET.get('page')
+    page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
     query_params = request.GET.copy()
     query_params.pop("page", None)
@@ -275,38 +291,49 @@ def orders_create(request):
                 orders_url=orders_url,
             )
             return redirect("orders_active")
-        return render(request, "orders/create.html", {"form": form, "page_title": "Нове замовлення", "page_title_center": True})
+        return render(
+            request,
+            "orders/create.html",
+            {"form": form, "page_title": "Нове замовлення", "page_title_center": True},
+        )
 
     form = OrderForm()
-    return render(request, "orders/create.html", {"form": form, "page_title": "Нове замовлення", "page_title_center": True})
+    return render(
+        request,
+        "orders/create.html",
+        {"form": form, "page_title": "Нове замовлення", "page_title_center": True},
+    )
+
 
 @custom_login_required
 def order_detail(request, order_id):
     order = get_object_or_404(Order, id=order_id)
-    statuses = OrderStatusHistory.objects.filter(order=order).order_by('-changed_at')
+    statuses = OrderStatusHistory.objects.filter(order=order).order_by("-changed_at")
 
     order_data = {
-        'id': order.id,
-        'model': order.model.name,
-        'color': order.color.name,
-        'embroidery': order.embroidery,
-        'comment': order.comment,
-        'urgent': order.urgent,
-        'etsy': order.etsy,
-        'created_at': localtime(order.created_at) if order.created_at else None,
-        'finished_at': localtime(order.finished_at) if order.finished_at else None,
-        'current_status_code': order.current_status,
-        'current_status_display': order.get_current_status_display(),
-        'status_history': [
+        "id": order.id,
+        "model": order.model.name,
+        "color": order.color.name,
+        "embroidery": order.embroidery,
+        "comment": order.comment,
+        "urgent": order.urgent,
+        "etsy": order.etsy,
+        "created_at": localtime(order.created_at) if order.created_at else None,
+        "finished_at": localtime(order.finished_at) if order.finished_at else None,
+        "current_status_code": order.current_status,
+        "current_status_display": order.get_current_status_display(),
+        "status_history": [
             {
-                'id': status.id,
-                'new_status': status.new_status,
-                'new_status_display': dict(OrderStatusHistory.STATUS_CHOICES).get(status.new_status, 'Unknown'),
-                'changed_by': status.changed_by.username if status.changed_by else 'Unknown',
-                'changed_at': localtime(status.changed_at) if status.changed_at else None,
+                "id": status.id,
+                "new_status": status.new_status,
+                "new_status_display": dict(OrderStatusHistory.STATUS_CHOICES).get(
+                    status.new_status, "Unknown"
+                ),
+                "changed_by": status.changed_by.username if status.changed_by else "Unknown",
+                "changed_at": localtime(status.changed_at) if status.changed_at else None,
             }
             for status in statuses
-        ]
+        ],
     }
 
     return render(
@@ -353,7 +380,11 @@ class ProductModelListCreateView(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
         models = ProductModel.objects.all()
         form = ProductModelForm()
-        return render(request, self.template_name, {"page_title": "Моделі продуктів", "models": models, "form": form})
+        return render(
+            request,
+            self.template_name,
+            {"page_title": "Моделі продуктів", "models": models, "form": form},
+        )
 
     def post(self, request, *args, **kwargs):
         form = ProductModelForm(request.POST)
@@ -361,8 +392,11 @@ class ProductModelListCreateView(LoginRequiredMixin, View):
             form.save()
             return redirect(reverse_lazy("product_models"))
         models = ProductModel.objects.all()
-        return render(request, self.template_name, {"page_title": "Моделі продуктів", "models": models, "form": form})
-
+        return render(
+            request,
+            self.template_name,
+            {"page_title": "Моделі продуктів", "models": models, "form": form},
+        )
 
 
 class ColorListCreateView(LoginRequiredMixin, ListView):
@@ -395,6 +429,7 @@ class ColorListCreateView(LoginRequiredMixin, ListView):
             return redirect("colors")
         return self.get(request, *args, **kwargs)
 
+
 class ColorDetailUpdateView(LoginRequiredMixin, UpdateView):
     login_url = reverse_lazy("auth_login")
     model = Color
@@ -415,97 +450,105 @@ class ColorDetailUpdateView(LoginRequiredMixin, UpdateView):
     def get_success_url(self):
         return reverse_lazy("colors")
 
+
 @custom_login_required
 def profile_view(request):
     user = request.user
 
-    if request.method == 'POST':
-        new_username = (request.POST.get('username') or '').strip()
+    if request.method == "POST":
+        new_username = (request.POST.get("username") or "").strip()
 
         if not new_username:
             messages.error(request, "Ім'я користувача не може бути порожнім.")
-            return redirect('profile')
+            return redirect("profile")
 
         if new_username == user.username:
-            messages.info(request, 'Змін не виявлено.')
-            return redirect('profile')
+            messages.info(request, "Змін не виявлено.")
+            return redirect("profile")
 
         user_model = get_user_model()
         if user_model.objects.filter(username__iexact=new_username).exclude(pk=user.pk).exists():
             messages.error(request, "Користувач з таким ім'ям вже існує.")
-            return redirect('profile')
+            return redirect("profile")
 
         user.username = new_username
-        user.save(update_fields=['username'])
-        messages.success(request, 'Ім’я користувача оновлено.')
+        user.save(update_fields=["username"])
+        messages.success(request, "Ім’я користувача оновлено.")
 
-        return redirect('profile')
+        return redirect("profile")
 
-    return render(request, "account/profile.html", {"page_title": "Профіль користувача", "user": user})
+    return render(
+        request, "account/profile.html", {"page_title": "Профіль користувача", "user": user}
+    )
+
 
 @custom_login_required
 def notification_settings(request):
     settings, _created = NotificationSetting.objects.get_or_create(user=request.user)
 
-    if request.method == 'POST':
-        settings.notify_order_created = request.POST.get('notify_order_created') == 'on'
-        settings.notify_order_finished = request.POST.get('notify_order_finished') == 'on'
-        settings.notify_order_created_pause = request.POST.get('notify_order_created_pause') == 'on'
+    if request.method == "POST":
+        settings.notify_order_created = request.POST.get("notify_order_created") == "on"
+        settings.notify_order_finished = request.POST.get("notify_order_finished") == "on"
+        settings.notify_order_created_pause = request.POST.get("notify_order_created_pause") == "on"
         settings.save()
-        messages.success(request, 'Налаштування сповіщень оновлено.')
+        messages.success(request, "Налаштування сповіщень оновлено.")
 
-        return redirect('notification_settings')
+        return redirect("notification_settings")
 
-    return render(request, "account/notification_settings.html", {"page_title": "Налаштування сповіщень", "settings": settings})
+    return render(
+        request,
+        "account/notification_settings.html",
+        {"page_title": "Налаштування сповіщень", "settings": settings},
+    )
 
 
 @custom_login_required
 def change_password(request):
-    if request.method == 'POST':
-        current_password = request.POST.get('current_password')
-        new_password = request.POST.get('new_password')
-        confirm_password = request.POST.get('confirm_password')
+    if request.method == "POST":
+        current_password = request.POST.get("current_password")
+        new_password = request.POST.get("new_password")
+        confirm_password = request.POST.get("confirm_password")
 
         if not current_password or not new_password or not confirm_password:
-            messages.error(request, 'Будь ласка, заповніть всі поля.')
-            return redirect('change_password')
+            messages.error(request, "Будь ласка, заповніть всі поля.")
+            return redirect("change_password")
 
         if new_password != confirm_password:
-            messages.error(request, 'Нові паролі не співпадають.')
-            return redirect('change_password')
+            messages.error(request, "Нові паролі не співпадають.")
+            return redirect("change_password")
 
         if not request.user.check_password(current_password):
-            messages.error(request, 'Поточний пароль невірний.')
-            return redirect('change_password')
+            messages.error(request, "Поточний пароль невірний.")
+            return redirect("change_password")
 
         try:
             validate_password(new_password, request.user)
         except ValidationError as exc:
             for error in exc.messages:
                 messages.error(request, error)
-            return redirect('change_password')
+            return redirect("change_password")
 
         request.user.set_password(new_password)
         request.user.save()
 
         update_session_auth_hash(request, request.user)
 
-        messages.success(request, 'Пароль успішно змінено.')
-        return redirect('profile')
+        messages.success(request, "Пароль успішно змінено.")
+        return redirect("profile")
 
     return render(request, "account/change_password.html", {"page_title": "Зміна пароля"})
 
 
 @csrf_exempt
 def send_delayed_notifications(request):
-    if request.method != 'POST':
-        return JsonResponse({'error': 'invalid method'}, status=405)
+    if request.method != "POST":
+        return JsonResponse({"error": "invalid method"}, status=405)
 
     is_valid, error = _validate_internal_token(request)
     if not is_valid:
         status = 500 if error == "token not configured" else 403
-        return JsonResponse({'error': error}, status=status)
+        return JsonResponse({"error": error}, status=status)
 
     service = _get_delayed_notification_service()
     status = service.send_delayed_notifications()
-    return JsonResponse({'status': status})
+    return JsonResponse({"status": status})

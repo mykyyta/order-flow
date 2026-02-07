@@ -37,7 +37,7 @@ STATUS_DEFINITIONS: Tuple[OrderStatusDefinition, ...] = (
         code=STATUS_DOING,
         label="Робимо",
         icon="play",
-        indicator_class="text-sky-500",
+        indicator_class="text-blue-500",
         text_class="text-slate-700",
         badge_class="bg-sky-100 text-sky-800",
     ),
@@ -45,7 +45,7 @@ STATUS_DEFINITIONS: Tuple[OrderStatusDefinition, ...] = (
         code=STATUS_EMBROIDERY,
         label="Вишиваємо",
         icon="play",
-        indicator_class="text-orange-500",
+        indicator_class="text-blue-500",
         text_class="text-slate-700",
         badge_class="bg-orange-100 text-orange-800",
     ),
@@ -53,7 +53,7 @@ STATUS_DEFINITIONS: Tuple[OrderStatusDefinition, ...] = (
         code=STATUS_DECIDING,
         label="Рішаємо",
         icon="pause",
-        indicator_class="text-amber-500",
+        indicator_class="text-yellow-500",
         text_class="text-slate-700",
         badge_class="bg-amber-100 text-amber-800",
     ),
@@ -61,7 +61,7 @@ STATUS_DEFINITIONS: Tuple[OrderStatusDefinition, ...] = (
         code=STATUS_ON_HOLD,
         label="Чогось нема",
         icon="pause",
-        indicator_class="text-rose-500",
+        indicator_class="text-yellow-500",
         text_class="text-slate-700",
         badge_class="bg-red-100 text-red-800",
     ),
@@ -78,7 +78,7 @@ STATUS_DEFINITIONS: Tuple[OrderStatusDefinition, ...] = (
         code=STATUS_ALMOST_FINISHED,
         label="Майже готове",
         icon="dot",
-        indicator_class="bg-slate-400",
+        indicator_class="bg-emerald-500",
         text_class="text-slate-500",
         badge_class="bg-slate-100 text-slate-700",
         is_legacy=True,
@@ -147,7 +147,9 @@ def get_allowed_transitions(current_status: str) -> Set[str]:
 
 
 def transition_map(*, include_legacy_current: bool) -> Dict[str, Set[str]]:
-    statuses = STATUS_DEFINITIONS if include_legacy_current else tuple(
-        status for status in STATUS_DEFINITIONS if not status.is_legacy
+    statuses = (
+        STATUS_DEFINITIONS
+        if include_legacy_current
+        else tuple(status for status in STATUS_DEFINITIONS if not status.is_legacy)
     )
     return {status.code: get_allowed_transitions(status.code) for status in statuses}

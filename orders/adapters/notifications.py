@@ -13,13 +13,10 @@ logger = logging.getLogger(__name__)
 
 class DjangoNotificationSender:
     def order_created(self, *, order, orders_url: Optional[str]) -> None:
-        users_to_notify = (
-            NotificationSetting.objects.filter(
-                notify_order_created=True,
-                user__telegram_id__isnull=False,
-            )
-            .select_related("user")
-        )
+        users_to_notify = NotificationSetting.objects.filter(
+            notify_order_created=True,
+            user__telegram_id__isnull=False,
+        ).select_related("user")
 
         if not users_to_notify.exists():
             logger.info("Order created notifications skipped: no users")

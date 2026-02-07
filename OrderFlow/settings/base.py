@@ -136,7 +136,9 @@ if "test" in sys.argv:
 else:
     database_url = os.getenv("DATABASE_URL")
     DATABASES = {
-        "default": _database_from_url(database_url) if database_url else _default_postgres_database()
+        "default": _database_from_url(database_url)
+        if database_url
+        else _default_postgres_database()
     }
 
 AUTH_PASSWORD_VALIDATORS = [

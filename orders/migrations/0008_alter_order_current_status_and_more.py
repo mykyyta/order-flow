@@ -11,21 +11,44 @@ def migrate_legacy_almost_finished_to_doing(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('orders', '0007_delayednotificationlog'),
+        ("orders", "0007_delayednotificationlog"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='order',
-            name='current_status',
-            field=models.CharField(choices=[('new', 'Нове'), ('doing', 'Робимо'), ('embroidery', 'Вишиваємо'), ('deciding', 'Рішаємо'), ('on_hold', 'Чогось нема'), ('finished', 'Фініш'), ('almost_finished', 'Майже готове')], db_index=True, default='new', max_length=20),
+            model_name="order",
+            name="current_status",
+            field=models.CharField(
+                choices=[
+                    ("new", "Нове"),
+                    ("doing", "Робимо"),
+                    ("embroidery", "Вишиваємо"),
+                    ("deciding", "Рішаємо"),
+                    ("on_hold", "Чогось нема"),
+                    ("finished", "Фініш"),
+                    ("almost_finished", "Майже готове"),
+                ],
+                db_index=True,
+                default="new",
+                max_length=20,
+            ),
         ),
         migrations.AlterField(
-            model_name='orderstatushistory',
-            name='new_status',
-            field=models.CharField(choices=[('new', 'Нове'), ('doing', 'Робимо'), ('embroidery', 'Вишиваємо'), ('deciding', 'Рішаємо'), ('on_hold', 'Чогось нема'), ('finished', 'Фініш'), ('almost_finished', 'Майже готове')], max_length=20),
+            model_name="orderstatushistory",
+            name="new_status",
+            field=models.CharField(
+                choices=[
+                    ("new", "Нове"),
+                    ("doing", "Робимо"),
+                    ("embroidery", "Вишиваємо"),
+                    ("deciding", "Рішаємо"),
+                    ("on_hold", "Чогось нема"),
+                    ("finished", "Фініш"),
+                    ("almost_finished", "Майже готове"),
+                ],
+                max_length=20,
+            ),
         ),
         migrations.RunPython(
             migrate_legacy_almost_finished_to_doing,

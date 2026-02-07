@@ -3,6 +3,7 @@ from django.dispatch import receiver
 from django.conf import settings
 from .models import NotificationSetting
 
+
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_notification_settings(sender, instance, created, **kwargs):
     if created:

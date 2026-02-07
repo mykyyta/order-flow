@@ -50,10 +50,10 @@
         {% endfor %}
     </div>
 
-    <!-- Bulk actions (inline, only when selection exists) -->
+    <!-- Bulk actions -->
     <div
         id="bulk-action-bar"
-        class="hidden mt-2 flex flex-wrap items-center gap-2"
+        class="mt-3 flex flex-wrap items-center gap-2"
     >
         <label for="new_status" class="sr-only">Новий статус</label>
         <div class="w-40 sm:w-48">
@@ -70,7 +70,7 @@
         </button>
         <button type="button" id="clear-selection-btn" disabled class="btn-secondary px-3 min-h-[44px]">Зняти</button>
 
-        <p class="hidden text-xs text-slate-500 sm:block" id="status-transition-hint"></p>
+        <p class="text-xs text-slate-500" id="status-transition-hint"></p>
     </div>
 </form>
 

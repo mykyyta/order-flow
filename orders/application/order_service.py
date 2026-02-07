@@ -71,7 +71,9 @@ class OrderService:
                     self.repo.set_finished_at(order=order, finished_at=desired_finished_at)
                 continue
 
-            if latest_status is not None and not is_transition_allowed(latest_status, normalized_status):
+            if latest_status is not None and not is_transition_allowed(
+                latest_status, normalized_status
+            ):
                 raise InvalidStatusTransition(latest_status, normalized_status)
 
             self.repo.add_status(order=order, new_status=normalized_status, changed_by=changed_by)

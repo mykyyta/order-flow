@@ -4,15 +4,14 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('orders', '0003_notificationsetting_notify_order_finished_pause'),
+        ("orders", "0003_notificationsetting_notify_order_finished_pause"),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='notificationsetting',
-            old_name='notify_order_finished_pause',
-            new_name='notify_order_created_pause',
+            model_name="notificationsetting",
+            old_name="notify_order_finished_pause",
+            new_name="notify_order_created_pause",
         ),
     ]

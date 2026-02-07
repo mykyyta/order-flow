@@ -11,7 +11,7 @@ from telegram.ext import (
 from dotenv import load_dotenv
 
 load_dotenv()
-TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 
 if not TELEGRAM_BOT_TOKEN:
     raise RuntimeError("TELEGRAM_BOT_TOKEN is not set. Please define it in your .env file.")
@@ -32,9 +32,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 async def not_finished_orders(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle /not_finished_orders command to retrieve unfinished orders from the database."""
     try:
-        unfinished_orders = Order.objects.exclude(
-            current_status=STATUS_FINISHED
-        ).select_related("model", "color")
+        unfinished_orders = Order.objects.exclude(current_status=STATUS_FINISHED).select_related(
+            "model", "color"
+        )
         if unfinished_orders.exists():
             response = "Here are your unfinished orders:\n"
             for order in unfinished_orders:

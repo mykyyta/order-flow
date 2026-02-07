@@ -8,7 +8,7 @@ PYTHON ?= ./.venv/bin/python
 
 TAILWIND ?= bin/tailwindcss
 
-.PHONY: dev dev-detached down logs migrate shell test check lint format build push deploy tw-install tw-watch tw-build
+.PHONY: dev dev-detached down logs migrate shell test check lint format ruff-check ruff-format build push deploy tw-install tw-watch tw-build
 
 dev:
 	docker compose up --build
@@ -39,6 +39,13 @@ lint:
 
 format:
 	$(PYTHON) -m ruff format .
+
+# Use ruff from PATH (activate your venv with ruff first)
+ruff-check:
+	ruff check .
+
+ruff-format:
+	ruff format .
 
 build:
 	docker build --platform=linux/amd64 -t $(IMAGE) .
