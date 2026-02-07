@@ -16,7 +16,12 @@ from orders.application.exceptions import InvalidStatusTransition
 from orders.application.notification_service import DelayedNotificationService
 from orders.application.order_service import OrderService
 from orders.adapters.orders_repository import DjangoOrderRepository
-from orders.domain.status import STATUS_EMBROIDERY, STATUS_FINISHED, STATUS_NEW
+from orders.domain.status import (
+    STATUS_EMBROIDERY,
+    STATUS_FINISHED,
+    STATUS_NEW,
+    STATUS_ON_HOLD,
+)
 from orders.models import (
     Color,
     CustomUser,
@@ -418,6 +423,61 @@ class CurrentOrdersViewTests(TestCase):
         response = self.client.get(reverse("current_orders_list"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "transition-map-data")
+
+
+class CurrentOrdersFilteringTests(TestCase):
+    def setUp(self) -> None:
+        self.user = CustomUser.objects.create_user(username="planner2", password="pass12345")
+        self.client.force_login(self.user)
+        self.model = ProductModel.objects.create(name="Model E")
+        self.color = Color.objects.create(name="White", code=5, availability_status="in_stock")
+
+    def test_current_orders_list_is_paginated_and_excludes_finished(self):
+        for _ in range(21):
+            Order.objects.create(
+                model=self.model,
+                color=self.color,
+                current_status=STATUS_NEW,
+            )
+        Order.objects.create(
+            model=self.model,
+            color=self.color,
+            current_status=STATUS_FINISHED,
+        )
+
+        response = self.client.get(reverse("current_orders_list"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["page_obj"].paginator.count, 21)
+        self.assertEqual(len(response.context["orders"]), 20)
+        self.assertTrue(response.context["page_obj"].has_next())
+
+        second_page = self.client.get(reverse("current_orders_list"), {"page": 2})
+        self.assertEqual(second_page.status_code, 200)
+        self.assertEqual(len(second_page.context["orders"]), 1)
+        self.assertFalse(second_page.context["page_obj"].has_next())
+
+    def test_current_orders_supports_status_and_search_filters(self):
+        target = Order.objects.create(
+            model=self.model,
+            color=self.color,
+            comment="vip batch",
+            current_status=STATUS_ON_HOLD,
+        )
+        Order.objects.create(
+            model=self.model,
+            color=self.color,
+            comment="regular batch",
+            current_status=STATUS_NEW,
+        )
+
+        response = self.client.get(
+            reverse("current_orders_list"),
+            {"status": STATUS_ON_HOLD, "q": "vip"},
+        )
+        self.assertEqual(response.status_code, 200)
+        orders = list(response.context["orders"])
+        self.assertEqual(len(orders), 1)
+        self.assertEqual(orders[0].id, target.id)
 
 
 class HealthcheckCommandTests(TestCase):

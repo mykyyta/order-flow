@@ -14,6 +14,35 @@
     </div>
 {% endif %}
 
+<form method="get" class="row g-2 align-items-end mb-3">
+    <div class="col-md-5">
+        <label for="search-orders" class="form-label">Пошук</label>
+        <input
+            id="search-orders"
+            type="text"
+            class="form-control"
+            name="q"
+            value="{{ search_query }}"
+            placeholder="ID, модель, колір, коментар"
+        >
+    </div>
+    <div class="col-md-4">
+        <label for="filter-status" class="form-label">Статус</label>
+        <select id="filter-status" class="form-select" name="status">
+            <option value="">Всі</option>
+            {% for value, label in status_options %}
+                <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>
+                    {{ label }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-3 d-flex gap-2">
+        <button type="submit" class="btn btn-outline-primary w-100">Фільтрувати</button>
+        <a href="{% url 'current_orders_list' %}" class="btn btn-outline-secondary w-100">Скинути</a>
+    </div>
+</form>
+
 <form method="post" class="mb-4">
     {% csrf_token %}
 
@@ -81,6 +110,32 @@
         </div>
     </div>
 </form>
+
+{% if page_obj.paginator.num_pages > 1 %}
+<nav aria-label="Пагінація поточних замовлень">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query_string %}&{{ query_string }}{% endif %}">Попередня</a>
+            </li>
+        {% else %}
+            <li class="page-item disabled"><span class="page-link">Попередня</span></li>
+        {% endif %}
+
+        <li class="page-item active">
+            <span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+        </li>
+
+        {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query_string %}&{{ query_string }}{% endif %}">Наступна</a>
+            </li>
+        {% else %}
+            <li class="page-item disabled"><span class="page-link">Наступна</span></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
 
 <div class="mb-4">
     <a href="{% url 'finished_orders_list' %}" class="btn btn-secondary">Готові замовлення</a>
