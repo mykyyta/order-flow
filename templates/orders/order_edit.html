@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Редагувати замовлення #{{ order.id }}{% endblock %}
+{% block title %}Підправити замовлення #{{ order.id }}{% endblock %}
 
 {% block content %}
 
@@ -45,13 +45,13 @@
                     </div>
 
                     <div>
-                        <label for="id_comment" class="form-label">Коментар</label>
+                        <label for="id_comment" class="sr-only">Коментар</label>
                         {{ form.comment }}
                         {% if form.comment.errors %}<p class="form-error">{{ form.comment.errors.0 }}</p>{% endif %}
                     </div>
 
                     <div class="flex flex-wrap items-center gap-3 pt-1">
-                        <button type="submit" class="btn-primary">Оновити</button>
+                        <button type="submit" class="btn-primary">Зберегти</button>
                         <a href="{% url 'order_detail' order.id %}" class="btn-secondary">Скасувати</a>
                     </div>
                 </div>
@@ -60,7 +60,7 @@
     </div>
 
     <div class="mt-4">
-        <a href="{% url 'order_detail' order.id %}" class="link-back">&larr; До замовлення #{{ order.id }}</a>
+        <a href="{% url 'order_detail' order.id %}" class="link-back">&larr; Назад до замовлення #{{ order.id }}</a>
     </div>
 </div>
 

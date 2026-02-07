@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+/* Status indicator/badge classes from order_statuses.py (injected via {{ dot_class }} in templates) */
+@source inline("text-blue-500", "bg-blue-100", "text-blue-800");
+@source inline("text-emerald-600", "bg-emerald-100", "text-emerald-800");
+@source inline("text-orange-500", "bg-orange-100", "text-orange-800");
+@source inline("text-amber-600", "bg-amber-100", "text-amber-800");
+@source inline("text-rose-600", "bg-rose-100", "text-rose-800");
+@source inline("text-slate-400", "text-slate-500", "text-slate-700", "bg-slate-100", "bg-emerald-500");
+
 @theme {
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --color-primary: #0D9488;
@@ -12,7 +20,7 @@
 /* Form design system — one place for all form controls */
 @layer components {
   .form-label {
-    @apply block text-sm font-medium text-slate-700 mb-1;
+    @apply block text-sm font-semibold text-slate-700 mb-1;
   }
   .form-error {
     @apply mt-1 text-sm text-red-600;
@@ -21,6 +29,15 @@
     @apply block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400;
     @apply focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:ring-offset-0;
     @apply transition-[border-color,box-shadow];
+    font-size: 0.95rem;
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+    font-weight: 500;
+  }
+  .form-input::placeholder {
+    font-weight: 400;
+    color: var(--color-slate-500);
+    opacity: 0.9;
   }
   .form-select {
     @apply block w-full rounded-md border border-slate-300 bg-white px-3 py-2 pr-8 text-sm text-slate-900;
@@ -30,6 +47,10 @@
     background-position: right 0.5rem center;
     background-repeat: no-repeat;
     background-size: 1.25rem 1.25rem;
+    font-size: 0.95rem;
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+    font-weight: 500;
   }
   /* Custom dropdown panel (replaces native options list) */
   .form-select-wrap {
@@ -48,16 +69,23 @@
     background-repeat: no-repeat;
     background-size: 1.25rem 1.25rem;
     z-index: 1;
+    font-size: 0.95rem;
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+    font-weight: 500;
   }
   .form-select-trigger[aria-expanded="true"] {
     @apply border-teal-500 ring-2 ring-teal-500/20;
   }
   .form-select-dropdown {
-    @apply absolute left-0 right-0 top-full z-50 mt-1 max-h-60 overflow-auto rounded-md border border-slate-200 bg-white py-1 shadow-lg;
+    @apply fixed z-[9999] mt-1 max-h-60 overflow-auto rounded-md border border-slate-200 bg-white py-1 shadow-lg;
   }
   .form-select-option {
     @apply block w-full px-3 py-2 text-left text-sm text-slate-900 cursor-pointer;
     @apply hover:bg-slate-50;
+    font-size: 0.95rem;
+    line-height: 1.35;
+    letter-spacing: -0.01em;
   }
   .form-select-option[aria-selected="true"] {
     @apply bg-teal-50 text-teal-700;
@@ -69,9 +97,18 @@
     @apply block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 min-h-[88px] resize-y;
     @apply focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:ring-offset-0;
     @apply transition-[border-color,box-shadow];
+    font-size: 0.95rem;
+    line-height: 1.45;
+    letter-spacing: -0.01em;
+    font-weight: 500;
+  }
+  .form-textarea::placeholder {
+    font-weight: 400;
+    color: var(--color-slate-500);
+    opacity: 0.9;
   }
   .form-checkbox {
-    @apply h-5 w-5 shrink-0 cursor-pointer rounded-md border-2 border-slate-300 bg-white transition-colors;
+    @apply h-5 w-5 shrink-0 cursor-pointer rounded-md border border-slate-300 bg-white transition-colors;
     @apply focus:ring-2 focus:ring-teal-500/20 focus:ring-offset-0 focus:outline-none;
     appearance: none;
     -webkit-appearance: none;
@@ -80,15 +117,25 @@
     @apply border-slate-400;
   }
   .form-checkbox:checked {
-    @apply border-teal-600 bg-teal-600;
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpath d='M5 12l5 5L20 7'/%3e%3c/svg%3e");
+    border-color: var(--of-selection, var(--color-teal-600));
+    background-color: color-mix(
+      in oklab,
+      var(--of-selection, var(--color-teal-600)) 18%,
+      white
+    );
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230f172a' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round'%3e%3cpath d='M5 12l5 5L20 7'/%3e%3c/svg%3e");
     background-repeat: no-repeat;
     background-position: center;
     background-size: 0.875rem 0.875rem;
   }
   .form-checkbox:indeterminate {
-    @apply border-teal-600 bg-teal-600;
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3e%3cpath d='M5 12h14' stroke='white' stroke-width='2.5' stroke-linecap='round'/%3e%3c/svg%3e");
+    border-color: var(--of-selection, var(--color-teal-600));
+    background-color: color-mix(
+      in oklab,
+      var(--of-selection, var(--color-teal-600)) 18%,
+      white
+    );
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3e%3cpath d='M5 12h14' stroke='%230f172a' stroke-width='2.25' stroke-linecap='round'/%3e%3c/svg%3e");
     background-repeat: no-repeat;
     background-position: center;
     background-size: 0.875rem 0.875rem;
@@ -103,7 +150,45 @@
     @apply p-5 sm:p-6;
   }
   .btn-primary {
-    @apply inline-block rounded-md border border-transparent bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors;
+    @apply inline-block rounded-md px-4 py-2 text-sm font-medium text-white;
+    @apply border border-transparent bg-teal-600 hover:bg-teal-700;
+    @apply focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed transition-[background-color,box-shadow,transform,border-color];
+
+    /* Add a subtle “lumen” depth without looking too neon. */
+    --btn-base: color-mix(in oklab, var(--color-teal-600) 78%, #1e293b);
+    --btn-top: color-mix(in oklab, var(--btn-base) 84%, white);
+    --btn-bottom: color-mix(in oklab, var(--btn-base) 88%, #1e293b);
+
+    border-color: color-mix(in oklab, var(--btn-base) 78%, #1e293b);
+    background-color: var(--btn-base);
+    background-image: linear-gradient(180deg, var(--btn-top) 0%, var(--btn-base) 55%, var(--btn-bottom) 100%);
+    box-shadow:
+      0 1px 0 0 color-mix(in oklab, var(--btn-base) 14%, white),
+      0 10px 24px -16px color-mix(in oklab, var(--btn-base) 58%, #1e293b);
+  }
+  .btn-primary:hover:not(:disabled) {
+    --btn-base: color-mix(in oklab, var(--color-teal-700) 78%, #1e293b);
+    --btn-top: color-mix(in oklab, var(--btn-base) 84%, white);
+    --btn-bottom: color-mix(in oklab, var(--btn-base) 88%, #1e293b);
+
+    border-color: color-mix(in oklab, var(--btn-base) 78%, #1e293b);
+    background-color: var(--btn-base);
+    background-image: linear-gradient(180deg, var(--btn-top) 0%, var(--btn-base) 55%, var(--btn-bottom) 100%);
+    box-shadow:
+      0 1px 0 0 color-mix(in oklab, var(--btn-base) 12%, white),
+      0 14px 30px -18px color-mix(in oklab, var(--btn-base) 60%, #1e293b);
+    transform: translateY(-0.5px);
+  }
+  .btn-primary:active:not(:disabled) {
+    transform: translateY(0.5px);
+    box-shadow:
+      0 1px 0 0 color-mix(in oklab, var(--btn-base) 10%, white),
+      0 8px 18px -16px color-mix(in oklab, var(--btn-base) 62%, #1e293b);
+  }
+  .btn-primary:disabled {
+    background-image: none;
+    box-shadow: none;
   }
   .btn-secondary {
     @apply inline-block rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors;
@@ -129,6 +214,34 @@
   }
   .section-title {
     @apply text-sm font-semibold text-slate-900;
+  }
+  /* Status indicator glyphs (dot/play/pause) */
+  .status-mark {
+    @apply inline-flex items-center justify-center flex-shrink-0;
+    opacity: 1;
+  }
+  .status-icon {
+    width: 0.875rem; /* ~14px */
+    height: 0.875rem;
+    display: block;
+  }
+  .status-icon-lg {
+    width: 0.95rem;
+    height: 0.95rem;
+  }
+  .status-dot {
+    width: 0.55rem; /* ~9px */
+    height: 0.55rem;
+    border-radius: 9999px;
+    background-color: currentColor;
+    box-shadow:
+      0 0 0 2px color-mix(in oklab, currentColor 14%, white);
+    display: block;
+  }
+  .status-spacer {
+    width: 0.5rem;
+    height: 0.5rem;
+    display: block;
   }
   .detail-card-body {
     @apply px-5 py-5 md:grid md:grid-cols-[1fr_minmax(0,14rem)] md:gap-8 md:items-start;
@@ -191,5 +304,27 @@
   }
   .modal-actions {
     @apply mt-5 flex flex-row-reverse gap-2;
+  }
+
+  /* Centered pages (login, create order, etc.) */
+  .main-centered {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  body[data-has-nav="1"] .main-centered {
+    min-height: calc(100vh - 56px);
+  }
+}
+
+/* Prevent iOS Safari input zoom + improve legibility on small screens */
+@media (max-width: 640px) {
+  .form-input,
+  .form-select,
+  .form-select-trigger,
+  .form-select-option,
+  .form-textarea {
+    font-size: 16px;
   }
 }

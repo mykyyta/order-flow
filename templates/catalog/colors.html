@@ -6,7 +6,7 @@
 
 {% include "partials/messages.html" %}
 
-<div class="mt-4 space-y-6">
+<div class="space-y-6">
     <div class="card">
         <ul class="divide-y divide-slate-100">
             {% for color in colors %}
@@ -16,31 +16,31 @@
                 </a>
             </li>
             {% empty %}
-            <li class="px-4 py-6 text-center text-sm text-slate-500">Ще немає жодного кольору.</li>
+            <li class="px-4 py-6 text-center text-sm text-slate-500">Поки що кольорів немає.</li>
             {% endfor %}
         </ul>
     </div>
 
     <div class="card form-card-body">
-        <h2 class="section-title mb-4">Додати новий колір</h2>
+        <h2 class="section-title mb-4">Додати колір</h2>
         <form method="post" class="space-y-4">
             {% csrf_token %}
             <div>
-                <label for="id_name" class="form-label">Назва</label>
+                <label for="id_name" class="sr-only">Назва кольору</label>
                 {{ color_form.name }}
                 {% if color_form.name.errors %}
                 <p class="form-error">{{ color_form.name.errors.0 }}</p>
                 {% endif %}
             </div>
             <div>
-                <label for="id_code" class="form-label">Код</label>
+                <label for="id_code" class="sr-only">Код кольору</label>
                 {{ color_form.code }}
                 {% if color_form.code.errors %}
                 <p class="form-error">{{ color_form.code.errors.0 }}</p>
                 {% endif %}
             </div>
             <div>
-                <label for="id_availability_status" class="form-label">Наявність</label>
+                <label for="id_availability_status" class="sr-only">Наявність</label>
                 {{ color_form.availability_status }}
                 {% if color_form.availability_status.errors %}
                 <p class="form-error">{{ color_form.availability_status.errors.0 }}</p>

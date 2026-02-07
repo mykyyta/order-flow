@@ -1,14 +1,24 @@
 <span class="inline-flex items-center gap-1.5">
   <span class="text-sm font-medium {{ text_class }}">{{ label }}</span>
-  {% if icon == "play" %}
-    <svg class="h-3 w-3 flex-shrink-0 {{ dot_class }}" viewBox="0 0 12 12" fill="currentColor"><path d="M3 2.2v7.6c0 .6.7 1 1.2.6l5.2-3.8c.4-.3.4-.9 0-1.2L4.2 1.6c-.5-.4-1.2 0-1.2.6z"/></svg>
-  {% elif icon == "check" %}
-    <svg class="h-3.5 w-3.5 flex-shrink-0 {{ dot_class }}" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 6l3 3 4.5-6"/></svg>
-  {% elif icon == "pause" %}
-    <svg class="h-3 w-3 flex-shrink-0 {{ dot_class }}" viewBox="0 0 12 12" fill="currentColor"><rect x="2" y="1.5" width="2.5" height="9" rx=".75"/><rect x="7.5" y="1.5" width="2.5" height="9" rx=".75"/></svg>
-  {% elif icon == "none" %}
-    <span class="h-2 w-2 flex-shrink-0"></span>
-  {% else %}
-    <span class="h-2 w-2 flex-shrink-0 rounded-full {{ dot_class }}" style="background-color: currentColor;"></span>
-  {% endif %}
+
+  <span class="status-mark {{ dot_class }}" aria-hidden="true">
+    {% if icon == "play" %}
+      <svg class="status-icon" viewBox="0 0 12 12" fill="currentColor">
+        <path d="M3.2 2.4v7.2c0 .6.7 1 1.2.6l5-3.6c.4-.3.4-.9 0-1.2l-5-3.6c-.5-.4-1.2 0-1.2.6z"/>
+      </svg>
+    {% elif icon == "check" %}
+      <svg class="status-icon status-icon-lg" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M2.5 6l3 3 4.5-6"/>
+      </svg>
+    {% elif icon == "pause" %}
+      <svg class="status-icon" viewBox="0 0 12 12" fill="currentColor">
+        <rect x="3.1" y="2.4" width="2.4" height="7.2" rx="0.7"></rect>
+        <rect x="6.5" y="2.4" width="2.4" height="7.2" rx="0.7"></rect>
+      </svg>
+    {% elif icon == "none" %}
+      <span class="status-spacer"></span>
+    {% else %}
+      <span class="status-dot"></span>
+    {% endif %}
+  </span>
 </span>

@@ -29,7 +29,7 @@ STATUS_DEFINITIONS: Tuple[OrderStatusDefinition, ...] = (
         code=STATUS_NEW,
         label="Нове",
         icon="dot",
-        indicator_class="bg-emerald-500",
+        indicator_class="text-emerald-600",
         text_class="text-slate-700",
         badge_class="bg-emerald-100 text-emerald-800",
     ),
@@ -39,7 +39,7 @@ STATUS_DEFINITIONS: Tuple[OrderStatusDefinition, ...] = (
         icon="play",
         indicator_class="text-blue-500",
         text_class="text-slate-700",
-        badge_class="bg-sky-100 text-sky-800",
+        badge_class="bg-blue-100 text-blue-800",
     ),
     OrderStatusDefinition(
         code=STATUS_EMBROIDERY,
@@ -47,13 +47,13 @@ STATUS_DEFINITIONS: Tuple[OrderStatusDefinition, ...] = (
         icon="play",
         indicator_class="text-blue-500",
         text_class="text-slate-700",
-        badge_class="bg-orange-100 text-orange-800",
+        badge_class="bg-blue-100 text-blue-800",
     ),
     OrderStatusDefinition(
         code=STATUS_DECIDING,
         label="Рішаємо",
         icon="pause",
-        indicator_class="text-yellow-500",
+        indicator_class="text-amber-600",
         text_class="text-slate-700",
         badge_class="bg-amber-100 text-amber-800",
     ),
@@ -61,9 +61,9 @@ STATUS_DEFINITIONS: Tuple[OrderStatusDefinition, ...] = (
         code=STATUS_ON_HOLD,
         label="Чогось нема",
         icon="pause",
-        indicator_class="text-yellow-500",
+        indicator_class="text-orange-500",
         text_class="text-slate-700",
-        badge_class="bg-red-100 text-red-800",
+        badge_class="bg-orange-100 text-orange-800",
     ),
     OrderStatusDefinition(
         code=STATUS_FINISHED,
@@ -78,7 +78,7 @@ STATUS_DEFINITIONS: Tuple[OrderStatusDefinition, ...] = (
         code=STATUS_ALMOST_FINISHED,
         label="Майже готове",
         icon="dot",
-        indicator_class="bg-emerald-500",
+        indicator_class="text-emerald-600",
         text_class="text-slate-500",
         badge_class="bg-slate-100 text-slate-700",
         is_legacy=True,
@@ -99,6 +99,15 @@ TERMINAL_STATUS_CODES: Tuple[str, ...] = tuple(
     status.code for status in STATUS_DEFINITIONS if status.is_terminal
 )
 
+# Порядок у списку поточних замовлень: нові → робимо/вишиваємо → рішаємо → чогось нема
+ACTIVE_LIST_ORDER: Tuple[str, ...] = (
+    STATUS_NEW,
+    STATUS_DOING,
+    STATUS_EMBROIDERY,
+    STATUS_DECIDING,
+    STATUS_ON_HOLD,
+)
+
 
 def status_choices(*, include_legacy: bool, include_terminal: bool) -> Tuple[Tuple[str, str], ...]:
     choices = []
@@ -109,6 +118,15 @@ def status_choices(*, include_legacy: bool, include_terminal: bool) -> Tuple[Tup
             continue
         choices.append((status.code, status.label))
     return tuple(choices)
+
+
+def status_choices_for_active_page() -> Tuple[Tuple[str, str], ...]:
+    """Choices for bulk status change on active orders page. Excludes 'new' as it is forbidden."""
+    return tuple(
+        (code, label)
+        for code, label in status_choices(include_legacy=False, include_terminal=True)
+        if code != STATUS_NEW
+    )
 
 
 def status_label_map(*, include_legacy: bool) -> Dict[str, str]:

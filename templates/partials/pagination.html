@@ -1,9 +1,9 @@
 {% comment %}
 Pagination: prev/next arrows + "N / M". Pass: page_obj, query_string (optional).
-Optional: aria_label (default "Пагінація").
+Optional: aria_label (default "Сторінки").
 {% endcomment %}
 {% if page_obj.paginator.num_pages > 1 %}
-<nav aria-label="{{ aria_label|default:'Пагінація' }}" class="mt-4 flex items-center justify-center gap-1">
+<nav aria-label="{{ aria_label|default:'Сторінки' }}" class="mt-4 flex items-center justify-center gap-1">
     {% if page_obj.has_previous %}
     <a href="?page={{ page_obj.previous_page_number }}{% if query_string %}&{{ query_string }}{% endif %}" class="btn-secondary px-2.5 py-1">&larr;</a>
     {% else %}

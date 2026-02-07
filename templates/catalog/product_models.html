@@ -1,35 +1,35 @@
 {% extends "base.html" %}
 
-{% block title %}Моделі продуктів{% endblock %}
+{% block title %}Моделі{% endblock %}
 
 {% block content %}
 
 {% include "partials/messages.html" %}
 
-<div class="mt-4 space-y-6">
+<div class="space-y-6">
     <div class="card">
         <ul class="divide-y divide-slate-100">
             {% for model in models %}
             <li class="px-4 py-2.5 text-sm text-slate-800">{{ model.name }}</li>
             {% empty %}
-            <li class="px-4 py-6 text-center text-sm text-slate-500">Ще немає жодної моделі продукту.</li>
+            <li class="px-4 py-6 text-center text-sm text-slate-500">Поки що моделей немає.</li>
             {% endfor %}
         </ul>
     </div>
 
     <div class="card form-card-body">
-        <h2 class="section-title mb-4">Додати нову модель</h2>
+        <h2 class="section-title mb-4">Додати модель</h2>
         <form method="post" class="space-y-4">
             {% csrf_token %}
             <div>
-                <label for="id_name" class="form-label">Назва</label>
+                <label for="id_name" class="sr-only">Назва моделі</label>
                 {{ form.name }}
                 {% if form.name.errors %}
                 <p class="form-error">{{ form.name.errors.0 }}</p>
                 {% endif %}
             </div>
             <button type="submit" class="btn-primary">
-                Додати модель
+                Додати
             </button>
         </form>
     </div>

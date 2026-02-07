@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Палітра — OrderFlow{% endblock %}
+
+{% block content %}
+  <div class="space-y-6">
+    <div class="flex items-center justify-between gap-3">
+      <h1 class="page-title mb-0">Палітра (перевірка)</h1>
+      <a class="btn-secondary px-3 py-2" href="{% url 'orders_active' %}">Назад</a>
+    </div>
+
+    <div class="card">
+      <div class="form-card-body space-y-4">
+        <div class="space-y-1">
+          <div class="text-sm font-medium text-slate-900">Теми</div>
+          <div class="text-sm text-slate-600">
+            Перемикай теми через <span class="font-mono">?theme=...</span> (запам’ятовується в localStorage).
+            Рекомендовано для «неяскравої» сучасної палітри: <span class="font-mono">soft_indigo</span>.
+          </div>
+        </div>
+
+        <div class="flex flex-wrap gap-2">
+          <a class="btn-secondary px-3 py-2" href="?theme=default">Default</a>
+          <a class="btn-secondary px-3 py-2" href="?theme=lumen">lumen</a>
+          <a class="btn-secondary px-3 py-2" href="?theme=lumen_cool">lumen_cool</a>
+          <a class="btn-secondary px-3 py-2" href="?theme=lumen_warm">lumen_warm</a>
+          <a class="btn-secondary px-3 py-2" href="?theme=lumen_subtle">lumen_subtle</a>
+          <a class="btn-secondary px-3 py-2" href="?theme=soft_indigo">soft_indigo</a>
+          <a class="btn-secondary px-3 py-2" href="?theme=soft_warm">soft_warm</a>
+          <a class="btn-secondary px-3 py-2" href="?theme=dune_lite">dune_lite</a>
+        </div>
+
+        <div class="rounded-md border border-slate-200 bg-slate-50 p-4">
+          <div class="text-sm font-medium text-slate-900">Редактор (для soft_*)</div>
+          <div class="mt-1 text-sm text-slate-600">
+            Зміни нижче підкручують базові кольори (<span class="font-mono">--of-*</span>) і одразу перераховують м’які відтінки через <span class="font-mono">color-mix()</span>.
+          </div>
+
+          <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
+            <div>
+              <label class="form-label" for="pick-brand">Brand</label>
+              <input id="pick-brand" type="color" class="form-input h-10 px-2 py-1" />
+            </div>
+            <div>
+              <label class="form-label" for="pick-info">Info</label>
+              <input id="pick-info" type="color" class="form-input h-10 px-2 py-1" />
+            </div>
+            <div>
+              <label class="form-label" for="pick-success">Success</label>
+              <input id="pick-success" type="color" class="form-input h-10 px-2 py-1" />
+            </div>
+            <div>
+              <label class="form-label" for="pick-warning">Warning</label>
+              <input id="pick-warning" type="color" class="form-input h-10 px-2 py-1" />
+            </div>
+            <div>
+              <label class="form-label" for="pick-danger">Danger</label>
+              <input id="pick-danger" type="color" class="form-input h-10 px-2 py-1" />
+            </div>
+          </div>
+
+          <div class="mt-4 flex flex-wrap items-center gap-2">
+            <button type="button" class="btn-secondary px-3 py-2" id="btn-reset-overrides">Reset overrides</button>
+            <div class="text-xs text-slate-500" id="overrides-hint"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="form-card-body space-y-5">
+        <div class="text-sm font-semibold text-slate-900">Семпли</div>
+
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-5">
+          <div class="rounded-lg border border-slate-200 bg-white p-3">
+            <div class="text-xs font-medium uppercase tracking-wider text-slate-500">Brand</div>
+            <div class="mt-2 h-10 rounded-md bg-teal-600"></div>
+            <div class="mt-2 text-sm text-teal-700">teal-600/700</div>
+          </div>
+          <div class="rounded-lg border border-slate-200 bg-white p-3">
+            <div class="text-xs font-medium uppercase tracking-wider text-slate-500">Info</div>
+            <div class="mt-2 h-10 rounded-md bg-blue-500"></div>
+            <div class="mt-2 text-sm text-blue-700">blue-*</div>
+          </div>
+          <div class="rounded-lg border border-slate-200 bg-white p-3">
+            <div class="text-xs font-medium uppercase tracking-wider text-slate-500">Success</div>
+            <div class="mt-2 h-10 rounded-md bg-emerald-600"></div>
+            <div class="mt-2 text-sm text-emerald-700">emerald-*</div>
+          </div>
+          <div class="rounded-lg border border-slate-200 bg-white p-3">
+            <div class="text-xs font-medium uppercase tracking-wider text-slate-500">Warning</div>
+            <div class="mt-2 h-10 rounded-md bg-amber-600"></div>
+            <div class="mt-2 text-sm text-amber-700">amber/orange</div>
+          </div>
+          <div class="rounded-lg border border-slate-200 bg-white p-3">
+            <div class="text-xs font-medium uppercase tracking-wider text-slate-500">Danger</div>
+            <div class="mt-2 h-10 rounded-md bg-rose-600"></div>
+            <div class="mt-2 text-sm text-rose-700">rose/red</div>
+          </div>
+        </div>
+
+        <div class="grid gap-4 md:grid-cols-2">
+          <div class="rounded-lg border border-slate-200 bg-white p-4 space-y-3">
+            <div class="text-sm font-semibold text-slate-900">Кнопки + контраст</div>
+            <div class="flex flex-wrap items-center gap-2">
+              <button class="btn-primary px-4 py-2" data-contrast>Primary</button>
+              <span class="text-xs text-slate-500" data-contrast-out></span>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <button class="btn-secondary px-4 py-2" data-contrast>Secondary</button>
+              <span class="text-xs text-slate-500" data-contrast-out></span>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="inline-flex items-center gap-2">
+                <input type="checkbox" class="form-checkbox" checked />
+                <span class="text-sm text-slate-700">checkbox / checked</span>
+              </span>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <input class="form-input w-64" placeholder="клікни сюди (перевірка фокуса)" />
+            </div>
+          </div>
+
+          <div class="rounded-lg border border-slate-200 bg-white p-4 space-y-3">
+            <div class="text-sm font-semibold text-slate-900">Бейджі / статуси</div>
+            <div class="flex flex-wrap gap-2">
+              <span class="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-800">Нове</span>
+              <span class="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-800">Робимо</span>
+              <span class="inline-flex items-center rounded-full bg-orange-100 px-2.5 py-1 text-xs font-medium text-orange-800">Потрібно</span>
+              <span class="inline-flex items-center rounded-full bg-red-100 px-2.5 py-1 text-xs font-medium text-red-800">Проблема</span>
+            </div>
+            <div class="flex flex-wrap gap-3 pt-2">
+              <a href="#" class="link-availability-in">В наявності</a>
+              <a href="#" class="link-availability-low">Мало</a>
+              <a href="#" class="link-availability-out">Нема</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-lg border border-slate-200 bg-white p-4">
+          <div class="text-sm font-semibold text-slate-900">Список (з емоджі)</div>
+          <div class="mt-3 overflow-hidden rounded-lg border border-slate-200">
+            <div class="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-3">
+              <input type="checkbox" class="form-checkbox" checked />
+              <div class="min-w-0 flex-1">
+                <div class="truncate text-sm font-medium text-slate-900">Сумка клатч · Білий ⚡️ 👵</div>
+                <div class="mt-1 flex items-center gap-2 text-xs text-slate-500">
+                  <span class="inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
+                  <span>Нове</span>
+                </div>
+              </div>
+              <div class="text-right text-sm font-medium text-slate-600">12:45</div>
+            </div>
+            <div class="flex items-center gap-3 bg-white px-4 py-3">
+              <input type="checkbox" class="form-checkbox" />
+              <div class="min-w-0 flex-1">
+                <div class="truncate text-sm font-medium text-slate-900">Рюкзак · Чорний 🌍</div>
+                <div class="mt-1 flex items-center gap-2 text-xs text-slate-500">
+                  <span class="inline-flex h-2 w-2 rounded-full bg-blue-500"></span>
+                  <span>Робимо</span>
+                </div>
+              </div>
+              <div class="text-right text-sm font-medium text-slate-600">13:10</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="text-xs text-slate-500">
+          Порада: якщо UI виглядає «занадто кольоровим» поруч з емоджі — знижуй насиченість (chroma) у брендовому/статусних кольорах, а контраст тримай через світлоту (lightness).
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block extra_js %}
+  <script src="{% static 'js/palette_lab.js' %}"></script>
+{% endblock %}

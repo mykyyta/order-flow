@@ -13,12 +13,14 @@ from .views import (
     orders_bulk_status,
     orders_completed,
     orders_create,
+    palette_lab,
     profile_view,
     send_delayed_notifications,
 )
 
 urlpatterns = [
     path("", orders_active, name="index"),
+    path("palette/", palette_lab, name="palette_lab"),
     path("orders/current/", orders_active, name="orders_active"),
     path("orders/current/bulk-status/", orders_bulk_status, name="orders_bulk_status"),
     path("orders/finished/", orders_completed, name="orders_completed"),

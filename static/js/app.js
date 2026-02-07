@@ -47,7 +47,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  /* Custom dropdown for .form-select — styled options list */
+  /* Custom dropdown for .form-select — positioned fixed to avoid overflow clipping */
   function enhanceFormSelect(select) {
     if (select.closest(".form-select-wrap")) return;
     var wrap = document.createElement("div");
@@ -84,6 +84,13 @@ document.addEventListener("DOMContentLoaded", function () {
     wrap.appendChild(trigger);
     wrap.appendChild(dropdown);
 
+    function positionDropdown() {
+      var rect = trigger.getBoundingClientRect();
+      dropdown.style.top = (rect.bottom + 4) + "px";
+      dropdown.style.left = rect.left + "px";
+      dropdown.style.width = rect.width + "px";
+    }
+
     function syncDisabled() {
       for (var i = 0; i < select.options.length; i++) {
         var opt = select.options[i];
@@ -96,6 +103,8 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     function open() {
       syncDisabled();
+      document.body.appendChild(dropdown);
+      positionDropdown();
       dropdown.classList.remove("hidden");
       dropdown.setAttribute("aria-hidden", "false");
       trigger.setAttribute("aria-expanded", "true");
@@ -106,6 +115,7 @@ document.addEventListener("DOMContentLoaded", function () {
       dropdown.setAttribute("aria-hidden", "true");
       trigger.setAttribute("aria-expanded", "false");
       document.removeEventListener("click", closeOnOutside);
+      wrap.appendChild(dropdown);
     }
     function closeOnOutside(e) {
       if (!wrap.contains(e.target)) close();

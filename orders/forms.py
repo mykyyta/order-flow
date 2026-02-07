@@ -20,7 +20,13 @@ class OrderForm(forms.ModelForm):
             "etsy": forms.CheckboxInput(attrs={"class": FORM_CHECKBOX}),
             "urgent": forms.CheckboxInput(attrs={"class": FORM_CHECKBOX}),
             "embroidery": forms.CheckboxInput(attrs={"class": FORM_CHECKBOX}),
-            "comment": forms.Textarea(attrs={"class": FORM_TEXTAREA, "rows": 3}),
+            "comment": forms.Textarea(
+                attrs={
+                    "class": FORM_TEXTAREA,
+                    "rows": 3,
+                    "placeholder": "Коментар (необов'язково)",
+                }
+            ),
         }
 
     def __init__(self, *args, **kwargs):
@@ -34,11 +40,24 @@ class ColorForm(forms.ModelForm):
     class Meta:
         model = Color
         fields = ["name", "code", "availability_status"]
+        labels = {"availability_status": ""}
         widgets = {
-            "name": forms.TextInput(attrs={"class": FORM_INPUT}),
-            "code": forms.NumberInput(attrs={"class": FORM_INPUT}),
+            "name": forms.TextInput(attrs={"class": FORM_INPUT, "placeholder": "Колір"}),
+            "code": forms.NumberInput(attrs={"class": FORM_INPUT, "placeholder": "Код"}),
             "availability_status": forms.Select(attrs={"class": FORM_SELECT}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["availability_status"].choices = [("", "Наявність")] + list(
+            Color.AVAILABILITY_CHOICES
+        )
+        if not self.instance.pk:
+            self.initial["availability_status"] = ""
+        self.fields["availability_status"].required = False
+
+    def clean_availability_status(self):
+        return self.cleaned_data.get("availability_status") or "in_stock"
 
     def clean_name(self):
         name = self.cleaned_data["name"]
@@ -50,7 +69,7 @@ class ProductModelForm(forms.ModelForm):
         model = ProductModel
         fields = ["name"]
         widgets = {
-            "name": forms.TextInput(attrs={"class": FORM_INPUT}),
+            "name": forms.TextInput(attrs={"class": FORM_INPUT, "placeholder": "Клатч"}),
         }
 
     def clean_name(self):
@@ -62,7 +81,7 @@ class OrderStatusUpdateForm(forms.Form):
     orders = forms.ModelMultipleChoiceField(
         queryset=Order.objects.all(),
         widget=forms.CheckboxSelectMultiple,
-        label="Вибрати замовлення",
+        label="Позначити замовлення",
     )
     new_status = forms.ChoiceField(
         choices=status_choices(include_legacy=False, include_terminal=True),

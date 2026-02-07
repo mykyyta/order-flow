@@ -44,6 +44,17 @@ docker compose run --rm web python manage.py migrate
 Open:
 - `http://localhost:8000`
 
+## UI Theme Preview / Palette Lab
+Theme preview is controlled via URL param `?theme=<name>` and is persisted in `localStorage`.
+
+Available preview themes:
+- `soft_indigo` (muted multi-accent)
+- `soft_warm` (muted warm multi-accent)
+- `dune_lite` (warm “spice”)
+
+Palette lab page (requires login):
+- `http://localhost:8000/palette/`
+
 ## Quick Start (Local Python)
 ```bash
 python3 -m venv .venv
