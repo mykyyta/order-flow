@@ -23,6 +23,7 @@ env:
   TF_STATE_PREFIX: orderflow/prod
   REPOSITORY: ${{ vars.ARTIFACT_REPOSITORY }}
   IMAGE_NAME: my-app
+  SERVICE_NAME: orderflow-app
   MIGRATE_JOB_NAME: orderflow-migrate
 
 jobs:
@@ -121,6 +122,23 @@ jobs:
             -var="container_image=${IMAGE_URI}" \
             -var="enable_migrate_job=true" \
             -var="google_access_token=${{ steps.auth.outputs.access_token }}"
+
+      # Cloud Run service/job are still in Terraform brownfield adoption mode
+      # (`ignore_changes = all`), so image rollout is done explicitly.
+      - name: Deploy app revision
+        run: |
+          gcloud run services update "${SERVICE_NAME}" \
+            --project "${PROJECT_ID}" \
+            --region "${REGION}" \
+            --image "${IMAGE_URI}"
+
+      - name: Sync migrate job image
+        run: |
+          gcloud run jobs update "${MIGRATE_JOB_NAME}" \
+            --project "${PROJECT_ID}" \
+            --region "${REGION}" \
+            --image "${IMAGE_URI}" \
+            --update-env-vars "DJANGO_SETTINGS_MODULE=OrderFlow.settings,CSRF_TRUSTED_ORIGINS=https://localhost"
 
       - name: Run migrations job
         run: |
