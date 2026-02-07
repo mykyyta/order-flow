@@ -15,7 +15,6 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db import models, transaction
-from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
@@ -82,21 +81,12 @@ def _get_delayed_notification_service() -> DelayedNotificationService:
     )
 
 
-def _filtered_current_orders_queryset(*, search_query: str, status_filter: str):
+def _filtered_current_orders_queryset(*, status_filter: str):
     queryset = (
         Order.objects.select_related("model", "color")
         .exclude(current_status=STATUS_FINISHED)
         .order_by("-created_at", "-id")
     )
-    if search_query:
-        search_filters = (
-            Q(model__name__icontains=search_query)
-            | Q(color__name__icontains=search_query)
-            | Q(comment__icontains=search_query)
-        )
-        if search_query.isdigit():
-            search_filters |= Q(id=int(search_query))
-        queryset = queryset.filter(search_filters)
 
     status_values = {value for value, _ in CURRENT_STATUS_OPTIONS}
     if status_filter in status_values:
@@ -148,10 +138,8 @@ def auth_logout(request):
 
 @custom_login_required
 def current_orders_list(request):
-    search_query = (request.GET.get("q") or "").strip()
     status_filter = (request.GET.get("status") or "").strip()
     orders_queryset, status_filter = _filtered_current_orders_queryset(
-        search_query=search_query,
         status_filter=status_filter,
     )
 
@@ -201,7 +189,6 @@ def current_orders_list(request):
                         "form": form,
                         "orders": page_obj.object_list,
                         "page_obj": page_obj,
-                        "search_query": search_query,
                         "status_filter": status_filter,
                         "status_options": CURRENT_STATUS_OPTIONS,
                         "query_string": query_string,

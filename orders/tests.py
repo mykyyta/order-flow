@@ -529,7 +529,7 @@ class CurrentOrdersFilteringTests(TestCase):
         self.assertEqual(len(second_page.context["orders"]), 1)
         self.assertFalse(second_page.context["page_obj"].has_next())
 
-    def test_current_orders_supports_status_and_search_filters(self):
+    def test_current_orders_supports_status_filter(self):
         target = Order.objects.create(
             model=self.model,
             color=self.color,
@@ -545,7 +545,7 @@ class CurrentOrdersFilteringTests(TestCase):
 
         response = self.client.get(
             reverse("current_orders_list"),
-            {"status": STATUS_ON_HOLD, "q": "vip"},
+            {"status": STATUS_ON_HOLD},
         )
         self.assertEqual(response.status_code, 200)
         orders = list(response.context["orders"])
