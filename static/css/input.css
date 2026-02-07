@@ -2,16 +2,48 @@
 
 @theme {
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --color-primary: #0F766E;
+  --color-primary: #0D9488;
+  --color-primary-dark: #0F766E;
   --color-accent: #F59E0B;
   --color-background: #F8FAFC;
   --color-surface: #ffffff;
 }
 
-.order-link {
-  text-decoration: none;
-  color: #64748b;
-}
-.order-link:hover {
-  color: #334155;
+/* Form design system — one place for all form controls */
+@layer components {
+  .form-label {
+    @apply block text-sm font-medium text-slate-700 mb-1;
+  }
+  .form-error {
+    @apply mt-1 text-sm text-red-600;
+  }
+  .form-input {
+    @apply block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400;
+    @apply focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:ring-offset-0;
+    @apply transition-[border-color,box-shadow];
+  }
+  .form-select {
+    @apply block w-full rounded-md border border-slate-300 bg-white px-3 py-2 pr-8 text-sm text-slate-900;
+    @apply focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:ring-offset-0;
+    @apply transition-[border-color,box-shadow] appearance-none;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 0.5rem center;
+    background-repeat: no-repeat;
+    background-size: 1.25rem 1.25rem;
+  }
+  .form-textarea {
+    @apply block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 min-h-[88px] resize-y;
+    @apply focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:ring-offset-0;
+    @apply transition-[border-color,box-shadow];
+  }
+  .form-checkbox {
+    @apply h-4 w-4 rounded border border-slate-300 bg-white text-teal-600;
+    @apply focus:ring-2 focus:ring-teal-500/20 focus:ring-offset-0;
+  }
+  .form-card {
+    @apply overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm;
+  }
+  .form-card-body {
+    @apply p-5 sm:p-6;
+  }
 }

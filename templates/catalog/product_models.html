@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Моделі продуктів{% endblock %}
+
+{% block content %}
+
+<h1 class="text-lg font-semibold text-slate-900">Моделі продуктів</h1>
+
+{% include "partials/messages.html" %}
+
+<div class="mt-4 space-y-6">
+    <div class="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+        <ul class="divide-y divide-slate-100">
+            {% for model in models %}
+            <li class="px-4 py-2.5 text-sm text-slate-800">{{ model.name }}</li>
+            {% empty %}
+            <li class="px-4 py-6 text-center text-sm text-slate-500">Ще немає жодної моделі продукту.</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div class="overflow-hidden rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+        <h2 class="mb-4 text-sm font-semibold text-slate-900">Додати нову модель</h2>
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            <div>
+                <label for="id_name" class="form-label">Назва</label>
+                {{ form.name }}
+                {% if form.name.errors %}
+                <p class="form-error">{{ form.name.errors.0 }}</p>
+                {% endif %}
+            </div>
+            <button type="submit" class="rounded-md border border-transparent bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 transition-colors">
+                Додати модель
+            </button>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
