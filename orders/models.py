@@ -70,19 +70,11 @@ class Order(models.Model):
         db_index=True,
     )
 
-
     def get_status(self):
-        if self.current_status:
-            return self.current_status
-        latest_status = self.history.order_by('-changed_at').first()
-        return latest_status.new_status if latest_status else "Немає статусу"
+        return self.current_status
 
     def get_status_display(self):
-        current_status = self.get_status()
-        for value, label in STATUS_CHOICES:
-            if current_status == value:
-                return label
-        return "Невідомий статус"
+        return self.get_current_status_display()
 
 
     def __str__(self):

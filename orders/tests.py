@@ -6,6 +6,8 @@ from datetime import datetime, timezone as dt_timezone
 from typing import Optional
 from unittest.mock import patch
 
+from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 
@@ -395,3 +397,31 @@ class DelayedNotificationsAdapterTests(TestCase):
             DelayedNotificationLog.objects.filter(user=self.user, order=self.order).count(),
             1,
         )
+
+
+class OrderModelStatusTests(TestCase):
+    def test_get_status_uses_current_status(self):
+        model = ProductModel.objects.create(name="Model D")
+        color = Color.objects.create(name="Black", code=4, availability_status="in_stock")
+        order = Order.objects.create(model=model, color=color, current_status=STATUS_NEW)
+        OrderStatusHistory.objects.create(order=order, changed_by=None, new_status=STATUS_FINISHED)
+
+        self.assertEqual(order.get_status(), STATUS_NEW)
+
+
+class CurrentOrdersViewTests(TestCase):
+    def setUp(self) -> None:
+        self.user = CustomUser.objects.create_user(username="planner", password="pass12345")
+        self.client.force_login(self.user)
+
+    def test_transition_map_present_in_page(self):
+        response = self.client.get(reverse("current_orders_list"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "transition-map-data")
+
+
+class HealthcheckCommandTests(TestCase):
+    @patch.dict(os.environ, {}, clear=True)
+    def test_healthcheck_requires_tokens_when_flag_enabled(self):
+        with self.assertRaises(CommandError):
+            call_command("healthcheck_app", "--require-telegram-token")
