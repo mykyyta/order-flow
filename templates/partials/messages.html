@@ -1,0 +1,8 @@
+{% load order_ui %}
+{% if messages %}
+    <div class="mb-3">
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags|message_alert_class }}" role="alert">{{ message }}</div>
+        {% endfor %}
+    </div>
+{% endif %}
