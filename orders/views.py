@@ -1,7 +1,12 @@
 import os
 import secrets
+from functools import wraps
+
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.password_validation import validate_password
 from django.core.paginator import Paginator
+from django.core.exceptions import ValidationError
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.views import View
@@ -29,11 +34,7 @@ def _validate_internal_token(request):
     if not expected:
         return False, "token not configured"
 
-    provided = (
-        request.headers.get("X-Internal-Token")
-        or request.GET.get("token")
-        or request.POST.get("token")
-    )
+    provided = request.headers.get("X-Internal-Token")
     if not provided:
         return False, "token missing"
 
@@ -61,6 +62,7 @@ def _get_delayed_notification_service() -> DelayedNotificationService:
 
 
 def custom_login_required(view_func):
+    @wraps(view_func)
     def wrapper(request, *args, **kwargs):
         if not request.user.is_authenticated:
             return redirect('auth_login')
@@ -76,22 +78,22 @@ def auth_login(request):
         return redirect('index')
 
     if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
+        username = (request.POST.get('username') or '').strip()
+        password = request.POST.get('password') or ''
 
         if not username or not password:
-            return JsonResponse({'message': 'Username and password are required'}, status=400)
+            messages.error(request, "Вкажіть ім'я користувача і пароль.")
+            return render(request, 'login.html', {'username': username}, status=400)
 
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
 
             return redirect('index')
-        else:
-            return JsonResponse({'message': 'Invalid credentials'}, status=401)
+        messages.error(request, 'Невірні облікові дані.')
+        return render(request, 'login.html', {'username': username}, status=401)
 
-    else:
-        return render(request, 'login.html')
+    return render(request, 'login.html', {'username': ''})
 
 
 def auth_logout(request):
@@ -219,7 +221,8 @@ def order_detail(request, order_id):
 
 
 
-class ProductModelListCreateView(View):
+class ProductModelListCreateView(LoginRequiredMixin, View):
+    login_url = reverse_lazy("auth_login")
     template_name = 'model_list_create.html'
 
     def get(self, request, *args, **kwargs):
@@ -237,7 +240,8 @@ class ProductModelListCreateView(View):
 
 
 
-class ColorListCreateView(ListView):
+class ColorListCreateView(LoginRequiredMixin, ListView):
+    login_url = reverse_lazy("auth_login")
     model = Color
     template_name = 'color_list_create.html'
     context_object_name = 'colors'
@@ -265,7 +269,8 @@ class ColorListCreateView(ListView):
             return redirect('color_list')
         return self.get(request, *args, **kwargs)
 
-class ColorDetailUpdateView(UpdateView):
+class ColorDetailUpdateView(LoginRequiredMixin, UpdateView):
+    login_url = reverse_lazy("auth_login")
     model = Color
     form_class = ColorForm
     template_name = 'color_detail_update.html'
@@ -327,6 +332,13 @@ def change_password(request):
 
         if not request.user.check_password(current_password):
             messages.error(request, 'Поточний пароль невірний.')
+            return redirect('change_password')
+
+        try:
+            validate_password(new_password, request.user)
+        except ValidationError as exc:
+            for error in exc.messages:
+                messages.error(request, error)
             return redirect('change_password')
 
         request.user.set_password(new_password)

@@ -11,10 +11,7 @@
         <ul class="list-group list-group-flush">
             {% for model in models %}
                 <li class="list-group-item">
-                    <a href="/product/{{ model.id }}/" class="text-decoration-none"
-                       style="color: inherit;">
-                        {{ model.name }}
-                    </a>
+                    {{ model.name }}
                 </li>
             {% empty %}
                 <li class="list-group-item">Ще немає жодної моделі продукту.</li>

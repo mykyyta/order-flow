@@ -114,3 +114,25 @@ class NotificationSetting(models.Model):
     notify_order_created = models.BooleanField(default=True)
     notify_order_finished = models.BooleanField(default=True)
     notify_order_created_pause = models.BooleanField(default=True)
+
+
+class DelayedNotificationLog(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="delayed_notification_logs",
+    )
+    order = models.ForeignKey(
+        Order,
+        on_delete=models.CASCADE,
+        related_name="delayed_notification_logs",
+    )
+    sent_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "order"],
+                name="orders_delayed_notification_user_order_uniq",
+            )
+        ]
