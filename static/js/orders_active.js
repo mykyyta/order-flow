@@ -10,6 +10,9 @@
         document.getElementById("select-all-orders"),
         document.getElementById("select-all-orders-mobile"),
     ].filter(Boolean);
+    var actionBar = document.getElementById("bulk-action-bar");
+    var actionSpacer = document.getElementById("bulk-action-spacer");
+    var selectedCount = document.getElementById("bulk-selected-count");
     var selectedLength = 0;
 
     if (!transitionDataEl || !bulkStatusForm || !select || !applyStatusButton || !clearSelectionButton) {
@@ -49,6 +52,9 @@
             .map(function (cb) { return cb.dataset.currentStatus; });
         var allowed = intersectSets(selectedStatuses);
         selectedLength = selectedStatuses.length;
+        if (selectedCount) {
+            selectedCount.textContent = String(selectedLength);
+        }
 
         options.forEach(function (option) {
             option.disabled = !allowed.has(option.value);
@@ -57,6 +63,17 @@
         applyStatusButton.disabled = selectedLength === 0;
         clearSelectionButton.disabled = selectedLength === 0;
         syncSelectAll();
+
+        // Mobile-first: show the fixed bottom bar only when there is a selection.
+        // Desktop stays visible because of responsive `sm:*` classes.
+        if (actionBar) {
+            if (selectedLength > 0) actionBar.classList.remove("hidden");
+            else actionBar.classList.add("hidden");
+        }
+        if (actionSpacer) {
+            if (selectedLength > 0) actionSpacer.classList.remove("hidden");
+            else actionSpacer.classList.add("hidden");
+        }
 
         if (options.every(function (option) { return option.disabled; })) {
             hint.textContent = "Немає спільного дозволеного переходу для обраних замовлень.";
@@ -91,20 +108,58 @@
         updateAllowedTransitions();
     });
 
+    var modal = document.getElementById("bulk-status-confirm-modal");
+    var modalMessage = modal ? document.getElementById("bulk-status-confirm-modal-message") : null;
+    var modalConfirm = modal ? modal.querySelector(".js-modal-confirm") : null;
+    var modalCancel = modal ? modal.querySelector(".js-modal-cancel") : null;
+    var pendingSubmit = false;
+
+    function closeModal() {
+        if (modal) {
+            modal.setAttribute("aria-hidden", "true");
+            modal.classList.add("hidden");
+        }
+    }
+    function openModal(message) {
+        if (modal && modalMessage) {
+            modalMessage.textContent = message;
+            modal.setAttribute("aria-hidden", "false");
+            modal.classList.remove("hidden");
+        }
+    }
+
+    if (modal) {
+        modal.addEventListener("click", function (e) {
+            if (e.target === modal) closeModal();
+        });
+        if (modalCancel) modalCancel.addEventListener("click", closeModal);
+        if (modalConfirm) {
+            modalConfirm.addEventListener("click", function () {
+                pendingSubmit = true;
+                closeModal();
+                bulkStatusForm.submit();
+            });
+        }
+        document.addEventListener("keydown", function (e) {
+            if (e.key === "Escape" && modal.getAttribute("aria-hidden") === "false") closeModal();
+        });
+    }
+
     bulkStatusForm.addEventListener("submit", function (event) {
         if (selectedLength === 0) {
             event.preventDefault();
             return;
         }
+        if (pendingSubmit) {
+            pendingSubmit = false;
+            return;
+        }
+        event.preventDefault();
         var selectedStatusLabel = select.selectedOptions[0]
             ? select.selectedOptions[0].textContent.trim()
             : "";
-        var confirmed = window.confirm(
-            'Змінити статус на "' + selectedStatusLabel + '" для ' + selectedLength + " замовлень?"
-        );
-        if (!confirmed) {
-            event.preventDefault();
-        }
+        var message = 'Змінити статус на "' + selectedStatusLabel + '" для ' + selectedLength + " замовлень?";
+        openModal(message);
     });
 
     updateAllowedTransitions();
