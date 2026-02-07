@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Створити нове замовлення{% endblock %}
+{% block title %}Редагувати замовлення #{{ order.id }}{% endblock %}
 
 {% block content %}
 
@@ -10,7 +10,7 @@
 <div class="mx-auto max-w-xl">
     <div class="card">
         <div class="form-card-body">
-            <form method="post" action="{% url 'orders_create' %}">
+            <form method="post" action="{% url 'order_edit' order.id %}">
                 {% csrf_token %}
 
                 <div class="space-y-4">
@@ -50,10 +50,9 @@
                         {% if form.comment.errors %}<p class="form-error">{{ form.comment.errors.0 }}</p>{% endif %}
                     </div>
 
-                    <div class="pt-1">
-                        <button type="submit" class="btn-primary w-full min-h-[44px]">
-                            Створити
-                        </button>
+                    <div class="flex flex-wrap items-center gap-3 pt-1">
+                        <button type="submit" class="btn-primary">Оновити</button>
+                        <a href="{% url 'order_detail' order.id %}" class="btn-secondary">Скасувати</a>
                     </div>
                 </div>
             </form>
@@ -61,12 +60,8 @@
     </div>
 
     <div class="mt-4">
-        <a href="{% url 'orders_active' %}" class="link-back">&larr; До поточних замовлень</a>
+        <a href="{% url 'order_detail' order.id %}" class="link-back">&larr; До замовлення #{{ order.id }}</a>
     </div>
 </div>
 
-{% endblock %}
-
-{% block extra_js %}
-<script src="{% static 'js/orders_create.js' %}"></script>
 {% endblock %}

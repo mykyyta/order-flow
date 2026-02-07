@@ -309,8 +309,41 @@ def order_detail(request, order_id):
         ]
     }
 
-    return render(request, "orders/detail.html", {"order": order_data, "page_title": f"Замовлення #{order.id}"})
+    return render(
+        request,
+        "orders/detail.html",
+        {
+            "order": order_data,
+            "page_title": f"Замовлення #{order.id}",
+            "order_edit_url": reverse("order_edit", args=[order.id]),
+        },
+    )
 
+
+@custom_login_required
+def order_edit(request, order_id):
+    order = get_object_or_404(Order, id=order_id)
+    if request.method == "POST":
+        form = OrderForm(request.POST, instance=order)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Замовлення оновлено.")
+            return redirect("order_detail", order_id=order.id)
+    else:
+        form = OrderForm(instance=order)
+    # Ensure current order color stays in dropdown even if out_of_stock
+    form.fields["color"].queryset = Color.objects.filter(
+        Q(availability_status__in=["in_stock", "low_stock"]) | Q(pk=order.color_id)
+    )
+    return render(
+        request,
+        "orders/order_edit.html",
+        {
+            "form": form,
+            "order": order,
+            "page_title": f"Редагувати замовлення #{order.id}",
+        },
+    )
 
 
 class ProductModelListCreateView(LoginRequiredMixin, View):

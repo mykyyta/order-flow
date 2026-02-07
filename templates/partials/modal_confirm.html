@@ -1,0 +1,14 @@
+{% comment %}
+Reusable confirmation modal. Pass: id, title, confirm_label, cancel_label.
+Set message via JS on the element with id="{{ id }}-message".
+{% endcomment %}
+<div id="{{ id }}" class="modal-overlay hidden" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="{{ id }}-title">
+  <div class="modal-panel" role="document">
+    <h2 id="{{ id }}-title" class="modal-title">{{ title }}</h2>
+    <p id="{{ id }}-message" class="modal-message"></p>
+    <div class="modal-actions">
+      <button type="button" class="btn-primary js-modal-confirm">{{ confirm_label }}</button>
+      <button type="button" class="btn-secondary js-modal-cancel">{{ cancel_label }}</button>
+    </div>
+  </div>
+</div>
