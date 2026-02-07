@@ -1,0 +1,24 @@
+{% load order_ui %}
+<div class="grid grid-cols-1 md:grid-cols-[56px_1fr_1fr] gap-2 p-4 md:gap-4 md:py-3 bg-white border border-slate-200 rounded-lg md:rounded-none md:border-0 md:border-b md:border-slate-200 hover:bg-slate-50 md:hover:bg-slate-50/50">
+    <div class="flex items-center">
+        <label class="md:sr-only text-xs text-slate-500 md:hidden">Вибір</label>
+        <input class="h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500 js-order-checkbox" type="checkbox" name="orders" value="{{ order.id }}" data-current-status="{{ order.current_status }}">
+    </div>
+    <div>
+        <span class="md:hidden block text-xs font-medium text-slate-500 uppercase mb-1">Модель та Колір</span>
+        <a href="{% url 'order_detail' order.id %}" class="order-link">{{ order.model.name }} - {{ order.color.name }}</a>
+    </div>
+    <div>
+        <span class="md:hidden block text-xs font-medium text-slate-500 uppercase mb-1">Статус та мітки</span>
+        {% include "partials/status_badge.html" with status_value=order.current_status label=order.get_current_status_display %}
+        {% if order.etsy %}
+        <span class="ml-1 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-slate-100 text-slate-700">Е</span>
+        {% endif %}
+        {% if order.embroidery %}
+        <span class="ml-1 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-800">В</span>
+        {% endif %}
+        {% if order.urgent %}
+        <span class="ml-1 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-red-100 text-red-700">Т</span>
+        {% endif %}
+    </div>
+</div>
