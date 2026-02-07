@@ -6,7 +6,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.views import View
 from django.views.generic import ListView, UpdateView
-from .models import ProductModel, Color, Order, NotificationSetting, STATUS_CHOICES
+from .models import ProductModel, Color, Order, STATUS_CHOICES
 from .forms import ProductModelForm, ColorForm, OrderStatusUpdateForm
 from orders.forms import OrderForm
 from orders.models import OrderStatusHistory
