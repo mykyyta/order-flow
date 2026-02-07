@@ -17,6 +17,7 @@ from orders.forms import OrderForm
 from orders.models import OrderStatusHistory
 from django.urls import reverse_lazy
 from django.db import models, transaction
+from django.db.models import Q
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.timezone import localtime
@@ -103,8 +104,38 @@ def auth_logout(request):
 
 @custom_login_required
 def current_orders_list(request):
+    status_options = [
+        (value, label)
+        for value, label in STATUS_CHOICES
+        if value != STATUS_FINISHED
+    ]
+    status_values = {value for value, _ in status_options}
+    search_query = (request.GET.get("q") or "").strip()
+    status_filter = (request.GET.get("status") or "").strip()
+
+    orders_queryset = (
+        Order.objects.select_related("model", "color")
+        .exclude(current_status=STATUS_FINISHED)
+        .order_by("-created_at", "-id")
+    )
+    if search_query:
+        search_filters = (
+            Q(model__name__icontains=search_query)
+            | Q(color__name__icontains=search_query)
+            | Q(comment__icontains=search_query)
+        )
+        if search_query.isdigit():
+            search_filters |= Q(id=int(search_query))
+        orders_queryset = orders_queryset.filter(search_filters)
+
+    if status_filter in status_values:
+        orders_queryset = orders_queryset.filter(current_status=status_filter)
+    else:
+        status_filter = ""
+
     if request.method == "POST":
         form = OrderStatusUpdateForm(request.POST)
+        form.fields["orders"].queryset = orders_queryset
         if form.is_valid():
             selected_orders = form.cleaned_data['orders']
             new_status = form.cleaned_data['new_status']
@@ -134,25 +165,29 @@ def current_orders_list(request):
             return redirect("current_orders_list")
         else:
             messages.error(request, "Виникла помилка. Зробіть ще одну спробу.")
-
-
-    orders_queryset = (
-        Order.objects.select_related("model", "color")
-        .exclude(current_status=STATUS_FINISHED)
-    )
     form = OrderStatusUpdateForm()
     form.fields['orders'].queryset = orders_queryset
     transition_map = {
         status: sorted(get_allowed_transitions(status))
         for status, _label in STATUS_CHOICES
     }
-
+    paginator = Paginator(orders_queryset, 20)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+    query_params = request.GET.copy()
+    query_params.pop("page", None)
+    query_string = query_params.urlencode()
 
     return render(request,
                   "current_orders_list.html",
                     {
                         "form": form,
-                        "orders": orders_queryset,
+                        "orders": page_obj.object_list,
+                        "page_obj": page_obj,
+                        "search_query": search_query,
+                        "status_filter": status_filter,
+                        "status_options": status_options,
+                        "query_string": query_string,
                         "transition_map": transition_map,
                              }
                 )
