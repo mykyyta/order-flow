@@ -106,10 +106,6 @@ def custom_login_required(view_func):
         return view_func(request, *args, **kwargs)
     return wrapper
 
-@custom_login_required
-def index(request):
-    return redirect("orders_active")
-
 def auth_login(request):
     if request.user.is_authenticated:
         return redirect('index')
@@ -120,7 +116,7 @@ def auth_login(request):
 
         if not username or not password:
             messages.error(request, "Вкажіть ім'я користувача і пароль.")
-            return render(request, 'login.html', {'username': username}, status=400)
+            return render(request, "account/login.html", {"username": username}, status=400)
 
         user = authenticate(request, username=username, password=password)
         if user is not None:
@@ -128,9 +124,9 @@ def auth_login(request):
 
             return redirect('index')
         messages.error(request, 'Невірні облікові дані.')
-        return render(request, 'login.html', {'username': username}, status=401)
+        return render(request, "account/login.html", {"username": username}, status=401)
 
-    return render(request, 'login.html', {'username': ''})
+    return render(request, "account/login.html", {"username": ""})
 
 
 @require_POST
@@ -147,7 +143,7 @@ def orders_active(request):
 
     form = OrderStatusUpdateForm()
     form.fields["orders"].queryset = orders_queryset
-    paginator = Paginator(orders_queryset, 20)
+    paginator = Paginator(orders_queryset, 50)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
     query_params = request.GET.copy()
@@ -317,66 +313,66 @@ def order_detail(request, order_id):
 
 class ProductModelListCreateView(LoginRequiredMixin, View):
     login_url = reverse_lazy("auth_login")
-    template_name = 'model_list_create.html'
+    template_name = "catalog/product_models.html"
 
     def get(self, request, *args, **kwargs):
         models = ProductModel.objects.all()
         form = ProductModelForm()
-        return render(request, self.template_name, {'models': models, 'form': form})
+        return render(request, self.template_name, {"models": models, "form": form})
 
     def post(self, request, *args, **kwargs):
         form = ProductModelForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect(reverse_lazy('model_list'))
+            return redirect(reverse_lazy("product_models"))
         models = ProductModel.objects.all()
-        return render(request, self.template_name, {'models': models, 'form': form})
+        return render(request, self.template_name, {"models": models, "form": form})
 
 
 
 class ColorListCreateView(LoginRequiredMixin, ListView):
     login_url = reverse_lazy("auth_login")
     model = Color
-    template_name = 'color_list_create.html'
-    context_object_name = 'colors'
+    template_name = "catalog/colors.html"
+    context_object_name = "colors"
 
     def get_queryset(self):
         return Color.objects.order_by(
             models.Case(
-                models.When(availability_status='out_of_stock', then=2),
-                models.When(availability_status='low_stock', then=1),
-                models.When(availability_status='in_stock', then=0),
+                models.When(availability_status="out_of_stock", then=2),
+                models.When(availability_status="low_stock", then=1),
+                models.When(availability_status="in_stock", then=0),
                 default=3,
-                output_field=models.IntegerField()
+                output_field=models.IntegerField(),
             )
         )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['color_form'] = ColorForm()
+        context["color_form"] = ColorForm()
         return context
 
     def post(self, request, *args, **kwargs):
         form = ColorForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('color_list')
+            return redirect("colors")
         return self.get(request, *args, **kwargs)
 
 class ColorDetailUpdateView(LoginRequiredMixin, UpdateView):
     login_url = reverse_lazy("auth_login")
     model = Color
     form_class = ColorForm
-    template_name = 'color_detail_update.html'
-    context_object_name = 'color'
+    template_name = "catalog/color_edit.html"
+    context_object_name = "color"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['color'] = self.object
+        context["color"] = self.object
         return context
 
     def get_success_url(self):
-        return reverse_lazy('color_detail_update', kwargs={'pk': self.object.pk})
+        return reverse_lazy("color_edit", kwargs={"pk": self.object.pk})
 
 @custom_login_required
 def profile_view(request):
@@ -404,7 +400,7 @@ def profile_view(request):
 
         return redirect('profile')
 
-    return render(request, 'profile.html', {'user': user})
+    return render(request, "account/profile.html", {"user": user})
 
 @custom_login_required
 def notification_settings(request):
@@ -419,7 +415,7 @@ def notification_settings(request):
 
         return redirect('notification_settings')
 
-    return render(request, 'notification_settings.html', {'settings': settings})
+    return render(request, "account/notification_settings.html", {"settings": settings})
 
 
 @custom_login_required
@@ -456,7 +452,7 @@ def change_password(request):
         messages.success(request, 'Пароль успішно змінено.')
         return redirect('profile')
 
-    return render(request, 'change_password.html')
+    return render(request, "account/change_password.html")
 
 
 @csrf_exempt

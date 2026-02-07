@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}Кольори{% endblock %}
+
+{% block content %}
+
+<h1 class="text-lg font-semibold text-slate-900">Кольори</h1>
+
+{% include "partials/messages.html" %}
+
+<div class="mt-4 space-y-6">
+    <div class="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+        <ul class="divide-y divide-slate-100">
+            {% for color in colors %}
+            <li class="px-4 py-2.5">
+                <a href="{% url 'color_edit' color.id %}" class="text-sm font-medium transition-colors {% if color.availability_status == 'out_of_stock' %}text-rose-600 hover:text-rose-700{% elif color.availability_status == 'low_stock' %}text-amber-600 hover:text-amber-700{% else %}text-emerald-600 hover:text-emerald-700{% endif %}">
+                    {{ color.name }} ({{ color.code }})
+                </a>
+            </li>
+            {% empty %}
+            <li class="px-4 py-6 text-center text-sm text-slate-500">Ще немає жодного кольору.</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div class="overflow-hidden rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+        <h2 class="mb-4 text-sm font-semibold text-slate-900">Додати новий колір</h2>
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            <div>
+                <label for="id_name" class="form-label">Назва</label>
+                {{ color_form.name }}
+                {% if color_form.name.errors %}
+                <p class="form-error">{{ color_form.name.errors.0 }}</p>
+                {% endif %}
+            </div>
+            <div>
+                <label for="id_code" class="form-label">Код</label>
+                {{ color_form.code }}
+                {% if color_form.code.errors %}
+                <p class="form-error">{{ color_form.code.errors.0 }}</p>
+                {% endif %}
+            </div>
+            <div>
+                <label for="id_availability_status" class="form-label">Наявність</label>
+                {{ color_form.availability_status }}
+                {% if color_form.availability_status.errors %}
+                <p class="form-error">{{ color_form.availability_status.errors.0 }}</p>
+                {% endif %}
+            </div>
+            <button type="submit" class="rounded-md border border-transparent bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 transition-colors">
+                Додати
+            </button>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

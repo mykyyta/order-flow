@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Профіль{% endblock %}
+
+{% block content %}
+
+<h1 class="text-lg font-semibold text-slate-900">Профіль користувача</h1>
+
+{% include "partials/messages.html" %}
+
+<div class="mt-4 max-w-xl">
+    <form method="post" id="profileForm" class="space-y-4">
+        {% csrf_token %}
+        <div>
+            <label for="username" class="form-label">Ім'я користувача</label>
+            <input type="text" id="username" name="username" value="{{ user.username }}" required class="form-input">
+        </div>
+        <button type="submit" id="saveButton" disabled class="rounded-md border border-transparent bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+            Зберегти зміни
+        </button>
+    </form>
+
+    <div class="mt-6 flex flex-wrap gap-3 border-t border-slate-200 pt-6">
+        <a href="{% url 'change_password' %}" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 transition-colors">
+            Змінити пароль
+        </a>
+        <a href="{% url 'notification_settings' %}" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 transition-colors">
+            Налаштування сповіщень
+        </a>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/profile.js' %}"></script>
+{% endblock %}

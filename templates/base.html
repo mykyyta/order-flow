@@ -6,37 +6,60 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}OrderFlow{% endblock %}</title>
     <link href="{% static 'css/app.css' %}" rel="stylesheet">
-    <!-- Bootstrap 5 CSS (тимчасово, до Phase 4) -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     {% block extra_head %}{% endblock %}
 </head>
-<body class="bg-slate-50 font-sans text-slate-900 antialiased">
+<body class="bg-slate-50 font-sans text-slate-800 antialiased">
     {% if request.user.is_authenticated %}
     {% with current_url=request.resolver_match.url_name %}
     <nav class="bg-white border-b border-slate-200">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div class="flex h-14 items-center justify-between">
-                <a href="{% url 'index' %}" class="text-lg font-medium text-teal-700 hover:text-teal-800">OrderFlow</a>
-                <button type="button" id="nav-toggle" class="inline-flex items-center justify-center rounded-md p-2 text-slate-600 hover:bg-slate-100 md:hidden" aria-expanded="false" aria-controls="nav-menu">
-                    <span class="sr-only">Меню</span>
-                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
-                </button>
-                <div id="nav-menu" class="hidden md:flex md:items-center md:gap-1">
-                    <div class="flex flex-col gap-1 py-2 md:flex-row md:py-0">
-                        <a href="{% url 'orders_create' %}" class="rounded-md px-3 py-2 text-sm font-medium {% if current_url == 'orders_create' %}bg-teal-50 text-teal-700{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}" {% if current_url == 'orders_create' %}aria-current="page"{% endif %}>Нове замовлення</a>
-                        <a href="{% url 'orders_completed' %}" class="rounded-md px-3 py-2 text-sm font-medium {% if current_url == 'orders_completed' %}bg-teal-50 text-teal-700{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}" {% if current_url == 'orders_completed' %}aria-current="page"{% endif %}>Готові</a>
-                        <a href="{% url 'orders_active' %}" class="rounded-md px-3 py-2 text-sm font-medium {% if current_url == 'orders_active' %}bg-teal-50 text-teal-700{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}" {% if current_url == 'orders_active' %}aria-current="page"{% endif %}>Поточні</a>
-                        <a href="{% url 'model_list' %}" class="rounded-md px-3 py-2 text-sm font-medium {% if current_url == 'model_list' %}bg-teal-50 text-teal-700{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}" {% if current_url == 'model_list' %}aria-current="page"{% endif %}>Моделі</a>
-                        <a href="{% url 'color_list' %}" class="rounded-md px-3 py-2 text-sm font-medium {% if current_url == 'color_list' %}bg-teal-50 text-teal-700{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}" {% if current_url == 'color_list' %}aria-current="page"{% endif %}>Кольори</a>
-                    </div>
-                    <div class="flex flex-col gap-1 border-t border-slate-200 pt-2 md:ml-auto md:flex-row md:border-0 md:pt-0">
-                        <a href="{% url 'profile' %}" class="rounded-md px-3 py-2 text-sm font-medium {% if current_url == 'profile' or current_url == 'change_password' or current_url == 'notification_settings' %}bg-teal-50 text-teal-700{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}" {% if current_url == 'profile' or current_url == 'change_password' or current_url == 'notification_settings' %}aria-current="page"{% endif %}>Профіль</a>
-                        <form method="post" action="{% url 'auth_logout' %}" class="m-0 p-0">
-                            {% csrf_token %}
-                            <button type="submit" class="min-h-[44px] min-w-[44px] rounded-md px-3 py-2 text-left text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 md:min-w-0">Вийти</button>
-                        </form>
-                    </div>
+                <a href="{% url 'index' %}" class="text-lg font-semibold tracking-tight text-teal-600">OrderFlow</a>
+
+                <!-- Desktop navigation -->
+                <div class="hidden md:flex md:items-center md:gap-0.5">
+                    <a href="{% url 'orders_active' %}" class="rounded-md px-3 py-1.5 text-sm font-medium transition-colors {% if current_url == 'orders_active' or current_url == 'index' %}bg-teal-50 text-teal-700{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}" {% if current_url == 'orders_active' or current_url == 'index' %}aria-current="page"{% endif %}>Поточні</a>
+                    <a href="{% url 'orders_completed' %}" class="rounded-md px-3 py-1.5 text-sm font-medium transition-colors {% if current_url == 'orders_completed' %}bg-teal-50 text-teal-700{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}" {% if current_url == 'orders_completed' %}aria-current="page"{% endif %}>Готові</a>
+                    <a href="{% url 'product_models' %}" class="rounded-md px-3 py-1.5 text-sm font-medium transition-colors {% if current_url == 'product_models' %}bg-teal-50 text-teal-700{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}" {% if current_url == 'product_models' %}aria-current="page"{% endif %}>Моделі</a>
+                    <a href="{% url 'colors' %}" class="rounded-md px-3 py-1.5 text-sm font-medium transition-colors {% if current_url == 'colors' %}bg-teal-50 text-teal-700{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}" {% if current_url == 'colors' %}aria-current="page"{% endif %}>Кольори</a>
+
+                    <span class="mx-1.5 h-5 w-px bg-slate-200" aria-hidden="true"></span>
+
+                    <a href="{% url 'orders_create' %}" class="rounded-md bg-teal-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-teal-700 transition-colors">+ Нове</a>
+
+                    <span class="mx-1.5 h-5 w-px bg-slate-200" aria-hidden="true"></span>
+
+                    <a href="{% url 'profile' %}" class="rounded-md px-3 py-1.5 text-sm font-medium transition-colors {% if current_url == 'profile' or current_url == 'change_password' or current_url == 'notification_settings' %}bg-teal-50 text-teal-700{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}" {% if current_url == 'profile' or current_url == 'change_password' or current_url == 'notification_settings' %}aria-current="page"{% endif %}>Профіль</a>
+                    <form method="post" action="{% url 'auth_logout' %}" class="m-0">
+                        {% csrf_token %}
+                        <button type="submit" class="rounded-md px-3 py-1.5 text-sm font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors">Вийти</button>
+                    </form>
                 </div>
+
+                <!-- Mobile hamburger -->
+                <button type="button" id="nav-toggle" class="inline-flex items-center justify-center rounded-md p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 md:hidden" aria-expanded="false" aria-controls="nav-menu">
+                    <span class="sr-only">Меню</span>
+                    <svg id="icon-menu" class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                    <svg id="icon-close" class="hidden h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobile navigation panel (OUTSIDE the h-14 flex — no layout shift) -->
+        <div id="nav-menu" class="hidden border-t border-slate-100 md:hidden">
+            <div class="space-y-1 px-4 pb-3 pt-2 sm:px-6">
+                <a href="{% url 'orders_active' %}" class="block rounded-md px-3 py-2 text-sm font-medium transition-colors {% if current_url == 'orders_active' or current_url == 'index' %}bg-teal-50 text-teal-700{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}" {% if current_url == 'orders_active' or current_url == 'index' %}aria-current="page"{% endif %}>Поточні</a>
+                <a href="{% url 'orders_completed' %}" class="block rounded-md px-3 py-2 text-sm font-medium transition-colors {% if current_url == 'orders_completed' %}bg-teal-50 text-teal-700{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}" {% if current_url == 'orders_completed' %}aria-current="page"{% endif %}>Готові</a>
+                <a href="{% url 'product_models' %}" class="block rounded-md px-3 py-2 text-sm font-medium transition-colors {% if current_url == 'product_models' %}bg-teal-50 text-teal-700{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}" {% if current_url == 'product_models' %}aria-current="page"{% endif %}>Моделі</a>
+                <a href="{% url 'colors' %}" class="block rounded-md px-3 py-2 text-sm font-medium transition-colors {% if current_url == 'colors' %}bg-teal-50 text-teal-700{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}" {% if current_url == 'colors' %}aria-current="page"{% endif %}>Кольори</a>
+                <div class="my-2 border-t border-slate-100"></div>
+                <a href="{% url 'orders_create' %}" class="block rounded-md bg-teal-600 px-3 py-2 text-sm font-medium text-white hover:bg-teal-700 transition-colors {% if current_url == 'orders_create' %}ring-2 ring-teal-500/30{% endif %}">+ Нове замовлення</a>
+                <div class="my-2 border-t border-slate-100"></div>
+                <a href="{% url 'profile' %}" class="block rounded-md px-3 py-2 text-sm font-medium transition-colors {% if current_url == 'profile' or current_url == 'change_password' or current_url == 'notification_settings' %}bg-teal-50 text-teal-700{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}" {% if current_url == 'profile' or current_url == 'change_password' or current_url == 'notification_settings' %}aria-current="page"{% endif %}>Профіль</a>
+                <form method="post" action="{% url 'auth_logout' %}" class="m-0">
+                    {% csrf_token %}
+                    <button type="submit" class="block w-full rounded-md px-3 py-2 text-left text-sm font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors">Вийти</button>
+                </form>
             </div>
         </div>
     </nav>
@@ -45,8 +68,6 @@
     <main class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         {% block content %}{% endblock %}
     </main>
-    <!-- Bootstrap 5 JS (тимчасово, для форм і решти) -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{% static 'js/app.js' %}"></script>
     {% block extra_js %}{% endblock %}
 </body>

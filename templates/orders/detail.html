@@ -9,14 +9,11 @@
 {% include "partials/messages.html" %}
 
 <div class="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-    <div class="border-b border-slate-200 bg-slate-50 px-4 py-3">
-        <h1 class="text-lg font-semibold text-slate-900">Деталі замовлення</h1>
+    <div class="border-b border-slate-200 bg-slate-50/80 px-4 py-3">
+        <h1 class="text-lg font-semibold text-slate-900">Замовлення #{{ order.id }}</h1>
     </div>
     <div class="px-4 py-4">
-        <dl class="grid gap-3 sm:grid-cols-[minmax(0,auto)_1fr] sm:gap-x-4">
-            <dt class="text-sm font-medium text-slate-500">ID</dt>
-            <dd class="text-sm text-slate-900">{{ order.id }}</dd>
-
+        <dl class="grid gap-3 sm:grid-cols-[minmax(0,auto)_1fr] sm:gap-x-6">
             <dt class="text-sm font-medium text-slate-500">Модель</dt>
             <dd class="text-sm text-slate-900">{{ order.model }}</dd>
 
@@ -26,14 +23,14 @@
             <dt class="text-sm font-medium text-slate-500">Вишивка</dt>
             <dd class="text-sm text-slate-900">{{ order.embroidery|yesno:"Так,Ні" }}</dd>
 
-            <dt class="text-sm font-medium text-slate-500">Коментар</dt>
-            <dd class="text-sm text-slate-900">{{ order.comment|default:"-" }}</dd>
+            <dt class="text-sm font-medium text-slate-500">Etsy</dt>
+            <dd class="text-sm text-slate-900">{{ order.etsy|yesno:"Так,Ні" }}</dd>
 
             <dt class="text-sm font-medium text-slate-500">Терміново</dt>
             <dd class="text-sm text-slate-900">{{ order.urgent|yesno:"Так,Ні" }}</dd>
 
-            <dt class="text-sm font-medium text-slate-500">Etsy</dt>
-            <dd class="text-sm text-slate-900">{{ order.etsy|yesno:"Так,Ні" }}</dd>
+            <dt class="text-sm font-medium text-slate-500">Коментар</dt>
+            <dd class="text-sm text-slate-900">{{ order.comment|default:"-" }}</dd>
 
             <dt class="text-sm font-medium text-slate-500">Створено</dt>
             <dd class="text-sm text-slate-900">{{ order.created_at|date:"d.m.Y H:i" }}</dd>
@@ -41,33 +38,33 @@
             <dt class="text-sm font-medium text-slate-500">Закінчено</dt>
             <dd class="text-sm text-slate-900">{% if order.finished_at %}{{ order.finished_at|date:"d.m.Y H:i" }}{% else %}-{% endif %}</dd>
 
-            <dt class="text-sm font-medium text-slate-500">Поточний статус</dt>
+            <dt class="text-sm font-medium text-slate-500">Статус</dt>
             <dd>
-                {% include "partials/status_badge.html" with status_value=order.current_status_code label=order.current_status_display %}
+                {% status_indicator order.current_status_code order.current_status_display %}
             </dd>
         </dl>
     </div>
 </div>
 
 <div class="mt-6 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-    <div class="border-b border-slate-200 bg-slate-50 px-4 py-3">
-        <h2 class="text-lg font-semibold text-slate-900">Історія статусів</h2>
+    <div class="border-b border-slate-200 bg-slate-50/80 px-4 py-3">
+        <h2 class="text-sm font-semibold text-slate-900">Історія статусів</h2>
     </div>
     <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-slate-200">
-            <thead class="bg-slate-50">
+            <thead class="bg-slate-50/80">
                 <tr>
-                    <th scope="col" class="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Статус</th>
-                    <th scope="col" class="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Змінив</th>
-                    <th scope="col" class="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Час</th>
+                    <th scope="col" class="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-slate-400">Статус</th>
+                    <th scope="col" class="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-slate-400">Змінив</th>
+                    <th scope="col" class="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-slate-400">Час</th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-slate-200 bg-white">
+            <tbody class="divide-y divide-slate-100 bg-white">
                 {% for status in order.status_history %}
                 <tr>
                     <td class="whitespace-nowrap px-4 py-2 text-sm text-slate-900">{{ status.new_status_display }}</td>
-                    <td class="whitespace-nowrap px-4 py-2 text-sm text-slate-900">{{ status.changed_by }}</td>
-                    <td class="whitespace-nowrap px-4 py-2 text-sm text-slate-600">{{ status.changed_at|date:"d.m.Y H:i" }}</td>
+                    <td class="whitespace-nowrap px-4 py-2 text-sm text-slate-700">{{ status.changed_by }}</td>
+                    <td class="whitespace-nowrap px-4 py-2 text-sm text-slate-500">{{ status.changed_at|date:"d.m.Y H:i" }}</td>
                 </tr>
                 {% empty %}
                 <tr>
@@ -79,10 +76,8 @@
     </div>
 </div>
 
-<div class="mt-6">
-    <a href="{% url 'orders_active' %}" class="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2">
-        До поточних замовлень
-    </a>
+<div class="mt-4">
+    <a href="{% url 'orders_active' %}" class="text-sm font-medium text-teal-600 hover:text-teal-700 transition-colors">&larr; До поточних замовлень</a>
 </div>
 
 {% endblock %}

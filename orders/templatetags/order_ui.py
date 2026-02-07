@@ -2,20 +2,43 @@ from django import template
 
 register = template.Library()
 
+# ---------------------------------------------------------------------------
+# Status indicator: dot/icon + text (no background fill)
+# ---------------------------------------------------------------------------
+# Each status maps to:
+#   dot_class  – Tailwind class for the indicator color (bg-* for dots, text-* for SVG icons)
+#   icon       – "dot" (default), "pause" (on_hold), "check" (finished)
+#   text_class – Tailwind class for the label text color
+#
+# To add a new status, add one entry here. Zero template changes required.
+# ---------------------------------------------------------------------------
 
-@register.filter
-def status_badge_class(status_value: str) -> str:
-    base = "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
-    status_to_class = {
-        "new": "bg-emerald-100 text-emerald-700",
-        "embroidery": "bg-amber-100 text-amber-800",
-        "almost_finished": "bg-blue-100 text-blue-700",
-        "finished": "bg-slate-100 text-slate-600",
-        "on_hold": "bg-red-100 text-red-700",
+STATUS_CONFIG = {
+    "new":             {"dot_class": "bg-emerald-500", "icon": "dot",   "text_class": "text-slate-700"},
+    "embroidery":      {"dot_class": "bg-orange-500",  "icon": "dot",   "text_class": "text-slate-700"},
+    "almost_finished": {"dot_class": "bg-sky-500",     "icon": "dot",   "text_class": "text-slate-700"},
+    "on_hold":         {"dot_class": "text-rose-500",  "icon": "pause", "text_class": "text-slate-700"},
+    "finished":        {"dot_class": "text-slate-400", "icon": "check", "text_class": "text-slate-500"},
+}
+
+_DEFAULT_STATUS = {"dot_class": "bg-slate-400", "icon": "dot", "text_class": "text-slate-500"}
+
+
+@register.inclusion_tag("partials/status_indicator.html")
+def status_indicator(status_value, label=""):
+    """Render a status indicator: colored dot (or icon) + label text."""
+    config = STATUS_CONFIG.get(status_value, _DEFAULT_STATUS)
+    return {
+        "dot_class": config["dot_class"],
+        "icon": config["icon"],
+        "text_class": config["text_class"],
+        "label": label,
     }
-    colors = status_to_class.get(status_value, "bg-slate-100 text-slate-600")
-    return f"{base} {colors}"
 
+
+# ---------------------------------------------------------------------------
+# Message alerts (Django messages framework)
+# ---------------------------------------------------------------------------
 
 @register.filter
 def message_alert_class(message_tags: str) -> str:

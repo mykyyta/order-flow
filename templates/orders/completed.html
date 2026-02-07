@@ -8,52 +8,40 @@
 
 {% include "partials/messages.html" %}
 
-<div class="mb-4">
-    <a href="{% url 'orders_active' %}" class="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md border border-transparent bg-teal-700 px-4 py-2 text-sm font-medium text-white hover:bg-teal-800 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2">
-        Поточні замовлення
-    </a>
-</div>
-
-<form method="get" class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-2">
-    <div class="flex-1">
-        <label for="search-finished-orders" class="block text-sm font-medium text-slate-700">Пошук</label>
+<form method="get" class="mt-4 mb-3 flex flex-wrap items-center gap-2">
+    <div class="w-48 sm:w-64">
         <input
-            id="search-finished-orders"
             type="text"
             name="q"
             value="{{ search_query }}"
             placeholder="ID, модель, колір, коментар"
-            class="mt-1 block w-full rounded-md border border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm"
+            class="form-input"
         >
     </div>
-    <div class="flex gap-2">
-        <button type="submit" class="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md border border-teal-600 bg-white px-4 py-2 text-sm font-medium text-teal-700 hover:bg-teal-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2">
-            Знайти
-        </button>
-        <a href="{% url 'orders_completed' %}" class="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2">
-            Скинути
-        </a>
-    </div>
+    <button type="submit" class="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">Знайти</button>
+    {% if search_query %}
+    <a href="{% url 'orders_completed' %}" class="text-sm text-slate-500 hover:text-slate-700 transition-colors">Скинути</a>
+    {% endif %}
 </form>
 
-<div id="order-list" class="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+<div class="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
     <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-slate-200">
-            <thead class="bg-slate-50">
+            <thead class="bg-slate-50/80">
                 <tr>
-                    <th scope="col" class="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-slate-500">#</th>
-                    <th scope="col" class="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Модель та Колір</th>
-                    <th scope="col" class="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Дата завершення</th>
+                    <th scope="col" class="w-12 px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-slate-400">#</th>
+                    <th scope="col" class="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-slate-400">Замовлення</th>
+                    <th scope="col" class="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-slate-400">Завершено</th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-slate-200 bg-white">
+            <tbody class="divide-y divide-slate-100 bg-white">
                 {% for order in page_obj.object_list %}
-                <tr class="hover:bg-slate-50">
-                    <td class="whitespace-nowrap px-4 py-2 text-sm text-slate-600">{{ page_obj.start_index|add:forloop.counter0 }}</td>
-                    <td class="whitespace-nowrap px-4 py-2 text-sm">
-                        <a href="{% url 'order_detail' order.id %}" class="order-link">{{ order.model.name }} - {{ order.color.name }}</a>
+                <tr class="hover:bg-slate-50/80 transition-colors">
+                    <td class="whitespace-nowrap px-3 py-2 text-sm text-slate-400">{{ page_obj.start_index|add:forloop.counter0 }}</td>
+                    <td class="whitespace-nowrap px-3 py-2 text-sm">
+                        <a href="{% url 'order_detail' order.id %}" class="font-medium text-slate-800 hover:text-teal-600 transition-colors">{{ order.model.name }} — {{ order.color.name }}</a>
                     </td>
-                    <td class="whitespace-nowrap px-4 py-2 text-sm text-slate-600">{{ order.finished_at|date:"d.m.Y H:i" }}</td>
+                    <td class="whitespace-nowrap px-3 py-2 text-sm text-slate-500">{{ order.finished_at|date:"d.m.Y H:i" }}</td>
                 </tr>
                 {% empty %}
                 <tr>
@@ -68,40 +56,18 @@
 </div>
 
 {% if page_obj.paginator.num_pages > 1 %}
-<nav aria-label="Пагінація готових замовлень" class="mt-4 flex justify-center">
-    <ul class="inline-flex gap-1">
-        {% if page_obj.has_previous %}
-        <li>
-            <a href="?page={{ page_obj.previous_page_number }}{% if query_string %}&{{ query_string }}{% endif %}" class="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2">
-                Попередня
-            </a>
-        </li>
-        {% else %}
-        <li>
-            <span class="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-400">
-                Попередня
-            </span>
-        </li>
-        {% endif %}
-        <li>
-            <span class="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md border border-teal-200 bg-teal-50 px-3 py-2 text-sm font-medium text-teal-700">
-                {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
-            </span>
-        </li>
-        {% if page_obj.has_next %}
-        <li>
-            <a href="?page={{ page_obj.next_page_number }}{% if query_string %}&{{ query_string }}{% endif %}" class="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2">
-                Наступна
-            </a>
-        </li>
-        {% else %}
-        <li>
-            <span class="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-400">
-                Наступна
-            </span>
-        </li>
-        {% endif %}
-    </ul>
+<nav aria-label="Пагінація" class="mt-4 flex items-center justify-center gap-1">
+    {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}{% if query_string %}&{{ query_string }}{% endif %}" class="rounded-md border border-slate-300 bg-white px-2.5 py-1 text-sm text-slate-600 hover:bg-slate-50 transition-colors">&larr;</a>
+    {% else %}
+    <span class="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 text-sm text-slate-400">&larr;</span>
+    {% endif %}
+    <span class="px-3 text-sm text-slate-600">{{ page_obj.number }}<span class="text-slate-400"> / {{ page_obj.paginator.num_pages }}</span></span>
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}{% if query_string %}&{{ query_string }}{% endif %}" class="rounded-md border border-slate-300 bg-white px-2.5 py-1 text-sm text-slate-600 hover:bg-slate-50 transition-colors">&rarr;</a>
+    {% else %}
+    <span class="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 text-sm text-slate-400">&rarr;</span>
+    {% endif %}
 </nav>
 {% endif %}
 

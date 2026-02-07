@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Редагувати колір{% endblock %}
+
+{% block content %}
+
+<h1 class="text-lg font-semibold text-slate-900">Редагувати дані кольору</h1>
+
+{% include "partials/messages.html" %}
+
+<div class="mt-4 max-w-xl">
+    <form method="post" class="space-y-4">
+        {% csrf_token %}
+        <div>
+            <label for="id_name" class="form-label">Назва</label>
+            {{ form.name }}
+            {% if form.name.errors %}
+            <p class="form-error">{{ form.name.errors.0 }}</p>
+            {% endif %}
+        </div>
+        <div>
+            <label for="id_code" class="form-label">Код</label>
+            {{ form.code }}
+            {% if form.code.errors %}
+            <p class="form-error">{{ form.code.errors.0 }}</p>
+            {% endif %}
+        </div>
+        <div>
+            <label for="id_availability_status" class="form-label">Наявність</label>
+            {{ form.availability_status }}
+            {% if form.availability_status.errors %}
+            <p class="form-error">{{ form.availability_status.errors.0 }}</p>
+            {% endif %}
+        </div>
+        <div class="flex items-center gap-3">
+            <button type="submit" class="rounded-md border border-transparent bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 transition-colors">
+                Оновити
+            </button>
+            <a href="{% url 'colors' %}" class="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">Скасувати</a>
+        </div>
+    </form>
+</div>
+
+{% endblock %}
