@@ -159,5 +159,7 @@ variable "terraform_deployer_project_roles" {
     "roles/artifactregistry.admin",
     "roles/secretmanager.admin",
     "roles/iam.workloadIdentityPoolAdmin",
+    "roles/resourcemanager.projectIamAdmin",
+    "roles/storage.admin",
   ]
 }
