@@ -1,21 +1,12 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from OrderFlow import settings
-from orders.domain.status import (
-    STATUS_ALMOST_FINISHED,
-    STATUS_EMBROIDERY,
-    STATUS_FINISHED,
+from orders.domain.order_statuses import (
     STATUS_NEW,
-    STATUS_ON_HOLD,
+    status_choices,
 )
 
-STATUS_CHOICES = [
-    (STATUS_NEW, 'Нове'),
-    (STATUS_EMBROIDERY, 'На вишивці'),
-    (STATUS_ALMOST_FINISHED, 'Майже готове'),
-    (STATUS_FINISHED, 'Готове'),
-    (STATUS_ON_HOLD, 'Призупинено'),
-]
+STATUS_CHOICES = status_choices(include_legacy=True, include_terminal=True)
 
 
 class CustomUser(AbstractUser):

@@ -1,5 +1,6 @@
 from django import forms
-from .models import Order, OrderStatusHistory
+from orders.domain.order_statuses import status_choices
+from .models import Order
 from .models import Color, ProductModel
 
 # Design system: one class set for all form controls (see static/css/input.css)
@@ -64,6 +65,6 @@ class OrderStatusUpdateForm(forms.Form):
         label="Вибрати замовлення",
     )
     new_status = forms.ChoiceField(
-        choices=OrderStatusHistory.STATUS_CHOICES,
+        choices=status_choices(include_legacy=False, include_terminal=True),
         label="Новий статус",
     )

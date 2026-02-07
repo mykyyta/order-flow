@@ -17,6 +17,7 @@ from orders.application.notification_service import DelayedNotificationService
 from orders.application.order_service import OrderService
 from orders.adapters.orders_repository import DjangoOrderRepository
 from orders.domain.status import (
+    STATUS_DOING,
     STATUS_EMBROIDERY,
     STATUS_FINISHED,
     STATUS_NEW,
@@ -31,7 +32,7 @@ from orders.models import (
     OrderStatusHistory,
     ProductModel,
 )
-from orders.templatetags.order_ui import message_alert_class, status_badge_class
+from orders.templatetags.order_ui import message_alert_class
 
 
 @dataclass(eq=False)
@@ -191,14 +192,35 @@ class OrderServiceTests(SimpleTestCase):
             comment=None,
         )
         order.finished_at = self.fixed_now
+        self.repo.latest_status[order] = STATUS_NEW
+        order.current_status = STATUS_NEW
 
         self.service.change_status(
             orders=[order],
-            new_status=STATUS_NEW,
+            new_status=STATUS_DOING,
             changed_by="user",
         )
 
         self.assertIsNone(order.finished_at)
+
+    def test_change_status_rejects_return_to_new(self):
+        order = self.repo.create_order(
+            model="model",
+            color="color",
+            embroidery=False,
+            urgent=False,
+            etsy=False,
+            comment=None,
+        )
+        self.repo.latest_status[order] = STATUS_EMBROIDERY
+        order.current_status = STATUS_EMBROIDERY
+
+        with self.assertRaises(InvalidStatusTransition):
+            self.service.change_status(
+                orders=[order],
+                new_status=STATUS_NEW,
+                changed_by="user",
+            )
 
     def test_change_status_rejects_invalid_status(self):
         order = self.repo.create_order(
@@ -494,16 +516,11 @@ class OrderModelStatusTests(TestCase):
 
 
 class OrderUiTemplateFilterTests(SimpleTestCase):
-    def test_status_badge_class_mapping(self):
-        self.assertIn("bg-emerald-100", status_badge_class("new"))
-        self.assertIn("bg-red-100", status_badge_class("on_hold"))
-        self.assertIn("bg-slate-100", status_badge_class("unknown"))
-
     def test_message_alert_class_mapping(self):
-        self.assertIn("bg-red-50", message_alert_class("error"))
-        self.assertIn("bg-emerald-50", message_alert_class("success"))
-        self.assertIn("bg-amber-50", message_alert_class("warning extra"))
-        self.assertIn("bg-blue-50", message_alert_class("unknown"))
+        self.assertEqual(message_alert_class("error"), "alert alert-error")
+        self.assertEqual(message_alert_class("success"), "alert alert-success")
+        self.assertEqual(message_alert_class("warning extra"), "alert alert-warning")
+        self.assertEqual(message_alert_class("unknown"), "alert alert-info")
 
 
 class CurrentOrdersViewTests(TestCase):
@@ -644,7 +661,7 @@ class OrderDetailViewTests(TestCase):
         response = self.client.get(reverse("order_detail", kwargs={"order_id": order.id}))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "text-rose-500")
-        self.assertContains(response, "Призупинено")
+        self.assertContains(response, order.get_current_status_display())
 
 
 class HealthcheckCommandTests(TestCase):

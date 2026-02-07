@@ -1,17 +1,18 @@
 from __future__ import annotations
 
-STATUS_NEW = "new"
-STATUS_EMBROIDERY = "embroidery"
-STATUS_ALMOST_FINISHED = "almost_finished"
-STATUS_FINISHED = "finished"
-STATUS_ON_HOLD = "on_hold"
+from orders.domain.order_statuses import (
+    ACTIVE_STATUS_CODES,
+    STATUS_ALMOST_FINISHED,
+    STATUS_DECIDING,
+    STATUS_DOING,
+    STATUS_EMBROIDERY,
+    STATUS_FINISHED,
+    STATUS_NEW,
+    STATUS_ON_HOLD,
+)
 
 ALLOWED_STATUSES = {
-    STATUS_NEW,
-    STATUS_EMBROIDERY,
-    STATUS_ALMOST_FINISHED,
-    STATUS_FINISHED,
-    STATUS_ON_HOLD,
+    *ACTIVE_STATUS_CODES,
 }
 
 

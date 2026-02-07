@@ -32,23 +32,23 @@ from orders.adapters.orders_repository import DjangoOrderRepository
 from orders.application.exceptions import InvalidStatusTransition
 from orders.application.notification_service import DelayedNotificationService
 from orders.application.order_service import OrderService
+from orders.domain.order_statuses import (
+    status_choices,
+    status_label_map,
+    transition_map as build_transition_map,
+)
 from orders.domain.status import STATUS_FINISHED
-from orders.domain.transitions import get_allowed_transitions
 from orders.forms import OrderForm
 from orders.models import NotificationSetting, OrderStatusHistory
 
 from .forms import ColorForm, OrderStatusUpdateForm, ProductModelForm
-from .models import Color, Order, ProductModel, STATUS_CHOICES
+from .models import Color, Order, ProductModel
 
-STATUS_LABELS = dict(STATUS_CHOICES)
-CURRENT_STATUS_OPTIONS = tuple(
-    (value, label)
-    for value, label in STATUS_CHOICES
-    if value != STATUS_FINISHED
-)
+STATUS_LABELS = status_label_map(include_legacy=True)
+CURRENT_STATUS_OPTIONS = status_choices(include_legacy=False, include_terminal=False)
 TRANSITION_MAP = {
-    status: sorted(get_allowed_transitions(status))
-    for status, _label in STATUS_CHOICES
+    status: sorted(transitions)
+    for status, transitions in build_transition_map(include_legacy_current=True).items()
 }
 
 
@@ -116,7 +116,7 @@ def auth_login(request):
 
         if not username or not password:
             messages.error(request, "Вкажіть ім'я користувача і пароль.")
-            return render(request, "account/login.html", {"username": username}, status=400)
+            return render(request, "account/login.html", {"username": username, "page_title": "Вхід", "page_title_center": True}, status=400)
 
         user = authenticate(request, username=username, password=password)
         if user is not None:
@@ -124,9 +124,9 @@ def auth_login(request):
 
             return redirect('index')
         messages.error(request, 'Невірні облікові дані.')
-        return render(request, "account/login.html", {"username": username}, status=401)
+        return render(request, "account/login.html", {"username": username, "page_title": "Вхід", "page_title_center": True}, status=401)
 
-    return render(request, "account/login.html", {"username": ""})
+    return render(request, "account/login.html", {"username": "", "page_title": "Вхід", "page_title_center": True})
 
 
 @require_POST
@@ -154,6 +154,7 @@ def orders_active(request):
         request,
         "orders/active.html",
         {
+            "page_title": "Поточні замовлення",
             "form": form,
             "orders": page_obj.object_list,
             "page_obj": page_obj,
@@ -248,6 +249,7 @@ def orders_completed(request):
         request,
         "orders/completed.html",
         {
+            "page_title": "Готові замовлення",
             "page_obj": page_obj,
             "search_query": search_query,
             "query_string": query_string,
@@ -273,10 +275,10 @@ def orders_create(request):
                 orders_url=orders_url,
             )
             return redirect("orders_active")
-        return render(request, "orders/create.html", {"form": form})
+        return render(request, "orders/create.html", {"form": form, "page_title": "Нове замовлення", "page_title_center": True})
 
     form = OrderForm()
-    return render(request, "orders/create.html", {"form": form})
+    return render(request, "orders/create.html", {"form": form, "page_title": "Нове замовлення", "page_title_center": True})
 
 @custom_login_required
 def order_detail(request, order_id):
@@ -307,7 +309,7 @@ def order_detail(request, order_id):
         ]
     }
 
-    return render(request, "orders/detail.html", {"order": order_data})
+    return render(request, "orders/detail.html", {"order": order_data, "page_title": f"Замовлення #{order.id}"})
 
 
 
@@ -318,7 +320,7 @@ class ProductModelListCreateView(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
         models = ProductModel.objects.all()
         form = ProductModelForm()
-        return render(request, self.template_name, {"models": models, "form": form})
+        return render(request, self.template_name, {"page_title": "Моделі продуктів", "models": models, "form": form})
 
     def post(self, request, *args, **kwargs):
         form = ProductModelForm(request.POST)
@@ -326,7 +328,7 @@ class ProductModelListCreateView(LoginRequiredMixin, View):
             form.save()
             return redirect(reverse_lazy("product_models"))
         models = ProductModel.objects.all()
-        return render(request, self.template_name, {"models": models, "form": form})
+        return render(request, self.template_name, {"page_title": "Моделі продуктів", "models": models, "form": form})
 
 
 
@@ -349,6 +351,7 @@ class ColorListCreateView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context["page_title"] = "Кольори"
         context["color_form"] = ColorForm()
         return context
 
@@ -368,11 +371,16 @@ class ColorDetailUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context["page_title"] = "Редагувати дані кольору"
         context["color"] = self.object
         return context
 
+    def form_valid(self, form):
+        messages.success(self.request, "Дані кольору оновлено.")
+        return super().form_valid(form)
+
     def get_success_url(self):
-        return reverse_lazy("color_edit", kwargs={"pk": self.object.pk})
+        return reverse_lazy("colors")
 
 @custom_login_required
 def profile_view(request):
@@ -400,7 +408,7 @@ def profile_view(request):
 
         return redirect('profile')
 
-    return render(request, "account/profile.html", {"user": user})
+    return render(request, "account/profile.html", {"page_title": "Профіль користувача", "user": user})
 
 @custom_login_required
 def notification_settings(request):
@@ -415,7 +423,7 @@ def notification_settings(request):
 
         return redirect('notification_settings')
 
-    return render(request, "account/notification_settings.html", {"settings": settings})
+    return render(request, "account/notification_settings.html", {"page_title": "Налаштування сповіщень", "settings": settings})
 
 
 @custom_login_required
@@ -452,7 +460,7 @@ def change_password(request):
         messages.success(request, 'Пароль успішно змінено.')
         return redirect('profile')
 
-    return render(request, "account/change_password.html")
+    return render(request, "account/change_password.html", {"page_title": "Зміна пароля"})
 
 
 @csrf_exempt
