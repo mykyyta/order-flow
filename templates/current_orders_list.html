@@ -51,7 +51,11 @@
         <table class="table table-hover table-bordered align-middle text-small">
             <thead class="table-light">
                 <tr>
-                    <th scope="col" style="width: 56px;">#</th>
+                    <th scope="col" style="width: 56px;">
+                        <div class="form-check m-0">
+                            <input class="form-check-input" type="checkbox" id="select-all-orders">
+                        </div>
+                    </th>
                     <th scope="col">Модель та Колір</th>
                     <th scope="col">Статус та мітки</th>
                 </tr>
@@ -101,7 +105,10 @@
             <small class="text-muted" id="status-transition-hint"></small>
         </div>
         <div class="col-md-auto">
-            <button type="submit" class="btn btn-primary">Змінити статус</button>
+            <span class="badge text-bg-light border" id="selected-orders-count">Обрано: 0</span>
+        </div>
+        <div class="col-md-auto">
+            <button type="submit" class="btn btn-primary" id="apply-status-btn" disabled>Змінити статус</button>
         </div>
     </div>
 </form>
@@ -141,11 +148,14 @@
 <script>
     (function () {
         const transitionDataEl = document.getElementById("transition-map-data");
+        const selectAllCheckbox = document.getElementById("select-all-orders");
         const select = document.getElementById("new_status");
         const hint = document.getElementById("status-transition-hint");
+        const selectedCount = document.getElementById("selected-orders-count");
+        const applyStatusButton = document.getElementById("apply-status-btn");
         const checkboxes = Array.from(document.querySelectorAll(".js-order-checkbox"));
 
-        if (!transitionDataEl || !select || checkboxes.length === 0) {
+        if (!transitionDataEl || !select || !selectedCount || !applyStatusButton || checkboxes.length === 0) {
             return;
         }
 
@@ -192,11 +202,27 @@
                     select.value = firstEnabled.value;
                 }
             }
+
+            const selectedLength = selectedStatuses.length;
+            selectedCount.textContent = `Обрано: ${selectedLength}`;
+            applyStatusButton.disabled = selectedLength === 0;
+            if (selectAllCheckbox) {
+                selectAllCheckbox.checked = selectedLength > 0 && selectedLength === checkboxes.length;
+                selectAllCheckbox.indeterminate = selectedLength > 0 && selectedLength < checkboxes.length;
+            }
         }
 
         checkboxes.forEach((checkbox) => {
             checkbox.addEventListener("change", updateAllowedTransitions);
         });
+        if (selectAllCheckbox) {
+            selectAllCheckbox.addEventListener("change", function () {
+                checkboxes.forEach((checkbox) => {
+                    checkbox.checked = selectAllCheckbox.checked;
+                });
+                updateAllowedTransitions();
+            });
+        }
 
         updateAllowedTransitions();
     })();
