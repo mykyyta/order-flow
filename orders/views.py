@@ -224,7 +224,7 @@ def orders_bulk_status(request):
 
 
 @custom_login_required
-def finished_orders_list(request):
+def orders_completed(request):
     search_query = (request.GET.get("q") or "").strip()
     orders = (
         Order.objects.select_related("model", "color")
@@ -250,18 +250,18 @@ def finished_orders_list(request):
 
     return render(
         request,
-        'finished_orders_list.html',
+        "orders/completed.html",
         {
-            'page_obj': page_obj,
-            'search_query': search_query,
-            'query_string': query_string,
+            "page_obj": page_obj,
+            "search_query": search_query,
+            "query_string": query_string,
         },
     )
 
 
 @custom_login_required
-def order_create(request):
-    if request.method == 'POST':
+def orders_create(request):
+    if request.method == "POST":
         form = OrderForm(request.POST)
         if form.is_valid():
             service = _get_order_service()
@@ -277,10 +277,10 @@ def order_create(request):
                 orders_url=orders_url,
             )
             return redirect("orders_active")
-        return render(request, "order_create.html", {"form": form})
+        return render(request, "orders/create.html", {"form": form})
 
     form = OrderForm()
-    return render(request, 'order_create.html', {'form': form})
+    return render(request, "orders/create.html", {"form": form})
 
 @custom_login_required
 def order_detail(request, order_id):
@@ -311,7 +311,7 @@ def order_detail(request, order_id):
         ]
     }
 
-    return render(request, 'order_detail.html', {'order': order_data})
+    return render(request, "orders/detail.html", {"order": order_data})
 
 
 
