@@ -1,0 +1,2 @@
+bucket = "orderflow-terraform-state"
+prefix = "orderflow/prod"

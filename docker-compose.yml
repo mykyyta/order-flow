@@ -1,25 +1,42 @@
 services:
-  web:  # Django app (web service)
-    build:  # Build the Docker image
-      context: .  # Current directory
-      dockerfile: Dockerfile
-    volumes:  # Mount local files/folders inside the container
-      - .:/app
-    ports:  # Map container's port to host's port
-      - "8000:8000"
-    environment:  # Use environment variables, loaded from .env
-      - DEBUG=${DJANGO_DEBUG}
-      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
-      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
-      - PORT=8000
-    depends_on:
-      - db  # Make sure the database starts before Django
-
-  db:  # PostgreSQL database service
-    image: postgres:15  # Use the official PostgreSQL image
-    environment:  # Database environment variables from .env
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-orderflow_dev}
+      POSTGRES_USER: ${POSTGRES_USER:-orderflow_dev}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-orderflow_dev}
     ports:
-      - "5432:5432"  # Exposing DB port (optional for development)
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-orderflow_dev} -d ${POSTGRES_DB:-orderflow_dev}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    environment:
+      DJANGO_SETTINGS_MODULE: OrderFlow.settings.local
+      DJANGO_DEBUG: ${DJANGO_DEBUG:-1}
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-local-dev-insecure-secret-key}
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-orderflow_dev}
+      POSTGRES_USER: ${POSTGRES_USER:-orderflow_dev}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-orderflow_dev}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
