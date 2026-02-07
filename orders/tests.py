@@ -474,15 +474,15 @@ class OrderModelStatusTests(TestCase):
 
 class OrderUiTemplateFilterTests(SimpleTestCase):
     def test_status_badge_class_mapping(self):
-        self.assertEqual(status_badge_class("new"), "bg-success")
-        self.assertEqual(status_badge_class("on_hold"), "bg-secondary")
-        self.assertEqual(status_badge_class("unknown"), "bg-light text-dark")
+        self.assertIn("bg-emerald-100", status_badge_class("new"))
+        self.assertIn("bg-red-100", status_badge_class("on_hold"))
+        self.assertIn("bg-slate-100", status_badge_class("unknown"))
 
     def test_message_alert_class_mapping(self):
-        self.assertEqual(message_alert_class("error"), "danger")
-        self.assertEqual(message_alert_class("success"), "success")
-        self.assertEqual(message_alert_class("warning extra"), "warning")
-        self.assertEqual(message_alert_class("unknown"), "info")
+        self.assertIn("bg-red-50", message_alert_class("error"))
+        self.assertIn("bg-emerald-50", message_alert_class("success"))
+        self.assertIn("bg-amber-50", message_alert_class("warning extra"))
+        self.assertIn("bg-blue-50", message_alert_class("unknown"))
 
 
 class CurrentOrdersViewTests(TestCase):
@@ -622,7 +622,7 @@ class OrderDetailViewTests(TestCase):
 
         response = self.client.get(reverse("order_detail", kwargs={"order_id": order.id}))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "badge bg-secondary")
+        self.assertContains(response, "bg-red-100 text-red-700")
         self.assertContains(response, "Призупинено")
 
 

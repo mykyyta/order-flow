@@ -51,7 +51,7 @@
             <tr>
                 <th>Поточний статус</th>
                 <td>
-                    <span class="badge {{ order.current_status_code|status_badge_class }}">
+                    <span class="{{ order.current_status_code|status_badge_class }}">
                         {{ order.current_status_display }}
                     </span>
                 </td>
