@@ -1,0 +1,32 @@
+project_id      = "orderflow-451220"
+region          = "us-central1"
+environment     = "prod"
+service_name    = "orderflow-app"
+migrate_job_name = "orderflow-migrate"
+artifact_repository_id = "my-repo"
+container_image        = "us-central1-docker.pkg.dev/orderflow-451220/my-repo/my-app"
+service_account_email  = "841559594474-compute@developer.gserviceaccount.com"
+container_cpu_limit    = "1000m"
+container_memory_limit = "512Mi"
+container_concurrency  = 80
+max_instances          = 100
+public_invoker_member  = "allUsers"
+
+migrate_job_timeout    = 1200
+enable_migrate_job     = false
+manage_secret_versions = false
+
+github_repository      = "mykyyta/order-flow"
+wif_pool_id            = "github-actions-pool"
+wif_provider_id        = "github-actions-provider"
+terraform_deployer_sa_id = "orderflow-tf-deployer"
+tf_state_bucket_name   = "orderflow-451220-tfstate"
+
+# For one-time bootstrap you can set manage_secret_versions=true
+# and provide values locally (never commit real secrets):
+#
+# secret_values = {
+#   django_secret_key  = "..."
+#   database_url       = "..."
+#   telegram_bot_token = "..."
+# }

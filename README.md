@@ -13,7 +13,7 @@ Order management system with Telegram integration for tracking and managing prod
 ### Backend
 - **Django 5.1.6** - Web framework
 - **PostgreSQL** - Primary database (with psycopg2-binary)
-- **SQLite** - Development database
+- **SQLite** - Test database
 - **Python 3.x** - Programming language
 
 ### Frontend
@@ -78,12 +78,43 @@ Order management system with Telegram integration for tracking and managing prod
 - **Order Filtering** - Separate views for current and finished orders
 - **Pagination** - Efficient handling of large order lists
 
+## ⚡ Local Development
+
+### Docker Compose (recommended)
+```bash
+cp .env.example .env
+docker compose up --build
+```
+
+Apply migrations in another terminal:
+```bash
+docker compose run --rm web python manage.py migrate
+```
+
+Open app:
+```text
+http://localhost:8000
+```
+
+### Local quality checks
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements-dev.txt
+make check
+make test
+make lint
+```
+
 ## 🏗️ Project Structure
 
 ```
 OrderFlow/
 ├── OrderFlow/           # Django project settings
-│   ├── settings.py      # Configuration
+│   ├── settings/        # Configuration by environment
+│   │   ├── base.py
+│   │   ├── local.py
+│   │   └── prod.py
 │   ├── urls.py         # URL routing
 │   └── wsgi.py         # WSGI configuration
 ├── orders/             # Main application
