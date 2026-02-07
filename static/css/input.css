@@ -1,6 +1,12 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --color-primary: #0F766E;
+  --color-accent: #F59E0B;
+  --color-background: #F8FAFC;
+  --color-surface: #ffffff;
+}
 
 .order-link {
   text-decoration: none;
