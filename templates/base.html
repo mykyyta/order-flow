@@ -25,7 +25,7 @@
                     <div class="flex flex-col gap-1 py-2 md:flex-row md:py-0">
                         <a href="{% url 'order_create' %}" class="rounded-md px-3 py-2 text-sm font-medium {% if current_url == 'order_create' %}bg-teal-50 text-teal-700{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}" {% if current_url == 'order_create' %}aria-current="page"{% endif %}>Нове замовлення</a>
                         <a href="{% url 'finished_orders_list' %}" class="rounded-md px-3 py-2 text-sm font-medium {% if current_url == 'finished_orders_list' %}bg-teal-50 text-teal-700{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}" {% if current_url == 'finished_orders_list' %}aria-current="page"{% endif %}>Готові</a>
-                        <a href="{% url 'current_orders_list' %}" class="rounded-md px-3 py-2 text-sm font-medium {% if current_url == 'current_orders_list' %}bg-teal-50 text-teal-700{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}" {% if current_url == 'current_orders_list' %}aria-current="page"{% endif %}>Поточні</a>
+                        <a href="{% url 'orders_active' %}" class="rounded-md px-3 py-2 text-sm font-medium {% if current_url == 'orders_active' %}bg-teal-50 text-teal-700{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}" {% if current_url == 'orders_active' %}aria-current="page"{% endif %}>Поточні</a>
                         <a href="{% url 'model_list' %}" class="rounded-md px-3 py-2 text-sm font-medium {% if current_url == 'model_list' %}bg-teal-50 text-teal-700{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}" {% if current_url == 'model_list' %}aria-current="page"{% endif %}>Моделі</a>
                         <a href="{% url 'color_list' %}" class="rounded-md px-3 py-2 text-sm font-medium {% if current_url == 'color_list' %}bg-teal-50 text-teal-700{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}" {% if current_url == 'color_list' %}aria-current="page"{% endif %}>Кольори</a>
                     </div>
@@ -48,5 +48,6 @@
     <!-- Bootstrap 5 JS (тимчасово, для форм і решти) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{% static 'js/app.js' %}"></script>
+    {% block extra_js %}{% endblock %}
 </body>
 </html>

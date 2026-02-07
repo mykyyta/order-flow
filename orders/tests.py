@@ -491,7 +491,7 @@ class CurrentOrdersViewTests(TestCase):
         self.client.force_login(self.user)
 
     def test_transition_map_present_in_page(self):
-        response = self.client.get(reverse("current_orders_list"))
+        response = self.client.get(reverse("orders_active"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "transition-map-data")
         self.assertContains(response, "bulk-status-form")
@@ -518,13 +518,13 @@ class CurrentOrdersFilteringTests(TestCase):
             current_status=STATUS_FINISHED,
         )
 
-        response = self.client.get(reverse("current_orders_list"))
+        response = self.client.get(reverse("orders_active"))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["page_obj"].paginator.count, 21)
         self.assertEqual(len(response.context["orders"]), 20)
         self.assertTrue(response.context["page_obj"].has_next())
 
-        second_page = self.client.get(reverse("current_orders_list"), {"page": 2})
+        second_page = self.client.get(reverse("orders_active"), {"page": 2})
         self.assertEqual(second_page.status_code, 200)
         self.assertEqual(len(second_page.context["orders"]), 1)
         self.assertFalse(second_page.context["page_obj"].has_next())
@@ -544,7 +544,7 @@ class CurrentOrdersFilteringTests(TestCase):
         )
 
         response = self.client.get(
-            reverse("current_orders_list"),
+            reverse("orders_active"),
             {"status": STATUS_ON_HOLD},
         )
         self.assertEqual(response.status_code, 200)

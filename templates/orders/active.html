@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% load order_ui %}
+{% load static %}
+
+{% block title %}Поточні замовлення{% endblock %}
+
+{% block content %}
+
+<h1 class="text-lg font-semibold text-slate-900">Поточні замовлення</h1>
+
+{% include "partials/messages.html" %}
+
+<form method="get" class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-2">
+    <div class="flex-1">
+        <label for="filter-status" class="block text-sm font-medium text-slate-700">Статус</label>
+        <select id="filter-status" name="status" class="mt-1 block w-full rounded-md border border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm">
+            <option value="">Всі</option>
+            {% for value, label in status_options %}
+            <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="flex gap-2">
+        <button type="submit" class="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md border border-teal-600 bg-white px-4 py-2 text-sm font-medium text-teal-700 hover:bg-teal-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2">
+            Фільтрувати
+        </button>
+        <a href="{% url 'orders_active' %}" class="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2">
+            Скинути
+        </a>
+    </div>
+</form>
+
+<form method="post" id="bulk-status-form" action="{% url 'orders_bulk_status' %}{% if query_string %}?{{ query_string }}{% endif %}" class="mb-4">
+    {% csrf_token %}
+
+    <div class="space-y-3 md:space-y-0">
+        <div class="hidden md:grid md:grid-cols-[56px_1fr_1fr] md:gap-4 md:px-4 md:py-2 md:rounded-t-lg bg-slate-50">
+            <div class="flex items-center">
+                <input type="checkbox" id="select-all-orders" class="h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500" aria-label="Вибрати всі">
+            </div>
+            <div class="text-sm font-medium text-slate-700">Модель та Колір</div>
+            <div class="text-sm font-medium text-slate-700">Статус та мітки</div>
+        </div>
+        {% for order in orders %}
+        {% include "partials/order_row.html" with order=order %}
+        {% empty %}
+        <div class="rounded-lg border border-slate-200 bg-white p-6 text-center text-sm text-slate-500">
+            Поточних замовлень немає.
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-2">
+        <div class="flex-1">
+            <label for="new_status" class="sr-only">Новий статус</label>
+            <select id="new_status" name="new_status" class="block w-full rounded-md border border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm">
+                {% for value, label in form.fields.new_status.choices %}
+                <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+            </select>
+            <p class="mt-1 text-xs text-slate-500" id="status-transition-hint"></p>
+        </div>
+        <div class="flex gap-2">
+            <button type="button" id="clear-selection-btn" disabled class="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                Зняти вибір
+            </button>
+            <button type="submit" id="apply-status-btn" disabled class="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md border border-transparent bg-teal-700 px-4 py-2 text-sm font-medium text-white hover:bg-teal-800 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                Змінити статус
+            </button>
+        </div>
+    </div>
+</form>
+
+{% if page_obj.paginator.num_pages > 1 %}
+<nav aria-label="Пагінація поточних замовлень" class="mt-4 flex justify-center">
+    <ul class="inline-flex gap-1">
+        {% if page_obj.has_previous %}
+        <li>
+            <a href="?page={{ page_obj.previous_page_number }}{% if query_string %}&{{ query_string }}{% endif %}" class="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2">
+                Попередня
+            </a>
+        </li>
+        {% else %}
+        <li>
+            <span class="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-400">
+                Попередня
+            </span>
+        </li>
+        {% endif %}
+        <li>
+            <span class="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md border border-teal-200 bg-teal-50 px-3 py-2 text-sm font-medium text-teal-700">
+                {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+            </span>
+        </li>
+        {% if page_obj.has_next %}
+        <li>
+            <a href="?page={{ page_obj.next_page_number }}{% if query_string %}&{{ query_string }}{% endif %}" class="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2">
+                Наступна
+            </a>
+        </li>
+        {% else %}
+        <li>
+            <span class="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-400">
+                Наступна
+            </span>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+<div class="mt-6">
+    <a href="{% url 'finished_orders_list' %}" class="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2">
+        Готові замовлення
+    </a>
+</div>
+
+{{ transition_map|json_script:"transition-map-data" }}
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/orders_active.js' %}"></script>
+{% endblock %}

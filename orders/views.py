@@ -18,6 +18,7 @@ from django.db import models, transaction
 from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.urls import reverse_lazy
 from django.utils.timezone import localtime
 from django.views import View
@@ -107,7 +108,7 @@ def custom_login_required(view_func):
 
 @custom_login_required
 def index(request):
-    return redirect('current_orders_list')
+    return redirect("orders_active")
 
 def auth_login(request):
     if request.user.is_authenticated:
@@ -138,45 +139,14 @@ def auth_logout(request):
     return redirect('auth_login')
 
 @custom_login_required
-def current_orders_list(request):
+def orders_active(request):
     status_filter = (request.GET.get("status") or "").strip()
     orders_queryset, status_filter = _filtered_current_orders_queryset(
         status_filter=status_filter,
     )
 
-    if request.method == "POST":
-        form = OrderStatusUpdateForm(request.POST)
-        form.fields["orders"].queryset = orders_queryset
-        if form.is_valid():
-            selected_orders = form.cleaned_data['orders']
-            new_status = form.cleaned_data['new_status']
-
-            if selected_orders:
-                service = _get_order_service()
-                with transaction.atomic():
-                    try:
-                        service.change_status(
-                            orders=selected_orders,
-                            new_status=new_status,
-                            changed_by=request.user,
-                        )
-                    except InvalidStatusTransition as exc:
-                        current_label = STATUS_LABELS.get(exc.current_status, exc.current_status)
-                        next_label = STATUS_LABELS.get(exc.next_status, exc.next_status)
-                        messages.error(
-                            request,
-                            f"Недопустимий перехід статусу: {current_label} → {next_label}.",
-                        )
-                        return redirect("current_orders_list")
-
-                messages.success(request, "Статус оновлено для вибраних замовлень.")
-            else:
-                messages.warning(request, "Не вибрано жодного замовлення для оновлення статусу.")
-            return redirect("current_orders_list")
-        else:
-            messages.error(request, "Виникла помилка. Зробіть ще одну спробу.")
     form = OrderStatusUpdateForm()
-    form.fields['orders'].queryset = orders_queryset
+    form.fields["orders"].queryset = orders_queryset
     paginator = Paginator(orders_queryset, 20)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
@@ -184,18 +154,73 @@ def current_orders_list(request):
     query_params.pop("page", None)
     query_string = query_params.urlencode()
 
-    return render(request,
-                  "current_orders_list.html",
-                    {
-                        "form": form,
-                        "orders": page_obj.object_list,
-                        "page_obj": page_obj,
-                        "status_filter": status_filter,
-                        "status_options": CURRENT_STATUS_OPTIONS,
-                        "query_string": query_string,
-                        "transition_map": TRANSITION_MAP,
-                             }
-                )
+    return render(
+        request,
+        "orders/active.html",
+        {
+            "form": form,
+            "orders": page_obj.object_list,
+            "page_obj": page_obj,
+            "status_filter": status_filter,
+            "status_options": CURRENT_STATUS_OPTIONS,
+            "query_string": query_string,
+            "transition_map": TRANSITION_MAP,
+        },
+    )
+
+
+@custom_login_required
+@require_POST
+def orders_bulk_status(request):
+    status_filter = (request.GET.get("status") or "").strip()
+    orders_queryset, status_filter = _filtered_current_orders_queryset(
+        status_filter=status_filter,
+    )
+
+    form = OrderStatusUpdateForm(request.POST)
+    form.fields["orders"].queryset = orders_queryset
+    if not form.is_valid():
+        messages.error(request, "Виникла помилка. Зробіть ще одну спробу.")
+        url = reverse("orders_active")
+        if request.GET:
+            url += "?" + request.GET.urlencode()
+        return redirect(url)
+
+    selected_orders = form.cleaned_data["orders"]
+    new_status = form.cleaned_data["new_status"]
+
+    if not selected_orders:
+        messages.warning(request, "Не вибрано жодного замовлення для оновлення статусу.")
+        url = reverse("orders_active")
+        if request.GET:
+            url += "?" + request.GET.urlencode()
+        return redirect(url)
+
+    service = _get_order_service()
+    with transaction.atomic():
+        try:
+            service.change_status(
+                orders=selected_orders,
+                new_status=new_status,
+                changed_by=request.user,
+            )
+        except InvalidStatusTransition as exc:
+            current_label = STATUS_LABELS.get(exc.current_status, exc.current_status)
+            next_label = STATUS_LABELS.get(exc.next_status, exc.next_status)
+            messages.error(
+                request,
+                f"Недопустимий перехід статусу: {current_label} → {next_label}.",
+            )
+            url = reverse("orders_active")
+            if request.GET:
+                url += "?" + request.GET.urlencode()
+            return redirect(url)
+
+    messages.success(request, "Статус оновлено для вибраних замовлень.")
+    url = reverse("orders_active")
+    if request.GET:
+        url += "?" + request.GET.urlencode()
+    return redirect(url)
 
 
 @custom_login_required
@@ -240,7 +265,7 @@ def order_create(request):
         form = OrderForm(request.POST)
         if form.is_valid():
             service = _get_order_service()
-            orders_url = request.build_absolute_uri(reverse_lazy('current_orders_list'))
+            orders_url = request.build_absolute_uri(reverse_lazy("orders_active"))
             service.create_order(
                 model=form.cleaned_data["model"],
                 color=form.cleaned_data["color"],
@@ -251,8 +276,8 @@ def order_create(request):
                 created_by=request.user,
                 orders_url=orders_url,
             )
-            return redirect('current_orders_list')
-        return render(request, 'order_create.html', {'form': form})
+            return redirect("orders_active")
+        return render(request, "order_create.html", {"form": form})
 
     form = OrderForm()
     return render(request, 'order_create.html', {'form': form})
