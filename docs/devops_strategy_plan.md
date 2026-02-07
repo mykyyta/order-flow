@@ -42,7 +42,7 @@
   Підтвердження: post-import `terraform plan` -> `No changes`.
 - [x] Переведено deploy workflow на `terraform plan/apply`. (2026-02-07)
   Примітка: GitHub repository variables вже підв'язані через `gh` (`mykyyta/order-flow`).
-- [ ] Додано runbook для deploy/rollback/migrate.
+- [x] Додано runbook для deploy/rollback/migrate. (2026-02-07)
 
 ## Покроковий план
 
