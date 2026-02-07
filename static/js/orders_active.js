@@ -11,8 +11,6 @@
         document.getElementById("select-all-orders-mobile"),
     ].filter(Boolean);
     var actionBar = document.getElementById("bulk-action-bar");
-    var actionSpacer = document.getElementById("bulk-action-spacer");
-    var selectedCount = document.getElementById("bulk-selected-count");
     var selectedLength = 0;
 
     if (!transitionDataEl || !bulkStatusForm || !select || !applyStatusButton || !clearSelectionButton) {
@@ -52,10 +50,6 @@
             .map(function (cb) { return cb.dataset.currentStatus; });
         var allowed = intersectSets(selectedStatuses);
         selectedLength = selectedStatuses.length;
-        if (selectedCount) {
-            selectedCount.textContent = String(selectedLength);
-        }
-
         options.forEach(function (option) {
             option.disabled = !allowed.has(option.value);
         });
@@ -64,15 +58,10 @@
         clearSelectionButton.disabled = selectedLength === 0;
         syncSelectAll();
 
-        // Mobile-first: show the fixed bottom bar only when there is a selection.
-        // Desktop stays visible because of responsive `sm:*` classes.
+        // Show the bulk actions inline only when there is a selection.
         if (actionBar) {
             if (selectedLength > 0) actionBar.classList.remove("hidden");
             else actionBar.classList.add("hidden");
-        }
-        if (actionSpacer) {
-            if (selectedLength > 0) actionSpacer.classList.remove("hidden");
-            else actionSpacer.classList.add("hidden");
         }
 
         if (options.every(function (option) { return option.disabled; })) {
