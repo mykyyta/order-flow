@@ -245,7 +245,8 @@ def order_detail(request, order_id):
         'etsy': order.etsy,
         'created_at': localtime(order.created_at) if order.created_at else None,
         'finished_at': localtime(order.finished_at) if order.finished_at else None,
-        'current_status': order.get_status_display(),
+        'current_status_code': order.current_status,
+        'current_status_display': order.get_current_status_display(),
         'status_history': [
             {
                 'id': status.id,

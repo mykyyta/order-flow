@@ -23,8 +23,8 @@
         <tbody>
             {% for order in page_obj.object_list %}
             <tr>
-                <td>{{ forloop.counter }}</td>
-                <td><a href="{% url 'order_detail' order.id %}" style="text-decoration: none; color: #6c757d;">{{ order.model.name }} - {{ order.color.name }}</a></td>
+                <td>{{ page_obj.start_index|add:forloop.counter0 }}</td>
+                <td><a href="{% url 'order_detail' order.id %}" class="order-link">{{ order.model.name }} - {{ order.color.name }}</a></td>
                 <td>{{ order.finished_at|date:"d.m.Y H:i" }}</td>
             </tr>
             {% empty %}
@@ -45,12 +45,12 @@
             </li>
         {% else %}
             <li class="page-item disabled">
-                <a class="page-link">Попередня</a>
+                <span class="page-link">Попередня</span>
             </li>
         {% endif %}
         
         <li class="page-item active">
-            <a class="page-link">{{ page_obj.number }}</a>
+            <span class="page-link">{{ page_obj.number }}</span>
         </li>
         
         {% if page_obj.has_next %}
@@ -59,7 +59,7 @@
             </li>
         {% else %}
             <li class="page-item disabled">
-                <a class="page-link">Наступна</a>
+                <span class="page-link">Наступна</span>
             </li>
         {% endif %}
     </ul>

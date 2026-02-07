@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load order_ui %}
 
 {% block title %}Поточні замовлення{% endblock %}
 
@@ -64,16 +65,10 @@
                         </div>
                     </td>
                     <td style="font-size: 14px;">
-                        <a href="{% url 'order_detail' order.id %}" style="text-decoration: none; color: #6c757d;">{{ order.model.name }} - {{ order.color.name }}</a>
+                        <a href="{% url 'order_detail' order.id %}" class="order-link">{{ order.model.name }} - {{ order.color.name }}</a>
                     </td>
                     <td style="font-size: 14px;">
-                            <span class="badge
-                                {% if order.current_status == 'new' %} bg-success
-                                {% elif order.current_status == 'embroidery' %} bg-warning
-                                {% elif order.current_status == 'almost_finished' %} bg-primary
-                                {% elif order.current_status == 'finished' %} bg-info
-                                {% elif order.current_status == 'on_hold' %} bg-secondary
-                                {% endif %}">
+                            <span class="badge {{ order.current_status|status_badge_class }}">
                                 {{ order.get_current_status_display }}
                             </span>
                             {% if order.etsy %}

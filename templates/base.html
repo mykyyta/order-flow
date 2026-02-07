@@ -7,10 +7,21 @@
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Додаткові стилі (за потреби) -->
+    <style>
+        .order-link {
+            text-decoration: none;
+            color: #6c757d;
+        }
+
+        .order-link:hover {
+            color: #495057;
+        }
+    </style>
     {% block extra_head %}{% endblock %}
 </head>
 <body>
     {% if request.user.is_authenticated %}
+    {% with current_url=request.resolver_match.url_name %}
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <div class="container">
             <a class="navbar-brand" href="{% url 'index' %}">OrderFlow</a>
@@ -19,21 +30,34 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav">
-                    <li class="nav-item"><a class="nav-link" href="{% url 'order_create' %}">Нове замовлення</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'finished_orders_list' %}">Готові</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'current_orders_list' %}">Поточні</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'model_list' %}">Моделі</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'color_list' %}">Кольори</a></li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if current_url == 'order_create' %}active{% endif %}" href="{% url 'order_create' %}" {% if current_url == 'order_create' %}aria-current="page"{% endif %}>Нове замовлення</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if current_url == 'finished_orders_list' %}active{% endif %}" href="{% url 'finished_orders_list' %}" {% if current_url == 'finished_orders_list' %}aria-current="page"{% endif %}>Готові</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if current_url == 'current_orders_list' %}active{% endif %}" href="{% url 'current_orders_list' %}" {% if current_url == 'current_orders_list' %}aria-current="page"{% endif %}>Поточні</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if current_url == 'model_list' %}active{% endif %}" href="{% url 'model_list' %}" {% if current_url == 'model_list' %}aria-current="page"{% endif %}>Моделі</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if current_url == 'color_list' %}active{% endif %}" href="{% url 'color_list' %}" {% if current_url == 'color_list' %}aria-current="page"{% endif %}>Кольори</a>
+                    </li>
                 </ul>
 
                 <!-- Профіль і Вихід справа -->
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link" href="{% url 'profile' %}">Профіль</a></li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if current_url == 'profile' or current_url == 'change_password' or current_url == 'notification_settings' %}active{% endif %}" href="{% url 'profile' %}" {% if current_url == 'profile' or current_url == 'change_password' or current_url == 'notification_settings' %}aria-current="page"{% endif %}>Профіль</a>
+                    </li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'auth_logout' %}">Вийти</a></li>
                 </ul>
             </div>
         </div>
     </nav>
+    {% endwith %}
     {% endif %}
     <div class="container mt-4">
         {% block content %}{% endblock %}
