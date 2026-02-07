@@ -1,6 +1,21 @@
 from django.db import models
 from django.contrib.auth.models import User, AbstractUser
 from OrderFlow import settings
+from orders.domain.status import (
+    STATUS_ALMOST_FINISHED,
+    STATUS_EMBROIDERY,
+    STATUS_FINISHED,
+    STATUS_NEW,
+    STATUS_ON_HOLD,
+)
+
+STATUS_CHOICES = [
+    (STATUS_NEW, 'Нове'),
+    (STATUS_EMBROIDERY, 'На вишивці'),
+    (STATUS_ALMOST_FINISHED, 'Майже готове'),
+    (STATUS_FINISHED, 'Готове'),
+    (STATUS_ON_HOLD, 'Призупинено'),
+]
 
 
 class CustomUser(AbstractUser):
@@ -48,15 +63,23 @@ class Order(models.Model):
     etsy = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     finished_at = models.DateTimeField(blank=True, null=True)
+    current_status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default=STATUS_NEW,
+        db_index=True,
+    )
 
 
     def get_status(self):
+        if self.current_status:
+            return self.current_status
         latest_status = self.history.order_by('-changed_at').first()
         return latest_status.new_status if latest_status else "Немає статусу"
 
     def get_status_display(self):
         current_status = self.get_status()
-        for value, label in OrderStatusHistory.STATUS_CHOICES:
+        for value, label in STATUS_CHOICES:
             if current_status == value:
                 return label
         return "Невідомий статус"
@@ -66,13 +89,7 @@ class Order(models.Model):
         return f"{self.model.name} ({self.color.name}) - {self.get_status()}"
 
 class OrderStatusHistory(models.Model):
-    STATUS_CHOICES = [
-        ('new', 'Нове'),
-        ('embroidery', 'На вишивці'),
-        ('almost_finished', 'Майже готове'),
-        ('finished', 'Готове'),
-        ('on_hold', 'Призупинено'),
-    ]
+    STATUS_CHOICES = STATUS_CHOICES
 
     id = models.AutoField(primary_key=True)
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="history")
@@ -82,6 +99,11 @@ class OrderStatusHistory(models.Model):
 
     def __str__(self):
         return f"{self.order.id} → {self.new_status} ({self.changed_at})"
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["order", "changed_at"]),
+        ]
 
 class NotificationSetting(models.Model):
     user = models.OneToOneField(

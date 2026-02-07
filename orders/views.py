@@ -1,11 +1,12 @@
+import os
+import secrets
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
-from django.utils import timezone
 from django.views import View
 from django.views.generic import ListView, UpdateView
-from .models import ProductModel, Color, Order, NotificationSetting
+from .models import ProductModel, Color, Order, NotificationSetting, STATUS_CHOICES
 from .forms import ProductModelForm, ColorForm, OrderStatusUpdateForm
 from orders.forms import OrderForm
 from orders.models import OrderStatusHistory
@@ -13,8 +14,49 @@ from django.urls import reverse_lazy
 from django.db import models, transaction
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from django.utils.timezone import localtime, now, timedelta, make_aware, datetime
-from orders.utils import send_tg_message, generate_order_details
+from django.utils.timezone import localtime
+from orders.adapters.clock import DjangoClock
+from orders.adapters.notifications import DjangoNotificationSender
+from orders.adapters.orders_repository import DjangoOrderRepository
+from orders.application.notification_service import DelayedNotificationService
+from orders.application.order_service import OrderService
+from orders.application.exceptions import InvalidStatusTransition
+from orders.domain.status import STATUS_FINISHED
+
+
+def _validate_internal_token(request):
+    expected = os.getenv("DELAYED_NOTIFICATIONS_TOKEN")
+    if not expected:
+        return False, "token not configured"
+
+    provided = (
+        request.headers.get("X-Internal-Token")
+        or request.GET.get("token")
+        or request.POST.get("token")
+    )
+    if not provided:
+        return False, "token missing"
+
+    if not secrets.compare_digest(provided, expected):
+        return False, "invalid token"
+
+    return True, None
+
+
+def _get_order_service() -> OrderService:
+    return OrderService(
+        repo=DjangoOrderRepository(),
+        notifier=DjangoNotificationSender(),
+        clock=DjangoClock(),
+    )
+
+
+def _get_delayed_notification_service() -> DelayedNotificationService:
+    return DelayedNotificationService(
+        repo=DjangoOrderRepository(),
+        notifier=DjangoNotificationSender(),
+        clock=DjangoClock(),
+    )
 
 
 
@@ -65,33 +107,23 @@ def current_orders_list(request):
             new_status = form.cleaned_data['new_status']
 
             if selected_orders:
+                service = _get_order_service()
                 with transaction.atomic():
-                    for order in selected_orders:
-                        latest_status_history = (
-                            OrderStatusHistory.objects.filter(order=order)
-                            .order_by('-id')
-                            .first()
-                        )
-                        if latest_status_history and latest_status_history.new_status == new_status: continue
-
-
-                        OrderStatusHistory.objects.create(
-                            order=order,
+                    try:
+                        service.change_status(
+                            orders=selected_orders,
                             new_status=new_status,
-                            changed_by=request.user
+                            changed_by=request.user,
                         )
-
-                        if new_status.lower() == "finished":
-                            order.finished_at = timezone.now()
-                            order.save()
-                            users_to_notify = NotificationSetting.objects.filter(
-                                notify_order_finished=True).select_related('user')
-
-                            for setting in users_to_notify:
-                                user = setting.user
-                                if user.telegram_id:
-                                    message = f"Замовлення завершено: {order.model.name}, {order.color.name}."
-                                    send_tg_message(user.telegram_id, message)
+                    except InvalidStatusTransition as exc:
+                        status_labels = dict(STATUS_CHOICES)
+                        current_label = status_labels.get(exc.current_status, exc.current_status)
+                        next_label = status_labels.get(exc.next_status, exc.next_status)
+                        messages.error(
+                            request,
+                            f"Недопустимий перехід статусу: {current_label} → {next_label}.",
+                        )
+                        return redirect("current_orders_list")
 
                 messages.success(request, "Статус оновлено для вибраних замовлень.")
             else:
@@ -101,7 +133,10 @@ def current_orders_list(request):
             messages.error(request, "Виникла помилка. Зробіть ще одну спробу.")
 
 
-    orders_queryset = Order.objects.filter(finished_at__isnull=True)
+    orders_queryset = (
+        Order.objects.select_related("model", "color")
+        .exclude(current_status=STATUS_FINISHED)
+    )
     form = OrderStatusUpdateForm()
     form.fields['orders'].queryset = orders_queryset
 
@@ -117,7 +152,11 @@ def current_orders_list(request):
 
 @custom_login_required
 def finished_orders_list(request):
-    orders = Order.objects.filter(finished_at__isnull=False).order_by('-finished_at')  # Фільтруємо завершені
+    orders = (
+        Order.objects.select_related("model", "color")
+        .filter(current_status=STATUS_FINISHED)
+        .order_by('-finished_at')
+    )
     paginator = Paginator(orders, 20)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
@@ -130,37 +169,20 @@ def order_create(request):
     if request.method == 'POST':
         form = OrderForm(request.POST)
         if form.is_valid():
-            order = form.save()
-            OrderStatusHistory.objects.create(
-                order=order,
-                changed_by=request.user,
-                new_status='new'
+            service = _get_order_service()
+            orders_url = request.build_absolute_uri(reverse_lazy('current_orders_list'))
+            service.create_order(
+                model=form.cleaned_data["model"],
+                color=form.cleaned_data["color"],
+                etsy=form.cleaned_data["etsy"],
+                embroidery=form.cleaned_data["embroidery"],
+                urgent=form.cleaned_data["urgent"],
+                comment=form.cleaned_data.get("comment"),
+                created_by=request.user,
+                orders_url=orders_url,
             )
-
-            users_to_notify = NotificationSetting.objects.filter(
-                notify_order_created=True,
-                user__telegram_id__isnull=False
-            ).select_related('user')
-
-            if users_to_notify:
-                order_details = generate_order_details(order)
-                message = (
-                    f"+ {order_details}"
-                    f"\n{request.build_absolute_uri(reverse_lazy('current_orders_list'))}\n"
-                )
-
-                for setting in users_to_notify:
-
-                    if setting.notify_order_created_pause:
-                        current_time = localtime(now())
-                        current_hour = current_time.hour
-                        WORKING_HOURS_START = 8
-                        WORKING_HOURS_END = 18
-                        if current_hour < WORKING_HOURS_START or current_hour >= WORKING_HOURS_END:
-                            continue
-                    send_tg_message(setting.user.telegram_id, message)
-
-        return redirect('current_orders_list')
+            return redirect('current_orders_list')
+        return render(request, 'order_create.html', {'form': form})
 
     form = OrderForm()
     return render(request, 'order_create.html', {'form': form})
@@ -323,43 +345,11 @@ def send_delayed_notifications(request):
     if request.method != 'POST':
         return JsonResponse({'error': 'invalid method'}, status=405)
 
-    current_time = localtime(now())
-    today = current_time.date()
+    is_valid, error = _validate_internal_token(request)
+    if not is_valid:
+        status = 500 if error == "token not configured" else 403
+        return JsonResponse({'error': error}, status=status)
 
-    yesterday_18 = make_aware(datetime.combine(today - timedelta(days=1), datetime.min.time().replace(hour=18)))
-
-    today_08 = make_aware(datetime.combine(today, datetime.min.time().replace(hour=8)))
-
-    # Замовлення, створені після 18:00 до 08:00
-    orders_to_notify = Order.objects.filter(
-        created_at__gte=yesterday_18,
-        created_at__lt=today_08
-    )
-
-    if not orders_to_notify.exists():
-        return JsonResponse({'status': 'no orders to notify'})
-
-    users_to_notify = NotificationSetting.objects.filter(
-        notify_order_created=True,
-        notify_order_created_pause=True,
-        user__telegram_id__isnull=False
-    ).select_related('user')
-
-    if not users_to_notify.exists():
-        return JsonResponse({'status': 'no users to notify'})
-
-    for setting in users_to_notify:
-        user_orders = []
-        for order in orders_to_notify:
-            order_details = generate_order_details(order)
-            user_orders.append(f"+ {order_details}")
-
-        if user_orders:
-            message = "\n".join(user_orders)
-            send_tg_message(setting.user.telegram_id, message)
-
-    return JsonResponse({'status': 'delayed notifications sent'})
-
-
-
-
+    service = _get_delayed_notification_service()
+    status = service.send_delayed_notifications()
+    return JsonResponse({'status': status})
