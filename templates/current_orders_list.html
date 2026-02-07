@@ -7,13 +7,7 @@
 
 <h3>Поточні замовлення</h3>
 
-{% if messages %}
-    <div class="mb-3">
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags|default:'info' }}" role="alert">{{ message }}</div>
-        {% endfor %}
-    </div>
-{% endif %}
+{% include "partials/messages.html" %}
 
 <form method="get" class="row g-2 align-items-end mb-3">
     <div class="col-md-5">
@@ -44,7 +38,7 @@
     </div>
 </form>
 
-<form method="post" class="mb-4">
+<form method="post" id="bulk-status-form" class="mb-4">
     {% csrf_token %}
 
     <div class="table-responsive">
@@ -108,6 +102,9 @@
             <span class="badge text-bg-light border" id="selected-orders-count">Обрано: 0</span>
         </div>
         <div class="col-md-auto">
+            <button type="button" class="btn btn-outline-secondary" id="clear-selection-btn" disabled>Зняти вибір</button>
+        </div>
+        <div class="col-md-auto">
             <button type="submit" class="btn btn-primary" id="apply-status-btn" disabled>Змінити статус</button>
         </div>
     </div>
@@ -148,14 +145,17 @@
 <script>
     (function () {
         const transitionDataEl = document.getElementById("transition-map-data");
+        const bulkStatusForm = document.getElementById("bulk-status-form");
         const selectAllCheckbox = document.getElementById("select-all-orders");
+        const clearSelectionButton = document.getElementById("clear-selection-btn");
         const select = document.getElementById("new_status");
         const hint = document.getElementById("status-transition-hint");
         const selectedCount = document.getElementById("selected-orders-count");
         const applyStatusButton = document.getElementById("apply-status-btn");
         const checkboxes = Array.from(document.querySelectorAll(".js-order-checkbox"));
+        let selectedLength = 0;
 
-        if (!transitionDataEl || !select || !selectedCount || !applyStatusButton || checkboxes.length === 0) {
+        if (!transitionDataEl || !bulkStatusForm || !select || !selectedCount || !applyStatusButton || !clearSelectionButton || checkboxes.length === 0) {
             return;
         }
 
@@ -185,10 +185,19 @@
                 .filter((checkbox) => checkbox.checked)
                 .map((checkbox) => checkbox.dataset.currentStatus);
             const allowed = intersectSets(selectedStatuses);
+            selectedLength = selectedStatuses.length;
 
             options.forEach((option) => {
                 option.disabled = !allowed.has(option.value);
             });
+
+            selectedCount.textContent = `Обрано: ${selectedLength}`;
+            applyStatusButton.disabled = selectedLength === 0;
+            clearSelectionButton.disabled = selectedLength === 0;
+            if (selectAllCheckbox) {
+                selectAllCheckbox.checked = selectedLength > 0 && selectedLength === checkboxes.length;
+                selectAllCheckbox.indeterminate = selectedLength > 0 && selectedLength < checkboxes.length;
+            }
 
             if (options.every((option) => option.disabled)) {
                 hint.textContent = "Немає спільного дозволеного переходу для обраних замовлень.";
@@ -201,14 +210,6 @@
                 if (firstEnabled) {
                     select.value = firstEnabled.value;
                 }
-            }
-
-            const selectedLength = selectedStatuses.length;
-            selectedCount.textContent = `Обрано: ${selectedLength}`;
-            applyStatusButton.disabled = selectedLength === 0;
-            if (selectAllCheckbox) {
-                selectAllCheckbox.checked = selectedLength > 0 && selectedLength === checkboxes.length;
-                selectAllCheckbox.indeterminate = selectedLength > 0 && selectedLength < checkboxes.length;
             }
         }
 
@@ -223,6 +224,27 @@
                 updateAllowedTransitions();
             });
         }
+        clearSelectionButton.addEventListener("click", function () {
+            checkboxes.forEach((checkbox) => {
+                checkbox.checked = false;
+            });
+            if (selectAllCheckbox) {
+                selectAllCheckbox.checked = false;
+                selectAllCheckbox.indeterminate = false;
+            }
+            updateAllowedTransitions();
+        });
+        bulkStatusForm.addEventListener("submit", function (event) {
+            if (selectedLength === 0) {
+                event.preventDefault();
+                return;
+            }
+            const selectedStatusLabel = select.selectedOptions[0] ? select.selectedOptions[0].textContent.trim() : "";
+            const confirmed = window.confirm(`Змінити статус на "${selectedStatusLabel}" для ${selectedLength} замовлень?`);
+            if (!confirmed) {
+                event.preventDefault();
+            }
+        });
 
         updateAllowedTransitions();
     })();

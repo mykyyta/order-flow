@@ -39,6 +39,17 @@ from orders.models import NotificationSetting, OrderStatusHistory
 from .forms import ColorForm, OrderStatusUpdateForm, ProductModelForm
 from .models import Color, Order, ProductModel, STATUS_CHOICES
 
+STATUS_LABELS = dict(STATUS_CHOICES)
+CURRENT_STATUS_OPTIONS = tuple(
+    (value, label)
+    for value, label in STATUS_CHOICES
+    if value != STATUS_FINISHED
+)
+TRANSITION_MAP = {
+    status: sorted(get_allowed_transitions(status))
+    for status, _label in STATUS_CHOICES
+}
+
 
 def _validate_internal_token(request):
     expected = os.getenv("DELAYED_NOTIFICATIONS_TOKEN")
@@ -69,6 +80,29 @@ def _get_delayed_notification_service() -> DelayedNotificationService:
         notifier=DjangoNotificationSender(),
         clock=DjangoClock(),
     )
+
+
+def _filtered_current_orders_queryset(*, search_query: str, status_filter: str):
+    queryset = (
+        Order.objects.select_related("model", "color")
+        .exclude(current_status=STATUS_FINISHED)
+        .order_by("-created_at", "-id")
+    )
+    if search_query:
+        search_filters = (
+            Q(model__name__icontains=search_query)
+            | Q(color__name__icontains=search_query)
+            | Q(comment__icontains=search_query)
+        )
+        if search_query.isdigit():
+            search_filters |= Q(id=int(search_query))
+        queryset = queryset.filter(search_filters)
+
+    status_values = {value for value, _ in CURRENT_STATUS_OPTIONS}
+    if status_filter in status_values:
+        queryset = queryset.filter(current_status=status_filter)
+        return queryset, status_filter
+    return queryset, ""
 
 
 
@@ -114,34 +148,12 @@ def auth_logout(request):
 
 @custom_login_required
 def current_orders_list(request):
-    status_options = [
-        (value, label)
-        for value, label in STATUS_CHOICES
-        if value != STATUS_FINISHED
-    ]
-    status_values = {value for value, _ in status_options}
     search_query = (request.GET.get("q") or "").strip()
     status_filter = (request.GET.get("status") or "").strip()
-
-    orders_queryset = (
-        Order.objects.select_related("model", "color")
-        .exclude(current_status=STATUS_FINISHED)
-        .order_by("-created_at", "-id")
+    orders_queryset, status_filter = _filtered_current_orders_queryset(
+        search_query=search_query,
+        status_filter=status_filter,
     )
-    if search_query:
-        search_filters = (
-            Q(model__name__icontains=search_query)
-            | Q(color__name__icontains=search_query)
-            | Q(comment__icontains=search_query)
-        )
-        if search_query.isdigit():
-            search_filters |= Q(id=int(search_query))
-        orders_queryset = orders_queryset.filter(search_filters)
-
-    if status_filter in status_values:
-        orders_queryset = orders_queryset.filter(current_status=status_filter)
-    else:
-        status_filter = ""
 
     if request.method == "POST":
         form = OrderStatusUpdateForm(request.POST)
@@ -160,9 +172,8 @@ def current_orders_list(request):
                             changed_by=request.user,
                         )
                     except InvalidStatusTransition as exc:
-                        status_labels = dict(STATUS_CHOICES)
-                        current_label = status_labels.get(exc.current_status, exc.current_status)
-                        next_label = status_labels.get(exc.next_status, exc.next_status)
+                        current_label = STATUS_LABELS.get(exc.current_status, exc.current_status)
+                        next_label = STATUS_LABELS.get(exc.next_status, exc.next_status)
                         messages.error(
                             request,
                             f"Недопустимий перехід статусу: {current_label} → {next_label}.",
@@ -177,10 +188,6 @@ def current_orders_list(request):
             messages.error(request, "Виникла помилка. Зробіть ще одну спробу.")
     form = OrderStatusUpdateForm()
     form.fields['orders'].queryset = orders_queryset
-    transition_map = {
-        status: sorted(get_allowed_transitions(status))
-        for status, _label in STATUS_CHOICES
-    }
     paginator = Paginator(orders_queryset, 20)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
@@ -196,9 +203,9 @@ def current_orders_list(request):
                         "page_obj": page_obj,
                         "search_query": search_query,
                         "status_filter": status_filter,
-                        "status_options": status_options,
+                        "status_options": CURRENT_STATUS_OPTIONS,
                         "query_string": query_string,
-                        "transition_map": transition_map,
+                        "transition_map": TRANSITION_MAP,
                              }
                 )
 
@@ -373,6 +380,7 @@ def notification_settings(request):
         settings.notify_order_finished = request.POST.get('notify_order_finished') == 'on'
         settings.notify_order_created_pause = request.POST.get('notify_order_created_pause') == 'on'
         settings.save()
+        messages.success(request, 'Налаштування сповіщень оновлено.')
 
         return redirect('notification_settings')
 

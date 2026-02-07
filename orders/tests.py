@@ -31,7 +31,7 @@ from orders.models import (
     OrderStatusHistory,
     ProductModel,
 )
-from orders.templatetags.order_ui import status_badge_class
+from orders.templatetags.order_ui import message_alert_class, status_badge_class
 
 
 @dataclass(eq=False)
@@ -423,6 +423,20 @@ class AuthAndSecurityFlowTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(NotificationSetting.objects.filter(user=self.user).exists())
 
+    def test_notification_settings_post_shows_success_message(self):
+        self.client.force_login(self.user)
+        response = self.client.post(
+            reverse("notification_settings"),
+            {
+                "notify_order_created": "on",
+                "notify_order_created_pause": "on",
+                "notify_order_finished": "on",
+            },
+            follow=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Налаштування сповіщень оновлено.")
+
 
 class DelayedNotificationsAdapterTests(TestCase):
     def setUp(self) -> None:
@@ -464,6 +478,12 @@ class OrderUiTemplateFilterTests(SimpleTestCase):
         self.assertEqual(status_badge_class("on_hold"), "bg-secondary")
         self.assertEqual(status_badge_class("unknown"), "bg-light text-dark")
 
+    def test_message_alert_class_mapping(self):
+        self.assertEqual(message_alert_class("error"), "danger")
+        self.assertEqual(message_alert_class("success"), "success")
+        self.assertEqual(message_alert_class("warning extra"), "warning")
+        self.assertEqual(message_alert_class("unknown"), "info")
+
 
 class CurrentOrdersViewTests(TestCase):
     def setUp(self) -> None:
@@ -474,6 +494,8 @@ class CurrentOrdersViewTests(TestCase):
         response = self.client.get(reverse("current_orders_list"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "transition-map-data")
+        self.assertContains(response, "bulk-status-form")
+        self.assertContains(response, "clear-selection-btn")
 
 
 class CurrentOrdersFilteringTests(TestCase):
