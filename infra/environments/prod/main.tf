@@ -194,7 +194,7 @@ resource "google_cloud_run_v2_job" "migrate" {
 
         env {
           name  = "DJANGO_SETTINGS_MODULE"
-          value = "OrderFlow.settings.prod"
+          value = "OrderFlow.settings"
         }
       }
     }
