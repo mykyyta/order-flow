@@ -66,6 +66,7 @@ jobs:
         run: |
           terraform plan \
             -var="project_id=${PROJECT_ID}" \
+            -var="enable_migrate_job=true" \
             -var="google_access_token=${{ steps.auth.outputs.access_token }}"
 
   terraform-apply:
@@ -118,6 +119,7 @@ jobs:
           terraform apply -auto-approve \
             -var="project_id=${PROJECT_ID}" \
             -var="container_image=${IMAGE_URI}" \
+            -var="enable_migrate_job=true" \
             -var="google_access_token=${{ steps.auth.outputs.access_token }}"
 
       - name: Run migrations job
