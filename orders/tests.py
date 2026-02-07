@@ -333,12 +333,33 @@ class AccessControlTests(TestCase):
         self.color = Color.objects.create(name="Blue", code=2, availability_status="in_stock")
 
     def test_models_and_colors_views_require_authentication(self):
-        self.assertEqual(self.client.get(reverse("model_list")).status_code, 302)
-        self.assertEqual(self.client.get(reverse("color_list")).status_code, 302)
+        self.assertEqual(self.client.get(reverse("product_models")).status_code, 302)
+        self.assertEqual(self.client.get(reverse("colors")).status_code, 302)
         self.assertEqual(
-            self.client.get(reverse("color_detail_update", kwargs={"pk": self.color.pk})).status_code,
+            self.client.get(reverse("color_edit", kwargs={"pk": self.color.pk})).status_code,
             302,
         )
+
+
+class ColorEditFlowTests(TestCase):
+    def setUp(self) -> None:
+        self.user = CustomUser.objects.create_user(username="color_editor", password="pass12345")
+        self.color = Color.objects.create(name="Ivory", code=101, availability_status="in_stock")
+        self.client.force_login(self.user)
+
+    def test_color_edit_redirects_to_colors_list(self):
+        response = self.client.post(
+            reverse("color_edit", kwargs={"pk": self.color.pk}),
+            data={
+                "name": "ivory",
+                "code": 101,
+                "availability_status": "low_stock",
+            },
+        )
+
+        self.assertRedirects(response, reverse("colors"))
+        self.color.refresh_from_db()
+        self.assertEqual(self.color.availability_status, "low_stock")
 
 
 class AuthAndSecurityFlowTests(TestCase):
@@ -506,7 +527,7 @@ class CurrentOrdersFilteringTests(TestCase):
         self.color = Color.objects.create(name="White", code=5, availability_status="in_stock")
 
     def test_current_orders_list_is_paginated_and_excludes_finished(self):
-        for _ in range(21):
+        for _ in range(51):
             Order.objects.create(
                 model=self.model,
                 color=self.color,
@@ -520,8 +541,8 @@ class CurrentOrdersFilteringTests(TestCase):
 
         response = self.client.get(reverse("orders_active"))
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context["page_obj"].paginator.count, 21)
-        self.assertEqual(len(response.context["orders"]), 20)
+        self.assertEqual(response.context["page_obj"].paginator.count, 51)
+        self.assertEqual(len(response.context["orders"]), 50)
         self.assertTrue(response.context["page_obj"].has_next())
 
         second_page = self.client.get(reverse("orders_active"), {"page": 2})
@@ -613,7 +634,7 @@ class OrderDetailViewTests(TestCase):
         self.model = ProductModel.objects.create(name="Model F")
         self.color = Color.objects.create(name="Cyan", code=6, availability_status="in_stock")
 
-    def test_order_detail_renders_status_badge(self):
+    def test_order_detail_renders_status_indicator(self):
         order = Order.objects.create(
             model=self.model,
             color=self.color,
@@ -622,7 +643,7 @@ class OrderDetailViewTests(TestCase):
 
         response = self.client.get(reverse("order_detail", kwargs={"order_id": order.id}))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "bg-red-100 text-red-700")
+        self.assertContains(response, "text-rose-500")
         self.assertContains(response, "Призупинено")
 
 
