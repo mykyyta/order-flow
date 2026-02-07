@@ -1,4 +1,6 @@
 import os
+
+import django
 from telegram import Update
 from telegram.ext import (
     Application,
@@ -7,14 +9,18 @@ from telegram.ext import (
 )
 
 from dotenv import load_dotenv
-from orders.models import Order  # Import your Order model if needed
 
-# Load environment variables
 load_dotenv()
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 
 if not TELEGRAM_BOT_TOKEN:
     raise RuntimeError("TELEGRAM_BOT_TOKEN is not set. Please define it in your .env file.")
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "OrderFlow.settings")
+django.setup()
+
+from orders.domain.status import STATUS_FINISHED  # noqa: E402
+from orders.models import Order  # noqa: E402
 
 
 # Command handler functions
@@ -25,14 +31,18 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def not_finished_orders(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle /not_finished_orders command to retrieve unfinished orders from the database."""
-    from django.db.models import Q
-
     try:
-        unfinished_orders = Order.objects.filter(~Q(status="Completed")).all()
+        unfinished_orders = Order.objects.exclude(
+            current_status=STATUS_FINISHED
+        ).select_related("model", "color")
         if unfinished_orders.exists():
             response = "Here are your unfinished orders:\n"
             for order in unfinished_orders:
-                response += f"- Order ID: {order.id}, Status: {order.status}, Created At: {order.created_at}\n"
+                response += (
+                    f"- Order ID: {order.id}, "
+                    f"Status: {order.get_status_display()}, "
+                    f"Created At: {order.created_at}\n"
+                )
         else:
             response = "You have no unfinished orders!"
     except Exception as e:

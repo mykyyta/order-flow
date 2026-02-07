@@ -21,10 +21,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 import os
+import sys
 from dotenv import load_dotenv
 load_dotenv()
 
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
+if not SECRET_KEY and 'test' in sys.argv:
+    SECRET_KEY = 'test-secret-key'
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -83,20 +86,28 @@ WSGI_APPLICATION = "OrderFlow.wsgi.application"
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',  # Database engine for PostgreSQL
-        'NAME': os.getenv('POSTGRES_DB', 'neondb'),  # Database name
-        'USER': os.getenv('POSTGRES_USER', 'neondb_owner'),  # Database username
-        'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'default_password'),  # Database password
-        'HOST': os.getenv('POSTGRES_HOST', 'localhost'),  # Database host
-        'PORT': os.getenv('POSTGRES_PORT', '5432'),  # Default PostgreSQL port
-        'OPTIONS': {
-            'sslmode': 'require',  # SSL mode
-        },
-        'CONN_MAX_AGE': 60,
+if 'test' in sys.argv:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'test_db.sqlite3',
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',  # Database engine for PostgreSQL
+            'NAME': os.getenv('POSTGRES_DB', 'neondb'),  # Database name
+            'USER': os.getenv('POSTGRES_USER', 'neondb_owner'),  # Database username
+            'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'default_password'),  # Database password
+            'HOST': os.getenv('POSTGRES_HOST', 'localhost'),  # Database host
+            'PORT': os.getenv('POSTGRES_PORT', '5432'),  # Default PostgreSQL port
+            'OPTIONS': {
+                'sslmode': 'require',  # SSL mode
+            },
+            'CONN_MAX_AGE': 60,
+        }
+    }
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators

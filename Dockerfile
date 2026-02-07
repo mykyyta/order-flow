@@ -22,4 +22,4 @@ COPY . /app/
 EXPOSE 8080
 
 # Run the Django server on Cloud Run PORT
-CMD ["sh", "-c", "python manage.py runserver 0.0.0.0:${PORT}"]
+CMD ["sh", "-c", "python manage.py runserver 0.0.0.0:${PORT:-8000}"]

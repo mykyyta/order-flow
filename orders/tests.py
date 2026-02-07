@@ -1,3 +1,306 @@
-from django.test import TestCase
+from __future__ import annotations
 
-# Create your tests here.
+from dataclasses import dataclass
+from datetime import datetime, timezone as dt_timezone
+from typing import Optional
+
+from django.test import SimpleTestCase, TestCase
+
+from orders.application.exceptions import InvalidStatusTransition
+from orders.application.notification_service import DelayedNotificationService
+from orders.application.order_service import OrderService
+from orders.adapters.orders_repository import DjangoOrderRepository
+from orders.domain.status import STATUS_EMBROIDERY, STATUS_FINISHED, STATUS_NEW
+from orders.models import Color, CustomUser, OrderStatusHistory, ProductModel
+
+
+@dataclass(eq=False)
+class FakeOrder:
+    created_at: Optional[datetime] = None
+    finished_at: Optional[datetime] = None
+    current_status: Optional[str] = None
+
+
+class FakeClock:
+    def __init__(self, now_value: datetime) -> None:
+        self._now = now_value
+
+    def now(self) -> datetime:
+        return self._now
+
+
+class FakeRepo:
+    def __init__(self) -> None:
+        self.latest_status = {}
+        self.add_status_calls = 0
+        self.set_finished_calls = 0
+        self.orders = []
+
+    def create_order(
+        self,
+        *,
+        model,
+        color,
+        embroidery: bool,
+        urgent: bool,
+        etsy: bool,
+        comment: Optional[str],
+    ):
+        order = FakeOrder()
+        self.orders.append(order)
+        self.latest_status[order] = None
+        return order
+
+    def add_status(self, *, order, new_status: str, changed_by) -> None:
+        self.latest_status[order] = new_status
+        self.add_status_calls += 1
+
+    def get_latest_status(self, *, order) -> Optional[str]:
+        return self.latest_status.get(order)
+
+    def set_finished_at(self, *, order, finished_at: Optional[datetime]) -> None:
+        order.finished_at = finished_at
+        self.set_finished_calls += 1
+
+    def set_current_status(self, *, order, current_status: str) -> None:
+        order.current_status = current_status
+
+    def list_orders_created_between(self, *, start: datetime, end: datetime):
+        return [
+            order for order in self.orders
+            if order.created_at is not None and start <= order.created_at < end
+        ]
+
+
+class FakeNotifier:
+    def __init__(self) -> None:
+        self.created = []
+        self.finished = []
+        self.delayed_sent = []
+        self.delayed_result = True
+
+    def order_created(self, *, order, orders_url: Optional[str]) -> None:
+        self.created.append((order, orders_url))
+
+    def order_finished(self, *, order) -> None:
+        self.finished.append(order)
+
+    def orders_created_delayed(self, *, orders) -> bool:
+        self.delayed_sent.append(list(orders))
+        return self.delayed_result
+
+
+class OrderServiceTests(SimpleTestCase):
+    def setUp(self) -> None:
+        self.fixed_now = datetime(2026, 1, 1, 9, 0, tzinfo=dt_timezone.utc)
+        self.clock = FakeClock(self.fixed_now)
+        self.repo = FakeRepo()
+        self.notifier = FakeNotifier()
+        self.service = OrderService(
+            repo=self.repo,
+            notifier=self.notifier,
+            clock=self.clock,
+        )
+
+    def test_create_order_sets_status_and_notifies(self):
+        order = self.service.create_order(
+            model="model",
+            color="color",
+            embroidery=False,
+            urgent=False,
+            etsy=False,
+            comment=None,
+            created_by="user",
+            orders_url="http://example/orders",
+        )
+
+        self.assertEqual(self.repo.latest_status[order], STATUS_NEW)
+        self.assertEqual(order.current_status, STATUS_NEW)
+        self.assertEqual(len(self.notifier.created), 1)
+
+    def test_change_status_finishes_order(self):
+        order = self.repo.create_order(
+            model="model",
+            color="color",
+            embroidery=False,
+            urgent=False,
+            etsy=False,
+            comment=None,
+        )
+
+        self.service.change_status(
+            orders=[order],
+            new_status=STATUS_FINISHED,
+            changed_by="user",
+        )
+
+        self.assertEqual(self.repo.latest_status[order], STATUS_FINISHED)
+        self.assertEqual(order.current_status, STATUS_FINISHED)
+        self.assertEqual(order.finished_at, self.fixed_now)
+        self.assertEqual(len(self.notifier.finished), 1)
+
+    def test_change_status_same_status_normalizes_finished_at(self):
+        order = self.repo.create_order(
+            model="model",
+            color="color",
+            embroidery=False,
+            urgent=False,
+            etsy=False,
+            comment=None,
+        )
+        self.repo.latest_status[order] = STATUS_FINISHED
+
+        self.service.change_status(
+            orders=[order],
+            new_status=STATUS_FINISHED,
+            changed_by="user",
+        )
+
+        self.assertEqual(self.repo.add_status_calls, 0)
+        self.assertEqual(order.current_status, STATUS_FINISHED)
+        self.assertEqual(order.finished_at, self.fixed_now)
+        self.assertEqual(len(self.notifier.finished), 0)
+
+    def test_change_status_unfinishes_order(self):
+        order = self.repo.create_order(
+            model="model",
+            color="color",
+            embroidery=False,
+            urgent=False,
+            etsy=False,
+            comment=None,
+        )
+        order.finished_at = self.fixed_now
+
+        self.service.change_status(
+            orders=[order],
+            new_status=STATUS_NEW,
+            changed_by="user",
+        )
+
+        self.assertIsNone(order.finished_at)
+
+    def test_change_status_rejects_invalid_status(self):
+        order = self.repo.create_order(
+            model="model",
+            color="color",
+            embroidery=False,
+            urgent=False,
+            etsy=False,
+            comment=None,
+        )
+
+        with self.assertRaises(ValueError):
+            self.service.change_status(
+                orders=[order],
+                new_status="invalid_status",
+                changed_by="user",
+            )
+
+    def test_change_status_rejects_invalid_transition(self):
+        order = self.repo.create_order(
+            model="model",
+            color="color",
+            embroidery=False,
+            urgent=False,
+            etsy=False,
+            comment=None,
+        )
+        self.repo.latest_status[order] = STATUS_FINISHED
+
+        with self.assertRaises(InvalidStatusTransition):
+            self.service.change_status(
+                orders=[order],
+                new_status=STATUS_EMBROIDERY,
+                changed_by="user",
+            )
+
+
+class DelayedNotificationServiceTests(SimpleTestCase):
+    def setUp(self) -> None:
+        self.fixed_now = datetime(2026, 1, 1, 9, 0, tzinfo=dt_timezone.utc)
+        self.clock = FakeClock(self.fixed_now)
+        self.repo = FakeRepo()
+        self.notifier = FakeNotifier()
+        self.service = DelayedNotificationService(
+            repo=self.repo,
+            notifier=self.notifier,
+            clock=self.clock,
+        )
+
+    def test_no_orders_to_notify(self):
+        status = self.service.send_delayed_notifications()
+        self.assertEqual(status, "no orders to notify")
+
+    def test_no_users_to_notify(self):
+        order = FakeOrder(created_at=self.fixed_now.replace(hour=7))
+        self.repo.orders.append(order)
+        self.notifier.delayed_result = False
+
+        status = self.service.send_delayed_notifications()
+        self.assertEqual(status, "no users to notify")
+
+    def test_delayed_notifications_sent(self):
+        order = FakeOrder(created_at=self.fixed_now.replace(hour=7))
+        self.repo.orders.append(order)
+
+        status = self.service.send_delayed_notifications()
+        self.assertEqual(status, "delayed notifications sent")
+
+
+class OrderServiceIntegrationTests(TestCase):
+    def setUp(self) -> None:
+        self.fixed_now = datetime(2026, 1, 1, 9, 0, tzinfo=dt_timezone.utc)
+        self.clock = FakeClock(self.fixed_now)
+        self.repo = DjangoOrderRepository()
+        self.notifier = FakeNotifier()
+        self.service = OrderService(
+            repo=self.repo,
+            notifier=self.notifier,
+            clock=self.clock,
+        )
+        self.user = CustomUser.objects.create_user(username="user", password="pass")
+        self.model = ProductModel.objects.create(name="Model A")
+        self.color = Color.objects.create(name="Red", code=1, availability_status="in_stock")
+
+    def test_create_order_persists_history(self):
+        order = self.service.create_order(
+            model=self.model,
+            color=self.color,
+            embroidery=False,
+            urgent=False,
+            etsy=False,
+            comment=None,
+            created_by=self.user,
+            orders_url=None,
+        )
+
+        self.assertEqual(OrderStatusHistory.objects.filter(order=order).count(), 1)
+        self.assertEqual(
+            OrderStatusHistory.objects.filter(order=order).first().new_status,
+            STATUS_NEW,
+        )
+        order.refresh_from_db()
+        self.assertEqual(order.current_status, STATUS_NEW)
+
+    def test_change_status_updates_finished_at(self):
+        order = self.service.create_order(
+            model=self.model,
+            color=self.color,
+            embroidery=False,
+            urgent=False,
+            etsy=False,
+            comment=None,
+            created_by=self.user,
+            orders_url=None,
+        )
+
+        self.service.change_status(
+            orders=[order],
+            new_status=STATUS_FINISHED,
+            changed_by=self.user,
+        )
+
+        order.refresh_from_db()
+        self.assertEqual(order.finished_at, self.fixed_now)
+        self.assertEqual(order.current_status, STATUS_FINISHED)
