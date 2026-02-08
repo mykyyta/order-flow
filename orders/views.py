@@ -509,6 +509,7 @@ class ColorDetailUpdateView(LoginRequiredMixin, UpdateView):
 @custom_login_required
 def profile_view(request):
     user = request.user
+    notif_settings, _created = NotificationSetting.objects.get_or_create(user=user)
 
     if request.method == "POST":
         new_username = (request.POST.get("username") or "").strip()
@@ -517,41 +518,29 @@ def profile_view(request):
             messages.error(request, "Логін не може бути порожнім.")
             return redirect("profile")
 
-        if new_username == user.username:
-            messages.info(request, "Змін немає — усе як було.")
-            return redirect("profile")
+        changed = False
 
-        user_model = get_user_model()
-        if user_model.objects.filter(username__iexact=new_username).exclude(pk=user.pk).exists():
-            messages.error(request, "Такий логін вже зайнятий.")
-            return redirect("profile")
+        if new_username != user.username:
+            user_model = get_user_model()
+            if user_model.objects.filter(username__iexact=new_username).exclude(pk=user.pk).exists():
+                messages.error(request, "Такий логін вже зайнятий.")
+                return redirect("profile")
+            user.username = new_username
+            user.save(update_fields=["username"])
 
-        user.username = new_username
-        user.save(update_fields=["username"])
-        messages.success(request, "Готово! Логін оновлено.")
+        notif_settings.notify_order_created = request.POST.get("notify_order_created") == "on"
+        notif_settings.notify_order_finished = request.POST.get("notify_order_finished") == "on"
+        notif_settings.notify_order_created_pause = request.POST.get("notify_order_created_pause") == "on"
+        notif_settings.save()
+
+        messages.success(request, "Готово! Налаштування збережено.")
 
         return redirect("profile")
 
-    return render(request, "account/profile.html", {"page_title": "Профіль", "user": user})
-
-
-@custom_login_required
-def notification_settings(request):
-    settings, _created = NotificationSetting.objects.get_or_create(user=request.user)
-
-    if request.method == "POST":
-        settings.notify_order_created = request.POST.get("notify_order_created") == "on"
-        settings.notify_order_finished = request.POST.get("notify_order_finished") == "on"
-        settings.notify_order_created_pause = request.POST.get("notify_order_created_pause") == "on"
-        settings.save()
-        messages.success(request, "Готово! Сповіщення оновлено.")
-
-        return redirect("notification_settings")
-
     return render(
         request,
-        "account/notification_settings.html",
-        {"page_title": "Сповіщення", "settings": settings},
+        "account/profile.html",
+        {"page_title": "Профіль", "user": user, "notification_settings": notif_settings},
     )
 
 
