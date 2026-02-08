@@ -65,16 +65,14 @@ gcloud run services update-traffic pult-app \
 ```
 
 ## Custom domain (optional)
-No domain is configured by default. To use a custom domain:
+No domain by default. To add one:
 
-1. **Verify domain** in [Google Search Console](https://search.google.com/search-console) (add property for the domain; if using a service account for Terraform, add it as owner).
-2. **Set domain only where you run Terraform** (never commit the value if you want it private):
-   - **CI**: GitHub → Settings → Secrets and variables → Actions → Variables → add `CUSTOM_DOMAIN` = your domain.
-   - **Local**: in `infra/environments/prod/terraform.tfvars` set `custom_domain = "your-domain.com"` (this file is gitignored).
-3. Run **Terraform** (push to main with infra changes, or manually run "Terraform Infra" workflow). This creates the domain mapping and sets `ALLOWED_HOSTS` for the app.
-4. **DNS**: After apply, get records from GCP Console (Cloud Run → pult-app → Manage custom domains) or `terraform output custom_domain_mapping_records`, and add the CNAME (or A/AAAA) at your DNS provider. Wait for propagation.
+1. **Verify domain** in [Search Console](https://search.google.com/search-console) (Domain property for the base domain, e.g. `example.com` for `app.example.com`).
+2. **Add Terraform deployer SA as Verified owner:** Search Console → property → Settings → **Verified owners** → Add owner → `orderflow-tf-deployer@orderflow-451220.iam.gserviceaccount.com`. Otherwise apply fails with "Caller is not authorized to administer the domain".
+3. **Set domain** (don’t commit): GitHub Actions variable `CUSTOM_DOMAIN` or local `terraform.tfvars`: `custom_domain = "your-domain.com"`.
+4. **Terraform apply** (workflow or local). Then add the DNS records shown in Console (Cloud Run → Domain mappings → DNS records) or `gcloud beta run domain-mappings describe --domain=your-domain.com --region us-central1 --project orderflow-451220 --format="yaml(status.resourceRecords)"`.
 
-To remove the custom domain: set `CUSTOM_DOMAIN` / `custom_domain` to empty and apply again.
+To remove: set `CUSTOM_DOMAIN` / `custom_domain` to empty and apply again.
 
 ## Terraform state recovery
 ```bash

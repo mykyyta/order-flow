@@ -22,5 +22,5 @@
 
 ## Operational model
 - Cloud Run scales to zero for low traffic periods.
-- Migrations run through dedicated Cloud Run Job (`pult-migrate`). See [migration_orderflow_to_pult.md](../migration_orderflow_to_pult.md).
+- Migrations run through dedicated Cloud Run Job (`pult-migrate`). See [runbook](runbook.md).
 - Current technical debt: move Cloud Run runtime secrets from plaintext env to Secret Manager references end-to-end.
