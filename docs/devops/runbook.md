@@ -32,6 +32,19 @@ gcloud run jobs execute pult-migrate --region "$REGION" --project "$PROJECT" --w
 
 Check the job run in Cloud Console (Cloud Run → Jobs → pult-migrate → Executions) for logs and exit status.
 
+### Fix "can't open file '/app/manage.py'"
+If the job fails with `can't open file '/app/manage.py': No such file or directory`, the job's container command is wrong (it expects `manage.py` in `/app`; the image has it at `src/manage.py`). One-time fix:
+
+```bash
+REGION=us-central1
+PROJECT=orderflow-451220
+
+gcloud run jobs update pult-migrate --region "$REGION" --project "$PROJECT" \
+  --command="python" --args="src/manage.py,migrate,--noinput"
+```
+
+Then run the job again: `gcloud run jobs execute pult-migrate --region "$REGION" --project "$PROJECT" --wait`. Alternatively, fix via Terraform: the migrate job no longer has `ignore_changes = all`, so `terraform apply` will update the job's command to `python src/manage.py migrate --noinput`.
+
 ## Data consistency check
 ```bash
 python manage.py check_order_statuses
