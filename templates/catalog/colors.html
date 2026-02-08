@@ -7,18 +7,16 @@
 {% include "partials/messages.html" %}
 
 <div class="space-y-6">
-    <div class="card">
-        <ul class="divide-y divide-slate-100">
+    <div>
+        <div class="flex flex-wrap gap-2">
             {% for color in colors %}
-            <li class="px-4 py-2.5">
-                <a href="{% url 'color_edit' color.id %}" class="{% if color.availability_status == 'out_of_stock' %}link-availability-out{% elif color.availability_status == 'low_stock' %}link-availability-low{% else %}link-availability-in{% endif %}">
-                    {{ color.name }} ({{ color.code }})
-                </a>
-            </li>
+            <a href="{% url 'color_edit' color.id %}" class="catalog-chip-link {% if color.availability_status == 'out_of_stock' %}catalog-chip-availability-out{% elif color.availability_status == 'low_stock' %}catalog-chip-availability-low{% else %}catalog-chip-availability-in{% endif %}">
+                {{ color.name }} ({{ color.code }})
+            </a>
             {% empty %}
-            <li class="px-4 py-6 text-center text-sm text-slate-500">Поки що кольорів немає.</li>
+            <p class="text-sm text-slate-500">Поки що кольорів немає.</p>
             {% endfor %}
-        </ul>
+        </div>
     </div>
 
     <div class="card form-card-body">

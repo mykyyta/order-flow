@@ -459,19 +459,20 @@ class AuthAndSecurityFlowTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "не може бути порожнім")
 
-    def test_notification_settings_get_or_create_for_existing_user(self):
+    def test_profile_creates_notification_settings_for_existing_user(self):
         NotificationSetting.objects.filter(user=self.user).delete()
         self.client.force_login(self.user)
 
-        response = self.client.get(reverse("notification_settings"))
+        response = self.client.get(reverse("profile"))
         self.assertEqual(response.status_code, 200)
         self.assertTrue(NotificationSetting.objects.filter(user=self.user).exists())
 
-    def test_notification_settings_post_shows_success_message(self):
+    def test_profile_saves_notification_settings(self):
         self.client.force_login(self.user)
         response = self.client.post(
-            reverse("notification_settings"),
+            reverse("profile"),
             {
+                "username": self.user.username,
                 "notify_order_created": "on",
                 "notify_order_created_pause": "on",
                 "notify_order_finished": "on",
@@ -479,7 +480,7 @@ class AuthAndSecurityFlowTests(TestCase):
             follow=True,
         )
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Готово! Сповіщення оновлено.")
+        self.assertContains(response, "Готово! Налаштування збережено.")
 
 
 class DelayedNotificationsAdapterTests(TestCase):

@@ -65,7 +65,7 @@
 
                     <span class="mx-1.5 h-5 w-px bg-slate-200" aria-hidden="true"></span>
 
-                    <a href="{% url 'profile' %}" class="rounded-md px-3 py-1.5 text-sm font-medium transition-colors {% if current_url == 'profile' or current_url == 'change_password' or current_url == 'notification_settings' %}bg-teal-50 text-teal-700{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}" {% if current_url == 'profile' or current_url == 'change_password' or current_url == 'notification_settings' %}aria-current="page"{% endif %}>Профіль</a>
+                    <a href="{% url 'profile' %}" class="rounded-md px-3 py-1.5 text-sm font-medium transition-colors {% if current_url == 'profile' or current_url == 'change_password' %}bg-teal-50 text-teal-700{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}" {% if current_url == 'profile' or current_url == 'change_password' %}aria-current="page"{% endif %}>Профіль</a>
                     <form method="post" action="{% url 'auth_logout' %}" class="m-0 inline-flex">
                         {% csrf_token %}
                         <button type="submit" class="rounded-md px-3 py-1.5 text-sm font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors">Вийти</button>
@@ -91,7 +91,7 @@
                 <div class="my-2 border-t border-slate-100"></div>
                 <a href="{% url 'orders_create' %}" class="btn-primary block px-3 py-2 {% if current_url == 'orders_create' %}ring-2 ring-slate-500/30{% endif %}">+ Нове замовлення</a>
                 <div class="my-2 border-t border-slate-100"></div>
-                <a href="{% url 'profile' %}" class="block rounded-md px-3 py-2 text-sm font-medium transition-colors {% if current_url == 'profile' or current_url == 'change_password' or current_url == 'notification_settings' %}bg-teal-50 text-teal-700{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}" {% if current_url == 'profile' or current_url == 'change_password' or current_url == 'notification_settings' %}aria-current="page"{% endif %}>Профіль</a>
+                <a href="{% url 'profile' %}" class="block rounded-md px-3 py-2 text-sm font-medium transition-colors {% if current_url == 'profile' or current_url == 'change_password' %}bg-teal-50 text-teal-700{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}" {% if current_url == 'profile' or current_url == 'change_password' %}aria-current="page"{% endif %}>Профіль</a>
                 <form method="post" action="{% url 'auth_logout' %}" class="m-0">
                     {% csrf_token %}
                     <button type="submit" class="block w-full rounded-md px-3 py-2 text-left text-sm font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors">Вийти</button>
