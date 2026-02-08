@@ -293,7 +293,8 @@ def orders_bulk_status(request):
 def orders_completed(request):
     search_query = (request.GET.get("q") or "").strip()
     orders = (
-        Order.objects.select_related("model", "color")
+        Order.objects.only("id", "finished_at", "model_id", "color_id")
+        .select_related("model", "color")
         .filter(current_status=STATUS_FINISHED)
         .order_by("-finished_at")
     )
