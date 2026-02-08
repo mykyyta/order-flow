@@ -10,7 +10,8 @@ from orders.domain.status import (
     STATUS_NEW,
     STATUS_ON_HOLD,
 )
-from orders.models import Color, Order, ProductModel
+from catalog.models import Color, ProductModel
+from orders.models import Order
 
 
 class Command(BaseCommand):
