@@ -24,22 +24,22 @@
 
 <div class="card">
     <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-slate-200">
-            <thead class="bg-slate-50/80">
+        <table class="data-table">
+            <thead>
                 <tr>
-                    <th scope="col" class="w-14 px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-slate-400">ID</th>
-                    <th scope="col" class="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-slate-400">Замовлення</th>
-                    <th scope="col" class="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-slate-400">Завершено</th>
+                    <th scope="col" class="w-14">ID</th>
+                    <th scope="col">Замовлення</th>
+                    <th scope="col">Завершено</th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-slate-100 bg-white">
+            <tbody>
                 {% for order in page_obj.object_list %}
-                <tr class="hover:bg-slate-50/80 transition-colors">
-                    <td class="whitespace-nowrap px-3 py-2 text-sm text-slate-500">{{ order.id }}</td>
-                    <td class="whitespace-nowrap px-3 py-2 text-sm">
+                <tr>
+                    <td class="text-slate-500">{{ order.id }}</td>
+                    <td>
                         <a href="{% url 'order_detail' order.id %}" class="font-medium text-slate-800 hover:text-teal-600 transition-colors">{{ order.model.name }} · {{ order.color.name }}</a>
                     </td>
-                    <td class="whitespace-nowrap px-3 py-2 text-sm text-slate-500">{{ order.finished_at|date:"d.m.Y H:i" }}</td>
+                    <td class="text-slate-500">{{ order.finished_at|date:"d.m.Y H:i" }}</td>
                 </tr>
                 {% empty %}
                 <tr>

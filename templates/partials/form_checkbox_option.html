@@ -1,0 +1,8 @@
+{% comment %}
+Single checkbox option in a row (e.g. Etsy, Вишивка, Терміново). Pass: field (form field), label (text).
+Use inside: <div class="flex flex-wrap items-center gap-x-6 gap-y-2"> ... </div>
+{% endcomment %}
+<label class="flex items-center gap-2 cursor-pointer">
+    {{ field }}
+    <span class="text-sm font-medium text-slate-700">{{ label }}</span>
+</label>

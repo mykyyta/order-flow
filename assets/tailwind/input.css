@@ -15,8 +15,11 @@
 
 @theme {
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  /* Primary (brand): one place to change; themes override these. */
   --color-primary: #0D9488;
   --color-primary-dark: #0F766E;
+  --color-primary-muted: #f0fdfa;   /* light bg / active nav */
+  --color-primary-focus: #14b8a6;   /* focus ring, borders */
   --color-accent: #F59E0B;
   --color-background: #F8FAFC;
   --color-surface: #ffffff;
@@ -32,12 +35,15 @@
   }
   .form-input {
     @apply block w-full min-h-10 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400;
-    @apply focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:ring-offset-0;
-    @apply transition-[border-color,box-shadow];
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-0 transition-[border-color,box-shadow];
     font-size: 0.95rem;
     line-height: 1.35;
     letter-spacing: -0.01em;
     font-weight: 500;
+  }
+  .form-input:focus {
+    border-color: var(--color-primary-focus);
+    --tw-ring-color: color-mix(in oklab, var(--color-primary-focus) 20%, transparent);
   }
   .form-input::placeholder {
     font-weight: 400;
@@ -46,7 +52,7 @@
   }
   .form-select {
     @apply block w-full min-h-10 rounded-md border border-slate-300 bg-white px-3 py-2 pr-8 text-sm text-slate-900;
-    @apply focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:ring-offset-0;
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-0;
     @apply transition-[border-color,box-shadow] appearance-none;
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
     background-position: right 0.5rem center;
@@ -56,6 +62,10 @@
     line-height: 1.35;
     letter-spacing: -0.01em;
     font-weight: 500;
+  }
+  .form-select:focus {
+    border-color: var(--color-primary-focus);
+    --tw-ring-color: color-mix(in oklab, var(--color-primary-focus) 20%, transparent);
   }
   /* Custom dropdown panel (replaces native options list) */
   .form-select-wrap {
@@ -67,7 +77,7 @@
   }
   .form-select-trigger {
     @apply flex min-h-10 items-center justify-between w-full rounded-md border border-slate-300 bg-white px-3 py-2 pr-8 text-left text-sm text-slate-900 cursor-pointer;
-    @apply focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:ring-offset-0;
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-0;
     @apply transition-[border-color,box-shadow];
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
     background-position: right 0.5rem center;
@@ -79,8 +89,14 @@
     letter-spacing: -0.01em;
     font-weight: 500;
   }
+  .form-select-trigger:focus {
+    border-color: var(--color-primary-focus);
+    --tw-ring-color: color-mix(in oklab, var(--color-primary-focus) 20%, transparent);
+  }
   .form-select-trigger[aria-expanded="true"] {
-    @apply border-teal-500 ring-2 ring-teal-500/20;
+    border-color: var(--color-primary-focus);
+    --tw-ring-color: color-mix(in oklab, var(--color-primary-focus) 20%, transparent);
+    @apply ring-2;
   }
   .form-select-dropdown {
     @apply fixed z-[9999] mt-1 max-h-60 overflow-auto rounded-md border border-slate-200 bg-white py-1 shadow-lg;
@@ -93,19 +109,24 @@
     letter-spacing: -0.01em;
   }
   .form-select-option[aria-selected="true"] {
-    @apply bg-teal-50 text-teal-700;
+    background-color: var(--color-primary-muted);
+    color: var(--color-primary-dark);
   }
   .form-select-option.disabled {
     @apply opacity-50 cursor-not-allowed;
   }
   .form-textarea {
     @apply block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 min-h-[88px] resize-y;
-    @apply focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:ring-offset-0;
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-0;
     @apply transition-[border-color,box-shadow];
     font-size: 0.95rem;
     line-height: 1.45;
     letter-spacing: -0.01em;
     font-weight: 500;
+  }
+  .form-textarea:focus {
+    border-color: var(--color-primary-focus);
+    --tw-ring-color: color-mix(in oklab, var(--color-primary-focus) 20%, transparent);
   }
   .form-textarea::placeholder {
     font-weight: 400;
@@ -114,18 +135,21 @@
   }
   .form-checkbox {
     @apply h-5 w-5 shrink-0 cursor-pointer rounded-md border border-slate-300 bg-white transition-colors;
-    @apply focus:ring-2 focus:ring-teal-500/20 focus:ring-offset-0 focus:outline-none;
+    @apply focus:ring-2 focus:ring-offset-0 focus:outline-none;
     appearance: none;
     -webkit-appearance: none;
+  }
+  .form-checkbox:focus {
+    --tw-ring-color: color-mix(in oklab, var(--color-primary-focus) 20%, transparent);
   }
   .form-checkbox:hover {
     @apply border-slate-400;
   }
   .form-checkbox:checked {
-    border-color: var(--of-selection, var(--color-teal-600));
+    border-color: var(--of-selection, var(--color-primary));
     background-color: color-mix(
       in oklab,
-      var(--of-selection, var(--color-teal-600)) 18%,
+      var(--of-selection, var(--color-primary)) 18%,
       white
     );
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230f172a' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round'%3e%3cpath d='M5 12l5 5L20 7'/%3e%3c/svg%3e");
@@ -134,10 +158,10 @@
     background-size: 0.875rem 0.875rem;
   }
   .form-checkbox:indeterminate {
-    border-color: var(--of-selection, var(--color-teal-600));
+    border-color: var(--of-selection, var(--color-primary));
     background-color: color-mix(
       in oklab,
-      var(--of-selection, var(--color-teal-600)) 18%,
+      var(--of-selection, var(--color-primary)) 18%,
       white
     );
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3e%3cpath d='M5 12h14' stroke='%230f172a' stroke-width='2.25' stroke-linecap='round'/%3e%3c/svg%3e");
@@ -155,13 +179,10 @@
     @apply p-5 sm:p-6;
   }
   .btn-primary {
-    @apply inline-flex min-h-10 items-center justify-center rounded-md px-4 py-2 text-sm font-medium text-white;
-    @apply border border-transparent bg-teal-600 hover:bg-teal-700;
-    @apply focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2;
-    @apply disabled:opacity-50 disabled:cursor-not-allowed transition-[background-color,box-shadow,transform,border-color];
-
+    @apply inline-flex min-h-10 items-center justify-center rounded-md px-4 py-2 text-sm font-medium text-white border border-transparent;
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-[background-color,box-shadow,transform,border-color];
     /* Add a subtle depth without looking too neon. */
-    --btn-base: color-mix(in oklab, var(--color-teal-600) 78%, #1e293b);
+    --btn-base: color-mix(in oklab, var(--color-primary) 78%, #1e293b);
     --btn-top: color-mix(in oklab, var(--btn-base) 84%, white);
     --btn-bottom: color-mix(in oklab, var(--btn-base) 88%, #1e293b);
 
@@ -172,8 +193,11 @@
       0 1px 0 0 color-mix(in oklab, var(--btn-base) 14%, white),
       0 10px 24px -16px color-mix(in oklab, var(--btn-base) 58%, #1e293b);
   }
+  .btn-primary:focus {
+    --tw-ring-color: var(--color-primary-focus);
+  }
   .btn-primary:hover:not(:disabled) {
-    --btn-base: color-mix(in oklab, var(--color-teal-700) 78%, #1e293b);
+    --btn-base: color-mix(in oklab, var(--color-primary-dark) 78%, #1e293b);
     --btn-top: color-mix(in oklab, var(--btn-base) 84%, white);
     --btn-bottom: color-mix(in oklab, var(--btn-base) 88%, #1e293b);
 
@@ -196,13 +220,20 @@
     box-shadow: none;
   }
   .btn-secondary {
-    @apply inline-flex min-h-10 items-center justify-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors;
+    @apply inline-flex min-h-10 items-center justify-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors;
+  }
+  .btn-secondary:focus {
+    --tw-ring-color: var(--color-primary-focus);
   }
   .link-muted {
     @apply text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors;
   }
   .link-back {
-    @apply text-sm font-medium text-teal-600 hover:text-teal-700 transition-colors;
+    @apply text-sm font-medium transition-colors;
+    color: var(--color-primary);
+  }
+  .link-back:hover {
+    color: var(--color-primary-dark);
   }
   /* Catalog color links by availability (base + darker hover) */
   .link-availability-out {
@@ -275,6 +306,35 @@
   }
   .detail-group-title {
     @apply text-xs font-medium uppercase tracking-wider text-slate-400 pb-2;
+  }
+  /* Data table: one class on the table, consistent header/cell styling */
+  .data-table {
+    @apply min-w-full divide-y divide-slate-200;
+  }
+  .data-table thead {
+    @apply bg-slate-50/80;
+  }
+  .data-table th {
+    @apply px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-slate-400;
+  }
+  .data-table tbody {
+    @apply divide-y divide-slate-100 bg-white;
+  }
+  .data-table td {
+    @apply whitespace-nowrap px-4 py-2 text-sm text-slate-900;
+  }
+  .data-table tbody tr {
+    @apply transition-colors;
+  }
+  .data-table tbody tr:hover {
+    @apply bg-slate-50/80;
+  }
+  /* Empty state: card with centered muted text (used in partials/empty_state.html) */
+  .empty-state {
+    @apply px-6 py-12 text-center;
+  }
+  .empty-state p {
+    @apply text-sm text-slate-500;
   }
   /* Profile: harmonious 8pt vertical rhythm */
   .profile-form-spacing {
