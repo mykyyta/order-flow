@@ -17,11 +17,14 @@ WORKDIR /app
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the project into the Docker image
-COPY . /app/
+# Copy backend and frontend into the image
+COPY src/ /app/src/
+COPY frontend/ /app/frontend/
+
+ENV PYTHONPATH=/app/src
 
 # Expose the port that Cloud Run will use (but this is optional, just for documentation)
 EXPOSE 8080
 
 # Collect static files and run gunicorn on Cloud Run PORT
-CMD ["sh", "-c", "python manage.py collectstatic --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-8080} --workers ${GUNICORN_WORKERS:-2} --threads ${GUNICORN_THREADS:-4} --timeout ${GUNICORN_TIMEOUT:-120}"]
+CMD ["sh", "-c", "python src/manage.py collectstatic --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-8080} --workers ${GUNICORN_WORKERS:-2} --threads ${GUNICORN_THREADS:-4} --timeout ${GUNICORN_TIMEOUT:-120}"]

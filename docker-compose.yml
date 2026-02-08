@@ -19,12 +19,14 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: sh -c "python manage.py collectstatic --noinput && python manage.py runserver 0.0.0.0:8000"
+    command: sh -c "python src/manage.py collectstatic --noinput && python src/manage.py runserver 0.0.0.0:8000"
     volumes:
-      - .:/app
+      - ./src:/app/src
+      - ./frontend:/app/frontend
     ports:
       - "8000:8000"
     environment:
+      PYTHONPATH: /app/src
       DJANGO_SETTINGS_MODULE: config.settings.local
       DJANGO_DEBUG: ${DJANGO_DEBUG:-1}
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-local-dev-insecure-secret-key}
