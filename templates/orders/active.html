@@ -22,7 +22,7 @@
     </a>
 </form>
 
-<form method="post" id="bulk-status-form" action="{% url 'orders_bulk_status' %}{% if query_string %}?{{ query_string }}{% endif %}">
+<form method="post" id="bulk-status-form" action="{% url 'orders_bulk_status' %}{% if query_string %}?{{ query_string }}{% endif %}" data-no-nav-loading>
     {% csrf_token %}
 
     <div class="card">
