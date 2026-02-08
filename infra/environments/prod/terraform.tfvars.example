@@ -12,6 +12,9 @@ container_concurrency  = 80
 max_instances          = 100
 public_invoker_member  = "allUsers"
 
+# Optional: custom domain for Cloud Run (must be verified in Search Console first). Leave unset to skip.
+# custom_domain = "your-domain.com"
+
 migrate_job_timeout    = 1200
 enable_migrate_job     = false
 manage_secret_versions = false

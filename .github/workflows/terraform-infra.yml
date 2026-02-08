@@ -23,6 +23,7 @@ env:
   IMAGE_NAME: my-app
   SERVICE_NAME: pult-app
   MIGRATE_JOB_NAME: pult-migrate
+  CUSTOM_DOMAIN: ${{ vars.CUSTOM_DOMAIN }}
 
 jobs:
   apply-lock:
@@ -100,6 +101,7 @@ jobs:
           terraform plan \
             -var="project_id=${PROJECT_ID}" \
             -var="enable_migrate_job=true" \
+            -var="custom_domain=${CUSTOM_DOMAIN}" \
             -var="google_access_token=${{ steps.auth.outputs.access_token }}"
 
   terraform-apply:
@@ -142,4 +144,5 @@ jobs:
           terraform apply -auto-approve \
             -var="project_id=${PROJECT_ID}" \
             -var="enable_migrate_job=true" \
+            -var="custom_domain=${CUSTOM_DOMAIN}" \
             -var="google_access_token=${{ steps.auth.outputs.access_token }}"

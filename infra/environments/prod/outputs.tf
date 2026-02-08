@@ -37,3 +37,8 @@ output "github_wif_provider_name" {
   description = "Full WIF provider resource name for GitHub OIDC auth"
   value       = google_iam_workload_identity_pool_provider.github_actions.name
 }
+
+output "custom_domain_mapping_records" {
+  description = "DNS records to add for custom domain (after apply and domain verification)"
+  value       = length(google_cloud_run_domain_mapping.app) > 0 ? google_cloud_run_domain_mapping.app[0].status[0].resource_records : []
+}

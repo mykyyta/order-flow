@@ -94,6 +94,12 @@ variable "public_invoker_member" {
   default     = "allUsers"
 }
 
+variable "custom_domain" {
+  description = "Optional custom domain to map to Cloud Run. Must be verified in Google Search Console before apply. Leave empty to skip."
+  type        = string
+  default     = ""
+}
+
 variable "manage_secret_versions" {
   description = "Whether Terraform should create/update secret versions"
   type        = bool

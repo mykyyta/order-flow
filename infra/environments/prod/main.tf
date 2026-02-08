@@ -78,7 +78,7 @@ resource "google_cloud_run_service" "app" {
         }
         env {
           name  = "ALLOWED_HOSTS"
-          value = ".run.app"
+          value = join(",", compact([".run.app", var.custom_domain]))
         }
         env {
           name = "DJANGO_SECRET_KEY"
@@ -140,6 +140,20 @@ resource "google_cloud_run_service_iam_member" "public_invoker" {
   lifecycle {
     prevent_destroy = true
     ignore_changes  = all
+  }
+}
+
+resource "google_cloud_run_domain_mapping" "app" {
+  count    = length(var.custom_domain) > 0 ? 1 : 0
+  location = var.region
+  name     = var.custom_domain
+
+  metadata {
+    namespace = var.project_id
+  }
+
+  spec {
+    route_name = google_cloud_run_service.app.name
   }
 }
 
