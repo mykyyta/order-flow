@@ -519,8 +519,6 @@ def profile_view(request):
             messages.error(request, "Логін не може бути порожнім.")
             return redirect("profile")
 
-        changed = False
-
         if new_username != user.username:
             user_model = get_user_model()
             if user_model.objects.filter(username__iexact=new_username).exclude(pk=user.pk).exists():
