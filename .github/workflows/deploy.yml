@@ -10,7 +10,7 @@ on:
       - "requirements-dev.txt"
       - "pyproject.toml"
       - "manage.py"
-      - "OrderFlow/**"
+      - "config/**"
       - "orders/**"
       - "templates/**"
       - "static/**"

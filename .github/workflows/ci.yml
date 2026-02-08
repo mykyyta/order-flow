@@ -12,13 +12,13 @@ jobs:
   checks:
     runs-on: ubuntu-latest
     env:
-      DJANGO_SETTINGS_MODULE: OrderFlow.settings.local
+      DJANGO_SETTINGS_MODULE: config.settings.local
       DJANGO_SECRET_KEY: ci-secret-key
       POSTGRES_HOST: localhost
       POSTGRES_PORT: "5432"
-      POSTGRES_DB: orderflow_ci
-      POSTGRES_USER: orderflow_ci
-      POSTGRES_PASSWORD: orderflow_ci
+      POSTGRES_DB: pult_ci
+      POSTGRES_USER: pult_ci
+      POSTGRES_PASSWORD: pult_ci
       POSTGRES_SSLMODE: disable
     steps:
       - name: Checkout

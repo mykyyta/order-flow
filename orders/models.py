@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-from OrderFlow import settings
+from config import settings
 from orders.domain.order_statuses import (
     STATUS_NEW,
     status_choices,

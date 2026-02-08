@@ -1,6 +1,6 @@
-# OrderFlow
+# Pult
 
-OrderFlow is an order management system for small production workflows with Telegram notifications.
+Pult is an order management system for small production workflows with Telegram notifications.
 
 ## What It Does
 - Creates and tracks orders through a fixed status flow.

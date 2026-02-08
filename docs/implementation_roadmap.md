@@ -1,6 +1,6 @@
 # Implementation Roadmap
 
-Порядок дій для UI-рефакторингу OrderFlow.
+Порядок дій для UI-рефакторингу Pult.
 Базується на: [docs/design/](design/) (design_components.md, style_decisions.md).
 
 ## Phase 1: Інфраструктура

@@ -11,6 +11,13 @@ load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
+# ---------------------------------------------------------------------------
+# Brand / site name — single source of truth for UI (titles, logo, etc.)
+# ---------------------------------------------------------------------------
+SITE_NAME = os.getenv("SITE_NAME", "Pult")
+SITE_WORDMARK = os.getenv("SITE_WORDMARK", "PULT")
+SITE_EMOJI = os.getenv("SITE_EMOJI", "🎛️")
+
 
 def env_bool(name: str, default: bool = False) -> bool:
     value = os.getenv(name)
@@ -64,9 +71,9 @@ def _default_postgres_database() -> dict[str, object]:
 
     config: dict[str, object] = {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("POSTGRES_DB", "orderflow_dev"),
-        "USER": os.getenv("POSTGRES_USER", "orderflow_dev"),
-        "PASSWORD": os.getenv("POSTGRES_PASSWORD", "orderflow_dev"),
+        "NAME": os.getenv("POSTGRES_DB", "pult_dev"),
+        "USER": os.getenv("POSTGRES_USER", "pult_dev"),
+        "PASSWORD": os.getenv("POSTGRES_PASSWORD", "pult_dev"),
         "HOST": os.getenv("POSTGRES_HOST", "localhost"),
         "PORT": os.getenv("POSTGRES_PORT", "5432"),
         "CONN_MAX_AGE": env_int("CONN_MAX_AGE", 60),
@@ -104,7 +111,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = "OrderFlow.urls"
+ROOT_URLCONF = "config.urls"
 
 TEMPLATES = [
     {
@@ -118,13 +125,14 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "django.template.context_processors.tz",
+                "config.context_processors.site_brand",
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = "OrderFlow.wsgi.application"
-ASGI_APPLICATION = "OrderFlow.asgi.application"
+WSGI_APPLICATION = "config.wsgi.application"
+ASGI_APPLICATION = "config.asgi.application"
 
 if "test" in sys.argv:
     DATABASES = {

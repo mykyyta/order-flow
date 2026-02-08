@@ -5,7 +5,7 @@
 	<head>
 	    <meta charset="UTF-8">
 	    <meta name="viewport" content="width=device-width, initial-scale=1">
-	    <title>{% block title %}Pult{% endblock %}</title>
+	    <title>{% block title %}{{ site_name }}{% endblock %}</title>
 	    <link rel="preconnect" href="https://fonts.googleapis.com">
 	    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 	    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -57,8 +57,8 @@
 			                <a href="{% url 'index' %}" class="brand-logo nav-logo shrink-0 rounded-md px-1.5 py-1 text-slate-900 hover:bg-slate-50 hover:text-slate-900 transition-colors" data-size="sm">
 			                    <div class="brand-logo-wrap">
 			                        <div class="brand-logo-inner">
-			                            <span class="brand-wordmark">PULT</span>
-			                            <span class="brand-emoji-wrap brand-emoji-char" aria-hidden="true">🎛️</span>
+			                            <span class="brand-wordmark">{{ site_wordmark }}</span>
+			                            <span class="brand-emoji-wrap brand-emoji-char" aria-hidden="true">{{ site_emoji }}</span>
 			                        </div>
 			                    </div>
 			                </a>

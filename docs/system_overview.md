@@ -1,7 +1,7 @@
 # System Overview
 
 ## Purpose
-OrderFlow is a Django application for managing production orders, tracking status changes, and sending Telegram notifications to users.
+Pult is a Django application for managing production orders, tracking status changes, and sending Telegram notifications to users.
 
 ## Core modules
 - `orders/models.py`: users, orders, colors, product models, status history, notification settings.
@@ -15,8 +15,8 @@ OrderFlow is a Django application for managing production orders, tracking statu
 - Delayed notifications -> scheduled/manual trigger -> send pending messages.
 
 ## Runtime configuration
-- `OrderFlow/settings/local.py`: local development defaults.
-- `OrderFlow/settings/prod.py`: production-safe settings.
+- `config/settings/local.py`: local development defaults.
+- `config/settings/prod.py`: production-safe settings.
 - Secrets and environment variables control DB, app secret key, Telegram token.
 
 ## Data stores

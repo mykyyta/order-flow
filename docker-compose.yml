@@ -2,15 +2,15 @@ services:
   db:
     image: postgres:15
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-orderflow_dev}
-      POSTGRES_USER: ${POSTGRES_USER:-orderflow_dev}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-orderflow_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-pult_dev}
+      POSTGRES_USER: ${POSTGRES_USER:-pult_dev}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pult_dev}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-orderflow_dev} -d ${POSTGRES_DB:-orderflow_dev}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-pult_dev} -d ${POSTGRES_DB:-pult_dev}"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -25,15 +25,15 @@ services:
     ports:
       - "8000:8000"
     environment:
-      DJANGO_SETTINGS_MODULE: OrderFlow.settings.local
+      DJANGO_SETTINGS_MODULE: config.settings.local
       DJANGO_DEBUG: ${DJANGO_DEBUG:-1}
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-local-dev-insecure-secret-key}
       WHITENOISE_ENABLED: ${WHITENOISE_ENABLED:-1}
       POSTGRES_HOST: db
       POSTGRES_PORT: 5432
-      POSTGRES_DB: ${POSTGRES_DB:-orderflow_dev}
-      POSTGRES_USER: ${POSTGRES_USER:-orderflow_dev}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-orderflow_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-pult_dev}
+      POSTGRES_USER: ${POSTGRES_USER:-pult_dev}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pult_dev}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
     depends_on:
       db:

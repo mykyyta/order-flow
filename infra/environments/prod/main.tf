@@ -40,7 +40,7 @@ resource "google_artifact_registry_repository" "docker" {
   location      = var.region
   repository_id = var.artifact_repository_id
   format        = "DOCKER"
-  description   = "OrderFlow container registry"
+  description   = "Pult app container registry"
   labels        = local.common_labels
 
   lifecycle {
@@ -194,7 +194,7 @@ resource "google_cloud_run_v2_job" "migrate" {
 
         env {
           name  = "DJANGO_SETTINGS_MODULE"
-          value = "OrderFlow.settings.prod"
+          value = "config.settings.prod"
         }
       }
     }
@@ -210,7 +210,7 @@ resource "google_cloud_run_v2_job" "migrate" {
 
 resource "google_service_account" "terraform_deployer" {
   account_id   = var.terraform_deployer_sa_id
-  display_name = "OrderFlow Terraform Deployer"
+  display_name = "Pult (orderflow) Terraform Deployer"
   description  = "Used by GitHub Actions via Workload Identity Federation"
 }
 
