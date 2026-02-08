@@ -16,6 +16,15 @@ on:
       - "static/**"
       - ".github/workflows/deploy.yml"
   workflow_dispatch:
+    inputs:
+      run_migrations:
+        description: "Run Cloud Run migrations job"
+        type: boolean
+        default: true
+      sync_migrate_job_image:
+        description: "Update migrate job to use the new image"
+        type: boolean
+        default: true
 
 concurrency:
   group: prod-rollout
@@ -60,24 +69,25 @@ jobs:
           docker push "${IMAGE_URI}"
           echo "IMAGE_URI=${IMAGE_URI}" >> "${GITHUB_ENV}"
 
+      - name: Sync migrate job image
+        if: github.event_name == 'workflow_dispatch' && (inputs.sync_migrate_job_image == true || inputs.sync_migrate_job_image == 'true')
+        run: |
+          gcloud run jobs update "${MIGRATE_JOB_NAME}" \
+            --project "${PROJECT_ID}" \
+            --region "${REGION}" \
+            --image "${IMAGE_URI}"
+
+      - name: Run migrations job
+        if: github.event_name == 'workflow_dispatch' && (inputs.run_migrations == true || inputs.run_migrations == 'true')
+        run: |
+          gcloud run jobs execute "${MIGRATE_JOB_NAME}" \
+            --project "${PROJECT_ID}" \
+            --region "${REGION}" \
+            --wait
+
       - name: Deploy app revision
         run: |
           gcloud run services update "${SERVICE_NAME}" \
             --project "${PROJECT_ID}" \
             --region "${REGION}" \
             --image "${IMAGE_URI}"
-
-      - name: Sync migrate job image
-        run: |
-          gcloud run jobs update "${MIGRATE_JOB_NAME}" \
-            --project "${PROJECT_ID}" \
-            --region "${REGION}" \
-            --image "${IMAGE_URI}" \
-            --update-env-vars "DJANGO_SETTINGS_MODULE=OrderFlow.settings,CSRF_TRUSTED_ORIGINS=https://localhost"
-
-      - name: Run migrations job
-        run: |
-          gcloud run jobs execute "${MIGRATE_JOB_NAME}" \
-            --project "${PROJECT_ID}" \
-            --region "${REGION}" \
-            --wait

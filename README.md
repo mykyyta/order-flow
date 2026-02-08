@@ -30,6 +30,16 @@ Status model:
 - Telegram Bot API
 - Docker + Docker Compose
 
+## Docs
+- **Дизайн і layout** — [docs/design/](docs/design/):
+  - **[Компоненти та коли їх використовувати](docs/design/design_components.md)** — довідник по UI-компонентах і чеклісти для нових сторінок/форм.
+  - [Аналіз дизайн-системи](docs/design/design_system_analysis.md) — практики, рекомендації, можливі рефактори.
+  - [Style decisions](docs/design/style_decisions.md), [Style refactor principles](docs/design/style_refactor_principles.md).
+- **DevOps / Infra** — [docs/devops/](docs/devops/):
+  - [Infrastructure overview](docs/devops/infrastructure_overview.md)
+  - [Runbook](docs/devops/runbook.md)
+  - [Terraform brownfield adoption](docs/devops/terraform_brownfield_migration.md)
+
 ## Quick Start (Docker)
 ```bash
 cp .env.example .env

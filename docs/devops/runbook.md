@@ -4,9 +4,28 @@
 1. Merge PR into `main`.
 2. Check GitHub Actions:
 ```bash
+gh run list --repo mykyyta/order-flow --workflow deploy.yml --branch main --limit 3
 gh run list --repo mykyyta/order-flow --workflow terraform-infra.yml --branch main --limit 3
 gh run view <RUN_ID> --repo mykyyta/order-flow --log-failed
 ```
+
+## Fast deploy (default)
+On push to `main`, `deploy.yml` updates the Cloud Run service image and **does not run migrations**.
+
+Use this only when DB schema is unchanged. If you changed models/migrations, run the full deploy first.
+
+## Full deploy (manual, with migrations)
+Run deploy workflow manually (recommended from `main`, but you can pick a branch in the UI):
+```bash
+gh workflow run deploy.yml \
+  --repo mykyyta/order-flow \
+  --ref main \
+  -f sync_migrate_job_image=true \
+  -f run_migrations=true
+```
+
+## PR: skip lint (optional)
+If you need to merge quickly and don't want the PR blocked by Ruff, add label `skip-lint` to the PR.
 
 ## Manual migrate
 ```bash

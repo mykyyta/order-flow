@@ -1,42 +1,42 @@
-{% extends "base.html" %}
+{% extends "base_form_page.html" %}
 
 {% block title %}Підправити колір{% endblock %}
 
-{% block content %}
+{% block form_content %}
+<form method="post" class="space-y-4">
+    {% csrf_token %}
+    <div>
+        <label for="id_name" class="sr-only">Назва кольору</label>
+        {{ form.name }}
+        {% if form.name.errors %}
+        <p class="form-error">{{ form.name.errors.0 }}</p>
+        {% endif %}
+    </div>
+    <div>
+        <label for="id_code" class="sr-only">Код кольору</label>
+        {{ form.code }}
+        {% if form.code.errors %}
+        <p class="form-error">{{ form.code.errors.0 }}</p>
+        {% endif %}
+    </div>
+    <div>
+        <label for="id_availability_status" class="sr-only">Наявність</label>
+        {{ form.availability_status }}
+        {% if form.availability_status.errors %}
+        <p class="form-error">{{ form.availability_status.errors.0 }}</p>
+        {% endif %}
+    </div>
+    <div class="flex items-center gap-3">
+        <button type="submit" class="btn-primary">
+            Зберегти
+        </button>
+        <a href="{% url 'colors' %}" class="btn-secondary">Скасувати</a>
+    </div>
+</form>
+{% endblock %}
 
-{% include "partials/messages.html" %}
-
-<div class="max-w-xl">
-    <form method="post" class="space-y-4">
-        {% csrf_token %}
-        <div>
-            <label for="id_name" class="sr-only">Назва кольору</label>
-            {{ form.name }}
-            {% if form.name.errors %}
-            <p class="form-error">{{ form.name.errors.0 }}</p>
-            {% endif %}
-        </div>
-        <div>
-            <label for="id_code" class="sr-only">Код кольору</label>
-            {{ form.code }}
-            {% if form.code.errors %}
-            <p class="form-error">{{ form.code.errors.0 }}</p>
-            {% endif %}
-        </div>
-        <div>
-            <label for="id_availability_status" class="sr-only">Наявність</label>
-            {{ form.availability_status }}
-            {% if form.availability_status.errors %}
-            <p class="form-error">{{ form.availability_status.errors.0 }}</p>
-            {% endif %}
-        </div>
-        <div class="flex items-center gap-3">
-            <button type="submit" class="btn-primary">
-                Зберегти
-            </button>
-            <a href="{% url 'colors' %}" class="btn-secondary">Скасувати</a>
-        </div>
-    </form>
-</div>
-
+{% block form_page_footer %}
+<p class="mt-4">
+    <a href="{% url 'colors' %}" class="link-back">Назад до кольорів</a>
+</p>
 {% endblock %}

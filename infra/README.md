@@ -24,4 +24,4 @@ Terraform is the source of truth for GCP infrastructure in this repository.
 
 - `backend.hcl` and `terraform.tfvars` should stay out of git history.
 - CI will use the same root module in `environments/prod`.
-- Brownfield adoption guide: `/Users/myk/Projects/OrderFlow/docs/terraform_brownfield_migration.md`.
+- Brownfield adoption guide: `docs/devops/terraform_brownfield_migration.md`.

@@ -13,8 +13,11 @@
 
 ## CI/CD
 - GitHub Actions workflows in `.github/workflows`.
-- PR: lint/tests + Terraform plan.
-- Main branch: build image -> Terraform apply -> run Cloud Run migrate job.
+- PR: app lint/tests (`ci.yml`) + Terraform plan (`terraform-infra.yml`).
+- Main branch:
+  - App changes: build image -> deploy Cloud Run service (`deploy.yml`) (fast path; migrations are manual).
+  - Infra changes: Terraform apply (`terraform-infra.yml`).
+- Manual full deploy (with migrations) via `workflow_dispatch` inputs in `deploy.yml`.
 - Auth between GitHub and GCP: Workload Identity Federation (no static JSON keys).
 
 ## Operational model

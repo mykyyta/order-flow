@@ -1,70 +1,53 @@
-{% extends "base.html" %}
+{% extends "base_form_page.html" %}
 {% load static %}
 
 {% block title %}Нове замовлення{% endblock %}
 
-{% block content %}
+{% block form_content %}
+<form method="post" action="{% url 'orders_create' %}">
+    {% csrf_token %}
 
-{% include "partials/messages.html" %}
+    <div class="space-y-4">
+        <div>
+            <label for="id_model" class="form-label">Модель</label>
+            {{ form.model }}
+            {% if form.model.errors %}<p class="form-error">{{ form.model.errors.0 }}</p>{% endif %}
+        </div>
 
-<div class="mx-auto max-w-xl">
-    <div class="card">
-        <div class="form-card-body">
-            <form method="post" action="{% url 'orders_create' %}">
-                {% csrf_token %}
+        <div>
+            <label for="id_color" class="form-label">Колір</label>
+            {{ form.color }}
+            {% if form.color.errors %}<p class="form-error">{{ form.color.errors.0 }}</p>{% endif %}
+        </div>
 
-                <div class="space-y-4">
-                    <div>
-                        <label for="id_model" class="form-label">Модель</label>
-                        {{ form.model }}
-                        {% if form.model.errors %}<p class="form-error">{{ form.model.errors.0 }}</p>{% endif %}
-                    </div>
+        <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
+            {% include "partials/form_checkbox_option.html" with field=form.etsy label="Etsy" %}
+            {% include "partials/form_checkbox_option.html" with field=form.embroidery label="Вишивка" %}
+            {% include "partials/form_checkbox_option.html" with field=form.urgent label="Терміново" %}
+            {% if form.etsy.errors or form.embroidery.errors or form.urgent.errors %}
+            <p class="form-error w-full">{{ form.etsy.errors.0|default:form.embroidery.errors.0|default:form.urgent.errors.0 }}</p>
+            {% endif %}
+        </div>
 
-                    <div>
-                        <label for="id_color" class="form-label">Колір</label>
-                        {{ form.color }}
-                        {% if form.color.errors %}<p class="form-error">{{ form.color.errors.0 }}</p>{% endif %}
-                    </div>
+        <div>
+            <label for="id_comment" class="sr-only">Коментар</label>
+            {{ form.comment }}
+            {% if form.comment.errors %}<p class="form-error">{{ form.comment.errors.0 }}</p>{% endif %}
+        </div>
 
-                    <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            {{ form.etsy }}
-                            <span class="text-sm font-medium text-slate-700">Etsy</span>
-                        </label>
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            {{ form.embroidery }}
-                            <span class="text-sm font-medium text-slate-700">Вишивка</span>
-                        </label>
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            {{ form.urgent }}
-                            <span class="text-sm font-medium text-slate-700">Терміново</span>
-                        </label>
-                        {% if form.etsy.errors or form.embroidery.errors or form.urgent.errors %}
-                        <p class="form-error w-full">{{ form.etsy.errors.0|default:form.embroidery.errors.0|default:form.urgent.errors.0 }}</p>
-                        {% endif %}
-                    </div>
-
-                    <div>
-                        <label for="id_comment" class="sr-only">Коментар</label>
-                        {{ form.comment }}
-                        {% if form.comment.errors %}<p class="form-error">{{ form.comment.errors.0 }}</p>{% endif %}
-                    </div>
-
-                    <div class="pt-1">
-                        <button type="submit" class="btn-primary w-full min-h-[44px]">
-                            Створити замовлення
-                        </button>
-                    </div>
-                </div>
-            </form>
+        <div class="pt-1">
+            <button type="submit" class="btn-primary w-full min-h-[44px]">
+                Створити замовлення
+            </button>
         </div>
     </div>
+</form>
+{% endblock %}
 
-    <div class="mt-4">
-        <a href="{% url 'orders_active' %}" class="link-back">&larr; Назад до роботи</a>
-    </div>
+{% block form_page_footer %}
+<div class="mt-4">
+    <a href="{% url 'orders_active' %}" class="link-back">&larr; Назад до роботи</a>
 </div>
-
 {% endblock %}
 
 {% block extra_js %}
