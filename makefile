@@ -5,6 +5,7 @@ SERVICE_NAME ?= pult-app
 REGION ?= us-central1
 IMAGE ?= us-central1-docker.pkg.dev/$(PROJECT_ID)/$(REPO)/$(APP_NAME)
 PYTHON ?= ./.venv/bin/python
+MANAGE ?= $(PYTHON) src/manage.py
 
 TAILWIND ?= bin/tailwindcss
 
@@ -23,29 +24,29 @@ logs:
 	docker compose logs -f web
 
 migrate:
-	docker compose run --rm web python manage.py migrate
+	docker compose run --rm web python src/manage.py migrate
 
 shell:
-	docker compose run --rm web python manage.py shell
+	docker compose run --rm web python src/manage.py shell
 
 test:
-	$(PYTHON) manage.py test orders
+	PYTHONPATH=src $(PYTHON) -m pytest 2>/dev/null || PYTHONPATH=src $(MANAGE) test apps.orders apps.catalog apps.accounts
 
 check:
-	$(PYTHON) manage.py check
+	PYTHONPATH=src $(MANAGE) check
 
 lint:
-	$(PYTHON) -m ruff check .
+	$(PYTHON) -m ruff check src
 
 format:
 	$(PYTHON) -m ruff format .
 
 # Use ruff from PATH (activate your venv with ruff first)
 ruff-check:
-	ruff check .
+	ruff check src
 
 ruff-format:
-	ruff format .
+	ruff format src
 
 build:
 	docker build --platform=linux/amd64 -t $(IMAGE) .
@@ -74,8 +75,8 @@ tw-install:
 	chmod +x $(TAILWIND) && echo "Installed $(TAILWIND)"
 
 tw-watch: tw-build
-	$(TAILWIND) -i assets/tailwind/input.css -o static/css/app.css --watch
+	$(TAILWIND) -i frontend/assets/tailwind/input.css -o frontend/static/css/app.css --watch
 
 tw-build:
 	@test -f $(TAILWIND) || (echo "Run: make tw-install" && exit 1)
-	$(TAILWIND) -i assets/tailwind/input.css -o static/css/app.css --minify
+	$(TAILWIND) -i frontend/assets/tailwind/input.css -o frontend/static/css/app.css --minify
