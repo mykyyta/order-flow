@@ -1,35 +1,4 @@
 document.addEventListener("DOMContentLoaded", function () {
-  // Theme preview: set ?theme=dune_lite (or theme=default to clear).
-  // Persists in localStorage to make iteration easy without refactoring templates.
-  (function () {
-    var params = new URLSearchParams(window.location.search);
-    var themeParam = params.get("theme");
-    var stored = null;
-    try {
-      stored = window.localStorage.getItem("theme");
-    } catch (_err) {
-      stored = null;
-    }
-
-    var theme = themeParam || stored;
-    if (!theme) return;
-
-    if (theme === "default" || theme === "none") {
-      document.documentElement.removeAttribute("data-theme");
-      try {
-        window.localStorage.removeItem("theme");
-      } catch (_err) {}
-      return;
-    }
-
-    document.documentElement.setAttribute("data-theme", theme);
-    if (themeParam) {
-      try {
-        window.localStorage.setItem("theme", themeParam);
-      } catch (_err) {}
-    }
-  })();
-
   var toggle = document.getElementById("nav-toggle");
   var menu = document.getElementById("nav-menu");
   var iconMenu = document.getElementById("icon-menu");
@@ -86,7 +55,19 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function positionDropdown() {
       var rect = trigger.getBoundingClientRect();
-      dropdown.style.top = (rect.bottom + 4) + "px";
+      var maxHeight = 240;
+      var spaceBelow = window.innerHeight - rect.bottom;
+      var spaceAbove = rect.top;
+      var openUp = spaceBelow < maxHeight && spaceAbove > spaceBelow;
+      if (openUp) {
+        dropdown.style.top = (rect.top - maxHeight - 4) + "px";
+        dropdown.style.maxHeight = maxHeight + "px";
+        dropdown.classList.add("form-select-dropdown--up");
+      } else {
+        dropdown.style.top = (rect.bottom + 4) + "px";
+        dropdown.style.maxHeight = "";
+        dropdown.classList.remove("form-select-dropdown--up");
+      }
       dropdown.style.left = rect.left + "px";
       dropdown.style.width = rect.width + "px";
     }
