@@ -21,18 +21,9 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
-            <label class="flex items-center gap-2 cursor-pointer">
-                {{ form.etsy }}
-                <span class="text-sm font-medium text-slate-700">Etsy</span>
-            </label>
-            <label class="flex items-center gap-2 cursor-pointer">
-                {{ form.embroidery }}
-                <span class="text-sm font-medium text-slate-700">Вишивка</span>
-            </label>
-            <label class="flex items-center gap-2 cursor-pointer">
-                {{ form.urgent }}
-                <span class="text-sm font-medium text-slate-700">Терміново</span>
-            </label>
+            {% include "partials/form_checkbox_option.html" with field=form.etsy label="Etsy" %}
+            {% include "partials/form_checkbox_option.html" with field=form.embroidery label="Вишивка" %}
+            {% include "partials/form_checkbox_option.html" with field=form.urgent label="Терміново" %}
             {% if form.etsy.errors or form.embroidery.errors or form.urgent.errors %}
             <p class="form-error w-full">{{ form.etsy.errors.0|default:form.embroidery.errors.0|default:form.urgent.errors.0 }}</p>
             {% endif %}

@@ -36,7 +36,7 @@
 | **`.form-checkbox`** | Чекбокс. У рядку з текстом: `<label class="flex items-center gap-2 cursor-pointer">{{ field }}<span class="text-sm font-medium text-slate-700">Текст</span></label>`. |
 | **`.form-error`** | Під полем після помилки валідації: `<p class="form-error">{{ form.field.errors.0 }}</p>`. |
 
-Чекбокси в один ряд (як у створення замовлення): обгортка `div.flex.flex-wrap.items-center.gap-x-6.gap-y-2`, кожен пункт — label з `flex items-center gap-2 cursor-pointer` і `text-sm font-medium text-slate-700`.
+Чекбокси в один ряд: обгортка `div.flex.flex-wrap.items-center.gap-x-6.gap-y-2`, кожен пункт — **`{% include "partials/form_checkbox_option.html" with field=form.field_name label="Текст" %}`**. Помилки для кількох полів — один `form-error` після блоку (наприклад `form.etsy.errors|default:form.embroidery.errors|default:...`).
 
 ---
 
@@ -56,7 +56,7 @@
 | Що | Коли |
 |----|------|
 | **`{% include "partials/messages.html" %}`** | На початку контенту кожної сторінки (Django messages). |
-| **`{% include "partials/empty_state.html" with message="Текст" %}`** | Порожній список або «нічого не знайдено». |
+| **`{% include "partials/empty_state.html" with message="Текст" %}`** | Порожній список або «нічого не знайдено». Стиль задає клас `.empty-state` (картка з центрованим текстом). |
 | **`{% include "partials/modal_confirm.html" with id="..." title="..." confirm_label="..." cancel_label="..." %}`** | Діалог підтвердження. Текст повідомлення задається з JS у елемент з id `{{ id }}-message`. |
 
 ---
@@ -69,7 +69,7 @@
 | **`{% status_indicator status display_label %}`** | Індикатор статусу (текст + крапка/іконка). Для списків: `muted=1`. |
 | **`partials/pagination.html`** | Пагінація. Передати: `page_obj`, опційно `query_string`, опційно `aria_label`. |
 
-Таблиця: обгортка `div.card` або всередині картки, далі `div.overflow-x-auto`, потім `<table class="min-w-full divide-y divide-slate-200">`. Заголовок: `thead.bg-slate-50/80`, `th` з `px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-slate-400`. Клітинки: `px-4 py-2 text-sm`, для тексту `text-slate-900` / `text-slate-500` за потреби.
+**Таблиця:** обгортка `div.card` → `div.overflow-x-auto` → `<table class="data-table">`. Заголовки в `thead`/`th` і клітинки в `tbody`/`td` отримують стилі з компонента. Для приглушеного тексту в клітинці додай `class="text-slate-500"` або `text-slate-700` на `td`. Рядки мають hover по замовчуванню.
 
 ---
 

@@ -11,6 +11,11 @@ html[data-theme="dune_lite"] {
   --color-teal-500: #c2410c;
   --color-teal-600: #9a3412;
   --color-teal-700: #7c2d12;
+  /* Primary semantic tokens (used by input.css components) */
+  --color-primary: #9a3412;
+  --color-primary-dark: #7c2d12;
+  --color-primary-muted: #f7efe5;
+  --color-primary-focus: #c2410c;
 }
 
 [data-theme="dune_lite"] body {
@@ -81,6 +86,11 @@ html[data-theme="soft_indigo"] {
   --color-teal-500: color-mix(in oklab, var(--of-brand) 88%, white);
   --color-teal-600: var(--of-brand);
   --color-teal-700: color-mix(in oklab, var(--of-brand) 90%, black);
+  /* Primary semantic tokens (used by input.css components) */
+  --color-primary: var(--of-brand);
+  --color-primary-dark: color-mix(in oklab, var(--of-brand) 90%, black);
+  --color-primary-muted: color-mix(in oklab, var(--of-brand) 6%, white);
+  --color-primary-focus: color-mix(in oklab, var(--of-brand) 88%, white);
 
   /* Info */
   --color-blue-50: color-mix(in oklab, var(--of-info) 6%, white);
@@ -156,6 +166,10 @@ html[data-theme="soft_warm"] {
   --color-teal-500: color-mix(in oklab, var(--of-brand) 88%, white);
   --color-teal-600: var(--of-brand);
   --color-teal-700: color-mix(in oklab, var(--of-brand) 90%, black);
+  --color-primary: var(--of-brand);
+  --color-primary-dark: color-mix(in oklab, var(--of-brand) 90%, black);
+  --color-primary-muted: color-mix(in oklab, var(--of-brand) 6%, white);
+  --color-primary-focus: color-mix(in oklab, var(--of-brand) 88%, white);
 
   --color-blue-50: color-mix(in oklab, var(--of-info) 6%, white);
   --color-blue-100: color-mix(in oklab, var(--of-info) 12%, white);
@@ -227,6 +241,10 @@ html[data-theme="lumen"] {
   --color-teal-500: color-mix(in oklab, var(--of-brand) 92%, white);
   --color-teal-600: var(--of-brand);
   --color-teal-700: color-mix(in oklab, var(--of-brand) 88%, black);
+  --color-primary: var(--of-brand);
+  --color-primary-dark: color-mix(in oklab, var(--of-brand) 88%, black);
+  --color-primary-muted: color-mix(in oklab, var(--of-brand) 7%, white);
+  --color-primary-focus: color-mix(in oklab, var(--of-brand) 92%, white);
 
   --color-blue-50: color-mix(in oklab, var(--of-info) 7%, white);
   --color-blue-100: color-mix(in oklab, var(--of-info) 14%, white);
@@ -308,6 +326,10 @@ html[data-theme="lumen_cool"] {
   --color-teal-500: color-mix(in oklab, var(--of-brand) 92%, white);
   --color-teal-600: var(--of-brand);
   --color-teal-700: color-mix(in oklab, var(--of-brand) 88%, black);
+  --color-primary: var(--of-brand);
+  --color-primary-dark: color-mix(in oklab, var(--of-brand) 88%, black);
+  --color-primary-muted: color-mix(in oklab, var(--of-brand) 7%, white);
+  --color-primary-focus: color-mix(in oklab, var(--of-brand) 92%, white);
 
   --color-blue-50: color-mix(in oklab, var(--of-info) 7%, white);
   --color-blue-100: color-mix(in oklab, var(--of-info) 14%, white);
@@ -381,6 +403,10 @@ html[data-theme="lumen_warm"] {
   --color-teal-500: color-mix(in oklab, var(--of-brand) 92%, white);
   --color-teal-600: var(--of-brand);
   --color-teal-700: color-mix(in oklab, var(--of-brand) 88%, black);
+  --color-primary: var(--of-brand);
+  --color-primary-dark: color-mix(in oklab, var(--of-brand) 88%, black);
+  --color-primary-muted: color-mix(in oklab, var(--of-brand) 7%, white);
+  --color-primary-focus: color-mix(in oklab, var(--of-brand) 92%, white);
 
   --color-blue-50: color-mix(in oklab, var(--of-info) 7%, white);
   --color-blue-100: color-mix(in oklab, var(--of-info) 14%, white);
@@ -461,6 +487,10 @@ html[data-theme="lumen_subtle"] {
   --color-teal-500: color-mix(in oklab, var(--of-brand) 90%, white);
   --color-teal-600: var(--of-brand);
   --color-teal-700: color-mix(in oklab, var(--of-brand) 88%, black);
+  --color-primary: var(--of-brand);
+  --color-primary-dark: color-mix(in oklab, var(--of-brand) 88%, black);
+  --color-primary-muted: color-mix(in oklab, var(--of-brand) 6%, white);
+  --color-primary-focus: color-mix(in oklab, var(--of-brand) 90%, white);
 
   --color-blue-50: color-mix(in oklab, var(--of-info) 6%, white);
   --color-blue-100: color-mix(in oklab, var(--of-info) 12%, white);

@@ -42,10 +42,8 @@
 - **color_edit:** `mx-auto max-w-xl` + форма без card (лише в change_password додали card).
 - Наслідок: для кожної нової форми виникає питання — чи потрібна картка, чи потрібен max-w-xl, чи це вже дасть base. Легко отримати візуальну непослідовність.
 
-### 2.3 Кольори primary/accent не через змінні
-- У `@theme` є `--color-primary`, `--color-accent`, але в шаблонах і навігації використовуються конкретні класи (`text-teal-600`, `bg-teal-50`, `text-teal-700`).
-- Кнопки вже опираються на `--color-teal-600` у компоненті. Якщо колись захочеш змінити primary — доведеться шукати по всьому проєкту.
-- **Рекомендація:** поступово переходити на використання змінних у компонентах (наприклад `var(--color-primary)`), а в `@theme` мапінг на конкретний колір. Тоді зміна теми = зміна одного блоку.
+### 2.3 Кольори primary/accent через змінні — вирішено
+- У `@theme` задані `--color-primary`, `--color-primary-dark`, `--color-primary-muted`, `--color-primary-focus`; компоненти в input.css (форми, кнопки, link-back) використовують їх. У `theme_preview.css` кожна тема перевизначає ці змінні. Шаблони (nav, order_row тощо) досі використовують утиліти `text-teal-600`/`bg-teal-50` — вони теж під тему через перевизначення `--color-teal-*` у theme_preview.
 
 ### 2.4 Таблиці без спільного паттерну
 - Стилі таблиць (header: `bg-slate-50/80`, `text-xs uppercase tracking-wider text-slate-400`, клітинки: `px-4 py-2`, `divide-y`) повторюються в `orders/detail.html`, `orders/completed.html`, в `orders/active.html` — картка з іншим header, але схожа ідея.
@@ -77,12 +75,12 @@
 ### 3.2 Середні (рефактори на 1–2 години)
 4. **Єдиний partial для пункту навігації** — ✅ Зроблено: `partials/nav_item.html` + тег `get_nav_items` (список `NAV_ITEMS` у `order_ui.py`). Desktop і mobile рендерять з одного списку.
 5. **Паттерн «форма-сторінка»** — ✅ Зроблено: `base_form_page.html` (extends base), блоки `form_content` і `form_page_footer`. create, order_edit, change_password переходять на нього.
-6. **Класи для таблиць** — `.data-table`, `.data-table-header`, `.data-table-cell` в input.css.
+6. **Класи для таблиць** — ✅ Зроблено: `.data-table` в input.css (table + thead/th + tbody/td + row hover). completed.html і detail.html використовують `class="data-table"`.
 
 ### 3.3 Довгострокові (якщо буде час)
-7. **Primary/accent через CSS-змінні.**
-8. **Партіал для рядка чекбоксів (опційно).**
-9. **Empty state як компонент** — клас `.empty-state` / `.card-empty`.
+7. **Primary/accent через CSS-змінні** — ✅ Зроблено: у `@theme` додано `--color-primary`, `--color-primary-dark`, `--color-primary-muted`, `--color-primary-focus`; компоненти (form-input, form-select, form-checkbox, btn-primary, btn-secondary, link-back) використовують їх; у `theme_preview.css` кожна тема перевизначає ці змінні під свій бренд.
+8. **Партіал для рядка чекбоксів** — ✅ Зроблено: `partials/form_checkbox_option.html` (field + label), використовується в create і order_edit.
+9. **Empty state як компонент** — ✅ Зроблено: клас `.empty-state` в input.css, partial використовує `card empty-state`.
 
 ---
 
