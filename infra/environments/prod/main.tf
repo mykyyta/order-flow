@@ -251,7 +251,6 @@ resource "google_cloud_run_v2_job" "migrate" {
 
   lifecycle {
     prevent_destroy = true
-    ignore_changes  = all
   }
 
   depends_on = [google_secret_manager_secret_iam_member.runtime_access]
