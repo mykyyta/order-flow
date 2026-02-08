@@ -9,19 +9,8 @@ gh run list --repo mykyyta/pult --workflow terraform-infra.yml --branch main --l
 gh run view <RUN_ID> --repo mykyyta/pult --log-failed
 ```
 
-## Fast deploy (default)
-On push to `main`, `deploy.yml` updates the Cloud Run service image and **does not run migrations**.
-
-Use this only when DB schema is unchanged. If you changed models/migrations, run the full deploy first.
-
-## Full deploy (manual, with migrations)
-Run deploy workflow manually (recommended from `main`, but you can pick a branch in the UI):
-```bash
-gh workflow run deploy.yml \
-  --repo mykyyta/pult \
-  --ref main \
-  -f force_migrate=true
-```
+## Deploy behaviour
+On push to `main`, `deploy.yml` builds the image, **runs migrations** (updates migrate job image and executes it), then updates the Cloud Run service.
 
 ## PR: skip lint (optional)
 If you need to merge quickly and don't want the PR blocked by Ruff, add label `skip-lint` to the PR.
