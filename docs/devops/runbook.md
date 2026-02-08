@@ -75,7 +75,11 @@ No domain by default. To add one:
 To remove: set `CUSTOM_DOMAIN` / `custom_domain` to empty and apply again.
 
 ## WIF / GitHub Actions auth after repo rename
-If the pipeline fails with `Permission 'iam.serviceAccounts.getAccessToken' denied` for the deployer SA, the WIF provider and IAM binding in GCP are still scoped to the **old** repo (e.g. `mykyyta/order-flow`). They must allow the **new** repo (e.g. `mykyyta/pult`).
+If the pipeline fails with either:
+- **"The given credential is rejected by the attribute condition"** (federated token rejected by WIF provider), or
+- **"Permission 'iam.serviceAccounts.getAccessToken' denied"** for the deployer SA,
+
+the WIF provider and IAM binding in GCP are still scoped to the **old** repo (e.g. `mykyyta/order-flow`). They must allow the **new** repo (e.g. `mykyyta/pult`).
 
 **Fix:** run Terraform apply **locally** once so that `github_repository` (in `terraform.tfvars` or env) is the new repo. That updates:
 - WIF provider `attribute_condition` to the new repo
@@ -87,9 +91,59 @@ cd infra/environments/prod
 # Ensure backend and vars use the new repo (e.g. github_repository = "mykyyta/pult")
 terraform init -reconfigure -backend-config=backend.hcl -backend-config="access_token=$(gcloud auth print-access-token)"
 terraform plan   # expect: WIF provider + SA IAM member changes
-terraform apply
+# If plan tries to destroy other resources (e.g. Cloud Run with prevent_destroy), apply only WIF:
+terraform apply \
+  -target=google_iam_workload_identity_pool_provider.github_actions \
+  -target=google_service_account_iam_member.github_actions_wif_user
+# Or full: terraform apply
 ```
 After that, re-run the failing workflow.
+
+## Terraform state: one path for pipeline and local (avoid drift)
+**Cause of “state збився після пайплайну”:** Pipeline and local used **different state paths**. Pipeline uses `bucket=TF_STATE_BUCKET`, `prefix=pult/prod`. If local `backend.hcl` had `prefix=orderflow/prod`, you had two states; pipeline apply then synced GCP to the (old) state in `pult/prod`.
+
+**Rule:** Everyone must use the **same** state: bucket `orderflow-451220-tfstate`, prefix **`pult/prod`**.
+
+- **Pipeline:** Already uses `TF_STATE_BUCKET` (from vars) and `TF_STATE_PREFIX=pult/prod` in the workflow.
+- **Local:** In `infra/environments/prod/backend.hcl` (gitignored) set:
+  - `bucket = "orderflow-451220-tfstate"`
+  - `prefix = "pult/prod"`
+  Use `backend.hcl.example` as reference; copy to `backend.hcl` and run `terraform init -reconfigure -backend-config=backend.hcl -backend-config="access_token=$(gcloud auth print-access-token)"`.
+
+**If the “good” state was only in `orderflow/prod`:** Copy it once into `pult/prod` so the pipeline sees it, then use only `pult/prod`:
+```bash
+# One-time: backup pult/prod, then copy good state from orderflow/prod to pult/prod
+gsutil cp gs://orderflow-451220-tfstate/pult/prod/default.tfstate \
+  gs://orderflow-451220-tfstate/pult/prod/default.tfstate.backup  # optional
+gsutil cp gs://orderflow-451220-tfstate/orderflow/prod/default.tfstate \
+  gs://orderflow-451220-tfstate/pult/prod/default.tfstate
+```
+Then set local `backend.hcl` to `prefix = "pult/prod"` and run `terraform plan` to confirm.
+
+**If pipeline already overwrote GCP with old state:** Re-import current GCP resources into the state that pipeline uses (`pult/prod`): see “State points to orderflow-app” and “Re-import secrets as pult-*” below. Then fix `backend.hcl` to `pult/prod` so it never drifts again.
+
+## State points to orderflow-app instead of pult-app
+If you already migrated to pult (pult-app exists in GCP) but Terraform state or outputs still show `orderflow-app`, state was likely written by an old run (e.g. local tfvars with `service_name = "orderflow-app"` or another state prefix). Fix by re-importing the **existing** pult-app into state (no destroy in GCP).
+
+1. **Use the same state as the pipeline** (bucket + prefix `pult/prod`). In `infra/environments/prod`, ensure `backend.hcl` has `prefix = "pult/prod"`.
+2. **Ensure config uses pult-app:** in `terraform.tfvars` set `service_name = "pult-app"` (or rely on default in `variables.tf`). If you had `orderflow-app` there, change it and keep it as `pult-app`.
+3. **Re-import Cloud Run service and its IAM binding** (from repo root, or `cd infra/environments/prod`):
+```bash
+cd infra/environments/prod
+terraform init -reconfigure -backend-config=backend.hcl -backend-config="access_token=$(gcloud auth print-access-token)"
+
+# Remove wrong service from state (does not delete anything in GCP)
+terraform state rm 'google_cloud_run_service.app'
+terraform state rm 'google_cloud_run_service_iam_member.public_invoker'
+
+# Import existing pult-app (must exist in GCP). Use provider's expected format:
+terraform import 'google_cloud_run_service.app' 'locations/us-central1/namespaces/orderflow-451220/services/pult-app'
+terraform import 'google_cloud_run_service_iam_member.public_invoker' 'v1/projects/orderflow-451220/locations/us-central1/services/pult-app roles/run.invoker allUsers'
+terraform plan   # should be clean or only unrelated changes
+```
+4. If you use the migrate job and it’s in state, re-import it too if needed (see commented lines in `import_existing_pult_state.sh`).
+
+**If plan still wants to change the container** (secrets → orderflow-* or ALLOWED_HOSTS loses domain): Re-import the three secrets as `pult-*` and their IAM members; set `custom_domain = "pult.woolberry.ua"` in terraform.tfvars. See commands in runbook or below.
 
 ## Terraform state recovery
 From repo root:
@@ -100,3 +154,16 @@ terraform init -reconfigure -backend-config=backend.hcl -backend-config="access_
 TF_VAR_google_access_token="$TOKEN" terraform state pull > /tmp/pult-prod-state.json
 ```
 Restore previous version from GCS if needed, then run `terraform plan` to confirm consistency.
+
+## Re-import secrets as pult-* (when plan switches container to orderflow-*)
+From `infra/environments/prod`, after state rm of the three `google_secret_manager_secret.app` and three `runtime_access` IAM members:
+```bash
+terraform import 'google_secret_manager_secret.app["django_secret_key"]' 'projects/orderflow-451220/secrets/pult-django-secret-key'
+terraform import 'google_secret_manager_secret.app["database_url"]' 'projects/orderflow-451220/secrets/pult-database-url'
+terraform import 'google_secret_manager_secret.app["telegram_bot_token"]' 'projects/orderflow-451220/secrets/pult-telegram-bot-token'
+SA="841559594474-compute@developer.gserviceaccount.com"
+terraform import 'google_secret_manager_secret_iam_member.runtime_access["django_secret_key"]' "projects/orderflow-451220/secrets/pult-django-secret-key roles/secretmanager.secretAccessor serviceAccount:${SA}"
+terraform import 'google_secret_manager_secret_iam_member.runtime_access["database_url"]' "projects/orderflow-451220/secrets/pult-database-url roles/secretmanager.secretAccessor serviceAccount:${SA}"
+terraform import 'google_secret_manager_secret_iam_member.runtime_access["telegram_bot_token"]' "projects/orderflow-451220/secrets/pult-telegram-bot-token roles/secretmanager.secretAccessor serviceAccount:${SA}"
+```
+Set `custom_domain = "pult.woolberry.ua"` in terraform.tfvars so ALLOWED_HOSTS is not reduced.

@@ -1,2 +1,4 @@
-bucket = "orderflow-terraform-state"
+# Must match pipeline: bucket from TF_STATE_BUCKET, prefix pult/prod.
+# Copy to backend.hcl (gitignored) and run terraform init -reconfigure -backend-config=backend.hcl ...
+bucket = "orderflow-451220-tfstate"
 prefix = "pult/prod"

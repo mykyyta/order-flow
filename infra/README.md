@@ -23,5 +23,6 @@ Terraform is the source of truth for GCP infrastructure in this repository.
 ## Notes
 
 - `backend.hcl` and `terraform.tfvars` should stay out of git history.
+- **State path:** CI uses bucket from `TF_STATE_BUCKET` and prefix `pult/prod`. Your local `backend.hcl` must use the same (`prefix = "pult/prod"`) so pipeline and local share one state. See runbook “Terraform state: one path for pipeline and local”.
 - CI will use the same root module in `environments/prod`.
 - Brownfield adoption guide: `docs/devops/terraform_brownfield_migration.md`.
