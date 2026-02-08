@@ -17,10 +17,16 @@ Goal: add `staging` safely with minimum duplication.
 
 ## 2) Minimal rollout strategy
 Current practical flow is good:
-1. Terraform apply (infra).
-2. Update Cloud Run service image.
-3. Update migrate job image.
-4. Run migrate job.
+Fast path (default on push to `main`):
+1. Deploy Cloud Run service image.
+
+Full deploy (manual, when schema changes):
+1. Update migrate job image.
+2. Run migrate job.
+3. Deploy Cloud Run service image.
+
+Infra changes remain separate:
+1. Terraform apply when infra changes are merged.
 
 Keep this flow until Cloud Run resources are fully removed from Terraform adoption mode.
 
