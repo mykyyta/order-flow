@@ -549,14 +549,14 @@ html[data-theme="lumen_subtle"] {
   background-color: var(--of-bg);
 }
 
-[data-theme="lumen_subtle"] .nav-logo {
+[data-theme="lumen_subtle"] .nav-logo .brand-wordmark {
   color: var(--of-logo-a); /* fallback */
   background-image: linear-gradient(90deg, var(--of-logo-a), var(--of-logo-b));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
-[data-theme="lumen_subtle"] .nav-logo:hover {
+[data-theme="lumen_subtle"] .nav-logo:hover .brand-wordmark {
   background-image: linear-gradient(
     90deg,
     color-mix(in oklab, var(--of-logo-a) 86%, white),

@@ -5,7 +5,10 @@
 	<head>
 	    <meta charset="UTF-8">
 	    <meta name="viewport" content="width=device-width, initial-scale=1">
-	    <title>{% block title %}OrderFlow{% endblock %}</title>
+	    <title>{% block title %}Pult{% endblock %}</title>
+	    <link rel="preconnect" href="https://fonts.googleapis.com">
+	    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
 	    <script>
 	      (function () {
 	        // Theme preview: set ?theme=lumen_subtle (or theme=default to clear).
@@ -35,10 +38,11 @@
 	          } catch (_err) {}
 	        }
 	      })();
-	    </script>
-	    <link href="{% static 'css/app.css' %}" rel="stylesheet">
-	    <link href="{% static 'css/theme_preview.css' %}" rel="stylesheet">
-	    {% block extra_head %}{% endblock %}
+		    </script>
+		    <link href="{% static 'css/app.css' %}" rel="stylesheet">
+		    <link href="{% static 'css/brand.css' %}" rel="stylesheet">
+		    <link href="{% static 'css/theme_preview.css' %}" rel="stylesheet">
+		    {% block extra_head %}{% endblock %}
 	</head>
 <body class="bg-slate-50 font-sans text-slate-800 antialiased" data-has-nav="{% if request.user.is_authenticated %}1{% else %}0{% endif %}">
     <div class="nav-loading-overlay" id="nav-loading-overlay" aria-hidden="true">
@@ -48,12 +52,19 @@
     {% with current_url=request.resolver_match.url_name %}
     {% get_nav_items as nav_items %}
     <nav class="bg-white border-b border-slate-200">
-        <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-            <div class="flex h-14 items-center justify-between gap-2">
-                <a href="{% url 'index' %}" class="nav-logo shrink-0 text-lg font-semibold tracking-tight text-teal-600">OrderFlow</a>
+	        <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+	            <div class="flex h-14 items-center justify-between gap-2">
+			                <a href="{% url 'index' %}" class="brand-logo nav-logo shrink-0 rounded-md px-1.5 py-1 text-slate-900 hover:bg-slate-50 hover:text-slate-900 transition-colors" data-size="sm">
+			                    <div class="brand-logo-wrap">
+			                        <div class="brand-logo-inner">
+			                            <span class="brand-wordmark">PULT</span>
+			                            <span class="brand-emoji-wrap brand-emoji-char" aria-hidden="true">🎛️</span>
+			                        </div>
+			                    </div>
+			                </a>
 
-                <!-- Page title: between logo and nav (desktop) or hamburger (mobile) -->
-                <div class="min-w-0 flex-1 px-2">
+	                <!-- Page title: between logo and nav (desktop) or hamburger (mobile) -->
+	                <div class="min-w-0 flex-1 px-2">
                     {% if page_title %}<h1 class="nav-page-title">{{ page_title }}</h1>{% endif %}
                 </div>
 
