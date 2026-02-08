@@ -10,8 +10,6 @@ on:
       - main
     paths:
       - "infra/**"
-      - "Dockerfile"
-      - "requirements.txt"
       - ".github/workflows/terraform-infra.yml"
   workflow_dispatch:
 
@@ -108,7 +106,7 @@ jobs:
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     concurrency:
-      group: terraform-apply-prod
+      group: prod-rollout
       cancel-in-progress: false
     permissions:
       contents: read
@@ -125,23 +123,10 @@ jobs:
           service_account: ${{ vars.GCP_DEPLOYER_SERVICE_ACCOUNT }}
           token_format: access_token
 
-      - name: Setup gcloud CLI
-        uses: google-github-actions/setup-gcloud@v2
-
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.5.7
-
-      - name: Configure Docker auth
-        run: gcloud auth configure-docker "${REGION}-docker.pkg.dev" --quiet
-
-      - name: Build and push image
-        run: |
-          IMAGE_URI="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/${IMAGE_NAME}:${GITHUB_SHA}"
-          docker build --platform=linux/amd64 -t "${IMAGE_URI}" .
-          docker push "${IMAGE_URI}"
-          echo "IMAGE_URI=${IMAGE_URI}" >> "${GITHUB_ENV}"
 
       - name: Terraform Init
         working-directory: ${{ env.TF_DIR }}
@@ -156,30 +141,5 @@ jobs:
         run: |
           terraform apply -auto-approve \
             -var="project_id=${PROJECT_ID}" \
-            -var="container_image=${IMAGE_URI}" \
             -var="enable_migrate_job=true" \
             -var="google_access_token=${{ steps.auth.outputs.access_token }}"
-
-      # Cloud Run service/job are still in Terraform brownfield adoption mode
-      # (`ignore_changes = all`), so image rollout is done explicitly.
-      - name: Deploy app revision
-        run: |
-          gcloud run services update "${SERVICE_NAME}" \
-            --project "${PROJECT_ID}" \
-            --region "${REGION}" \
-            --image "${IMAGE_URI}"
-
-      - name: Sync migrate job image
-        run: |
-          gcloud run jobs update "${MIGRATE_JOB_NAME}" \
-            --project "${PROJECT_ID}" \
-            --region "${REGION}" \
-            --image "${IMAGE_URI}" \
-            --update-env-vars "DJANGO_SETTINGS_MODULE=OrderFlow.settings,CSRF_TRUSTED_ORIGINS=https://localhost"
-
-      - name: Run migrations job
-        run: |
-          gcloud run jobs execute "${MIGRATE_JOB_NAME}" \
-            --project "${PROJECT_ID}" \
-            --region "${REGION}" \
-            --wait
