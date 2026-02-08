@@ -6,7 +6,6 @@ from .views import (
     auth_login,
     auth_logout,
     change_password,
-    notification_settings,
     order_detail,
     order_edit,
     orders_active,
@@ -34,7 +33,6 @@ urlpatterns = [
     path("logout/", auth_logout, name="auth_logout"),
     path("profile/", profile_view, name="profile"),
     path("profile/change-password/", change_password, name="change_password"),
-    path("profile/settings/", notification_settings, name="notification_settings"),
     path(
         "cron/send-delayed-notifications/",
         send_delayed_notifications,

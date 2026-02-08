@@ -293,7 +293,8 @@ def orders_bulk_status(request):
 def orders_completed(request):
     search_query = (request.GET.get("q") or "").strip()
     orders = (
-        Order.objects.select_related("model", "color")
+        Order.objects.only("id", "finished_at", "model_id", "color_id")
+        .select_related("model", "color")
         .filter(current_status=STATUS_FINISHED)
         .order_by("-finished_at")
     )
@@ -432,7 +433,7 @@ class ProductModelListCreateView(LoginRequiredMixin, View):
     template_name = "catalog/product_models.html"
 
     def get(self, request, *args, **kwargs):
-        models = ProductModel.objects.all()
+        models = ProductModel.objects.order_by("name")
         form = ProductModelForm()
         return render(
             request,
@@ -445,7 +446,7 @@ class ProductModelListCreateView(LoginRequiredMixin, View):
         if form.is_valid():
             form.save()
             return redirect(reverse_lazy("product_models"))
-        models = ProductModel.objects.all()
+        models = ProductModel.objects.order_by("name")
         return render(
             request,
             self.template_name,
@@ -462,12 +463,13 @@ class ColorListCreateView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         return Color.objects.order_by(
             models.Case(
-                models.When(availability_status="out_of_stock", then=2),
-                models.When(availability_status="low_stock", then=1),
                 models.When(availability_status="in_stock", then=0),
+                models.When(availability_status="low_stock", then=1),
+                models.When(availability_status="out_of_stock", then=2),
                 default=3,
                 output_field=models.IntegerField(),
-            )
+            ),
+            "name",
         )
 
     def get_context_data(self, **kwargs):
@@ -508,6 +510,7 @@ class ColorDetailUpdateView(LoginRequiredMixin, UpdateView):
 @custom_login_required
 def profile_view(request):
     user = request.user
+    notif_settings, _created = NotificationSetting.objects.get_or_create(user=user)
 
     if request.method == "POST":
         new_username = (request.POST.get("username") or "").strip()
@@ -516,41 +519,29 @@ def profile_view(request):
             messages.error(request, "Логін не може бути порожнім.")
             return redirect("profile")
 
-        if new_username == user.username:
-            messages.info(request, "Змін немає — усе як було.")
-            return redirect("profile")
+        changed = False
 
-        user_model = get_user_model()
-        if user_model.objects.filter(username__iexact=new_username).exclude(pk=user.pk).exists():
-            messages.error(request, "Такий логін вже зайнятий.")
-            return redirect("profile")
+        if new_username != user.username:
+            user_model = get_user_model()
+            if user_model.objects.filter(username__iexact=new_username).exclude(pk=user.pk).exists():
+                messages.error(request, "Такий логін вже зайнятий.")
+                return redirect("profile")
+            user.username = new_username
+            user.save(update_fields=["username"])
 
-        user.username = new_username
-        user.save(update_fields=["username"])
-        messages.success(request, "Готово! Логін оновлено.")
+        notif_settings.notify_order_created = request.POST.get("notify_order_created") == "on"
+        notif_settings.notify_order_finished = request.POST.get("notify_order_finished") == "on"
+        notif_settings.notify_order_created_pause = request.POST.get("notify_order_created_pause") == "on"
+        notif_settings.save()
+
+        messages.success(request, "Готово! Налаштування збережено.")
 
         return redirect("profile")
 
-    return render(request, "account/profile.html", {"page_title": "Профіль", "user": user})
-
-
-@custom_login_required
-def notification_settings(request):
-    settings, _created = NotificationSetting.objects.get_or_create(user=request.user)
-
-    if request.method == "POST":
-        settings.notify_order_created = request.POST.get("notify_order_created") == "on"
-        settings.notify_order_finished = request.POST.get("notify_order_finished") == "on"
-        settings.notify_order_created_pause = request.POST.get("notify_order_created_pause") == "on"
-        settings.save()
-        messages.success(request, "Готово! Сповіщення оновлено.")
-
-        return redirect("notification_settings")
-
     return render(
         request,
-        "account/notification_settings.html",
-        {"page_title": "Сповіщення", "settings": settings},
+        "account/profile.html",
+        {"page_title": "Профіль", "user": user, "notification_settings": notif_settings},
     )
 
 
