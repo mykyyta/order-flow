@@ -43,7 +43,7 @@
     {% if request.user.is_authenticated %}
     {% with current_url=request.resolver_match.url_name %}
     <nav class="bg-white border-b border-slate-200">
-        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
             <div class="flex h-14 items-center justify-between gap-2">
                 <a href="{% url 'index' %}" class="nav-logo shrink-0 text-lg font-semibold tracking-tight text-teal-600">OrderFlow</a>
 
@@ -101,8 +101,8 @@
     </nav>
     {% endwith %}
     {% endif %}
-    <main class="{% if page_title_center or not request.user.is_authenticated %}main-centered px-4 py-10 sm:px-6 lg:px-8{% else %}mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8{% endif %}">
-        <div class="{% if page_title_center or not request.user.is_authenticated %}w-full{% endif %}">
+    <main class="{% if page_title_center or not request.user.is_authenticated %}main-centered px-4 py-10 sm:px-6 lg:px-8{% else %}main-content mx-auto px-4 py-6 sm:px-6 lg:px-8{% endif %}">
+        <div class="{% if page_title_center or not request.user.is_authenticated %}w-full max-w-2xl mx-auto{% endif %}">
             {% block content %}{% endblock %}
         </div>
     </main>

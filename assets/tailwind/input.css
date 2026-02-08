@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Scan Django templates so layout utilities (max-w-*, etc.) are included */
+@source "../../templates/**/*.html";
+
 /* Status indicator/badge classes from order_statuses.py (injected via {{ dot_class }} in templates) */
 @source inline("text-blue-500", "bg-blue-100", "text-blue-800");
 @source inline("text-emerald-600", "bg-emerald-100", "text-emerald-800");
@@ -7,6 +10,8 @@
 @source inline("text-amber-600", "bg-amber-100", "text-amber-800");
 @source inline("text-rose-600", "bg-rose-100", "text-rose-800");
 @source inline("text-slate-400", "text-slate-500", "text-slate-700", "bg-slate-100", "bg-emerald-500");
+/* Layout: ensure nav/main max-width classes are in the build */
+@source inline("max-w-2xl", "max-w-3xl", "max-w-4xl", "max-w-5xl", "mx-auto");
 
 @theme {
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -344,6 +349,11 @@
   }
   .modal-actions {
     @apply mt-5 flex flex-row-reverse gap-2;
+  }
+
+  /* Main content area (authenticated, not centered): fixed max width */
+  .main-content {
+    max-width: var(--container-2xl);
   }
 
   /* Centered pages (login, create order, etc.) */
