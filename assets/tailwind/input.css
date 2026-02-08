@@ -23,6 +23,10 @@
   --color-accent: #F59E0B;
   --color-background: #F8FAFC;
   --color-surface: #ffffff;
+  /* Subtle shadows: one place to tune. Surface = inputs, secondary btn; floating = dropdowns. */
+  --shadow-surface: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-surface-hover: 0 2px 4px rgba(0, 0, 0, 0.06);
+  --shadow-floating: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 /* Form design system - one place for all form controls */
@@ -35,6 +39,7 @@
   }
   .form-input {
     @apply block w-full min-h-10 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400;
+    box-shadow: var(--shadow-surface);
     @apply focus:outline-none focus:ring-2 focus:ring-offset-0 transition-[border-color,box-shadow];
     font-size: 0.95rem;
     line-height: 1.35;
@@ -52,6 +57,7 @@
   }
   .form-select {
     @apply block w-full min-h-10 rounded-md border border-slate-300 bg-white px-3 py-2 pr-8 text-sm text-slate-900;
+    box-shadow: var(--shadow-surface);
     @apply focus:outline-none focus:ring-2 focus:ring-offset-0;
     @apply transition-[border-color,box-shadow] appearance-none;
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
@@ -77,6 +83,7 @@
   }
   .form-select-trigger {
     @apply flex min-h-10 items-center justify-between w-full rounded-md border border-slate-300 bg-white px-3 py-2 pr-8 text-left text-sm text-slate-900 cursor-pointer;
+    box-shadow: var(--shadow-surface);
     @apply focus:outline-none focus:ring-2 focus:ring-offset-0;
     @apply transition-[border-color,box-shadow];
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
@@ -99,7 +106,8 @@
     @apply ring-2;
   }
   .form-select-dropdown {
-    @apply fixed z-[9999] mt-1 max-h-60 overflow-auto rounded-md border border-slate-200 bg-white py-1 shadow-lg;
+    @apply fixed z-[9999] mt-1 max-h-60 overflow-auto rounded-md border border-slate-200 bg-white py-1;
+    box-shadow: var(--shadow-floating);
   }
   .form-select-option {
     @apply block w-full px-3 py-2 text-left text-sm text-slate-900 cursor-pointer;
@@ -117,6 +125,7 @@
   }
   .form-textarea {
     @apply block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 min-h-[88px] resize-y;
+    box-shadow: var(--shadow-surface);
     @apply focus:outline-none focus:ring-2 focus:ring-offset-0;
     @apply transition-[border-color,box-shadow];
     font-size: 0.95rem;
@@ -221,6 +230,10 @@
   }
   .btn-secondary {
     @apply inline-flex min-h-10 items-center justify-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors;
+    box-shadow: var(--shadow-surface);
+  }
+  .btn-secondary:hover:not(:disabled) {
+    box-shadow: var(--shadow-surface-hover);
   }
   .btn-secondary:focus {
     --tw-ring-color: var(--color-primary-focus);
