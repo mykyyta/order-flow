@@ -2,6 +2,9 @@
 .env
 .env.local
 .env.*.local
+.env.production
+.env.prod
+.env.live
 
 # Virtual environments
 .venv/
@@ -15,6 +18,13 @@ __pycache__/
 *$py.class
 *.so
 
+# Tool caches (Ruff, pytest, mypy)
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
 # IDE files
 .idea/
 .vscode/
@@ -22,10 +32,24 @@ __pycache__/
 *.swo
 *~
 
+# AI/editor rules (local only)
+CLAUDE.md
+AGENTS.md
+
+# Secrets and credentials (open repo: never commit)
+*.pem
+*.key
+*credentials*.json
+*-credentials.json
+secrets/
+credentials/
+
 # Database
 db.sqlite3
 db.sqlite3-journal
 *.db
+*.sql
+*.dump
 
 # Django specific
 *.log

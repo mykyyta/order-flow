@@ -1,11 +1,11 @@
-project_id      = "orderflow-451220"
+project_id      = "YOUR_GCP_PROJECT_ID"
 region          = "us-central1"
 environment     = "prod"
 service_name    = "pult-app"
 migrate_job_name = "pult-migrate"
 artifact_repository_id = "my-repo"
-container_image        = "us-central1-docker.pkg.dev/orderflow-451220/my-repo/my-app"
-service_account_email  = "841559594474-compute@developer.gserviceaccount.com"
+container_image        = "us-central1-docker.pkg.dev/YOUR_GCP_PROJECT_ID/my-repo/my-app"
+service_account_email  = "YOUR_PROJECT_NUMBER-compute@developer.gserviceaccount.com"
 container_cpu_limit    = "1000m"
 container_memory_limit = "512Mi"
 container_concurrency  = 80
@@ -13,17 +13,17 @@ max_instances          = 100
 public_invoker_member  = "allUsers"
 
 # Optional: custom domain for Cloud Run (must be verified in Search Console first). Leave unset to skip.
-custom_domain = "pult.woolberry.ua"
+custom_domain = "your-domain.com"
 
 migrate_job_timeout    = 1200
 enable_migrate_job     = false
 manage_secret_versions = false
 
-github_repository      = "mykyyta/pult"
+github_repository      = "your-username/pult"
 wif_pool_id            = "github-actions-pool"
 wif_provider_id        = "github-actions-provider"
-terraform_deployer_sa_id = "orderflow-tf-deployer"
-tf_state_bucket_name   = "orderflow-451220-tfstate"
+terraform_deployer_sa_id = "your-tf-deployer-sa"
+tf_state_bucket_name   = "YOUR_GCP_PROJECT_ID-tfstate"
 
 # For one-time bootstrap you can set manage_secret_versions=true
 # and provide values locally (never commit real secrets):
