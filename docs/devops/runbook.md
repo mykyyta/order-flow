@@ -20,20 +20,28 @@ Run deploy workflow manually (recommended from `main`, but you can pick a branch
 gh workflow run deploy.yml \
   --repo mykyyta/pult \
   --ref main \
-  -f sync_migrate_job_image=true \
-  -f run_migrations=true
+  -f force_migrate=true
 ```
 
 ## PR: skip lint (optional)
 If you need to merge quickly and don't want the PR blocked by Ruff, add label `skip-lint` to the PR.
 
 ## Manual migrate
+The migrate job runs whatever **image** it was last updated to. If the app was deployed without running migrations (e.g. fast deploy), the job may still use an old image and will not create new tables. So first point the job at the current app image, then run it:
+
 ```bash
-gcloud run jobs execute pult-migrate \
-  --region us-central1 \
-  --project orderflow-451220 \
-  --wait
+REGION=us-central1
+PROJECT=orderflow-451220
+
+# Use same image as the running app
+IMAGE=$(gcloud run services describe pult-app --region "$REGION" --project "$PROJECT" --format='value(spec.template.spec.containers[0].image)')
+gcloud run jobs update pult-migrate --region "$REGION" --project "$PROJECT" --image "$IMAGE"
+
+# Then run migrations
+gcloud run jobs execute pult-migrate --region "$REGION" --project "$PROJECT" --wait
 ```
+
+Check the job run in Cloud Console (Cloud Run → Jobs → pult-migrate → Executions) for logs and exit status.
 
 ## Data consistency check
 ```bash
