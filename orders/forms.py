@@ -1,6 +1,6 @@
 from django import forms
 
-from catalog.models import Color, ProductModel
+from catalog.models import Color
 from orders.domain.order_statuses import status_choices
 
 from .models import Order
