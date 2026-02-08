@@ -1,0 +1,6 @@
+{% comment %}
+Single nav link. Pass: url_name, label, is_active, variant ('desktop' or 'mobile').
+{% endcomment %}
+<a href="{% url url_name %}"
+   class="rounded-md px-3 text-sm font-medium transition-colors {% if variant == 'mobile' %}block py-2 {% else %}py-1.5 {% endif %}{% if is_active %}bg-teal-50 text-teal-700{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}"
+   {% if is_active %}aria-current="page"{% endif %}>{{ label }}</a>
