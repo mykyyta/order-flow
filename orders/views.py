@@ -433,7 +433,7 @@ class ProductModelListCreateView(LoginRequiredMixin, View):
     template_name = "catalog/product_models.html"
 
     def get(self, request, *args, **kwargs):
-        models = ProductModel.objects.all()
+        models = ProductModel.objects.order_by("name")
         form = ProductModelForm()
         return render(
             request,
@@ -446,7 +446,7 @@ class ProductModelListCreateView(LoginRequiredMixin, View):
         if form.is_valid():
             form.save()
             return redirect(reverse_lazy("product_models"))
-        models = ProductModel.objects.all()
+        models = ProductModel.objects.order_by("name")
         return render(
             request,
             self.template_name,
@@ -463,12 +463,13 @@ class ColorListCreateView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         return Color.objects.order_by(
             models.Case(
-                models.When(availability_status="out_of_stock", then=2),
-                models.When(availability_status="low_stock", then=1),
                 models.When(availability_status="in_stock", then=0),
+                models.When(availability_status="low_stock", then=1),
+                models.When(availability_status="out_of_stock", then=2),
                 default=3,
                 output_field=models.IntegerField(),
-            )
+            ),
+            "name",
         )
 
     def get_context_data(self, **kwargs):

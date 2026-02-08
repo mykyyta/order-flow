@@ -7,14 +7,14 @@
 {% include "partials/messages.html" %}
 
 <div class="space-y-6">
-    <div class="card">
-        <ul class="divide-y divide-slate-100">
+    <div>
+        <div class="flex flex-wrap gap-2">
             {% for model in models %}
-            <li class="px-4 py-2.5 text-sm text-slate-800">{{ model.name }}</li>
+            <span class="catalog-chip-text">{{ model.name }}</span>
             {% empty %}
-            <li class="px-4 py-6 text-center text-sm text-slate-500">Поки що моделей немає.</li>
+            <p class="text-sm text-slate-500">Поки що моделей немає.</p>
             {% endfor %}
-        </ul>
+        </div>
     </div>
 
     <div class="card form-card-body">

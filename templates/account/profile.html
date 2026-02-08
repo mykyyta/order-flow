@@ -7,41 +7,37 @@
 
 {% include "partials/messages.html" %}
 
-<div class="mx-auto max-w-xl">
+<div class="mx-auto max-w-xl space-y-6">
     <div class="card">
         <div class="form-card-body">
-            <form method="post" id="profileForm">
+            <form method="post" id="profileForm" class="profile-form-spacing">
                 {% csrf_token %}
 
-                <!-- Обліковий запис -->
-                <div class="detail-group">
-                    <h2 class="detail-group-title">Обліковий запис</h2>
-                    <div>
-                        <label for="username" class="sr-only">Логін</label>
-                        <input type="text" id="username" name="username" value="{{ user.username }}" required class="form-input" placeholder="Логін">
-                    </div>
+                <div class="profile-section">
+                    <h2 class="detail-group-title profile-section-title">Обліковий запис</h2>
+                    <label for="username" class="sr-only">Логін</label>
+                    <input type="text" id="username" name="username" value="{{ user.username }}" required class="form-input" placeholder="Логін">
                 </div>
 
-                <!-- Сповіщення -->
-                <div class="detail-group">
-                    <h2 class="detail-group-title">Сповіщення</h2>
-                    <div class="space-y-2">
-                        <label class="flex min-h-[44px] cursor-pointer items-center gap-3 rounded-md py-2 transition-colors hover:bg-slate-50/80 sm:py-2.5">
+                <div class="profile-section">
+                    <h2 class="detail-group-title profile-section-title">Сповіщення</h2>
+                    <div class="profile-checkbox-list">
+                        <label class="profile-checkbox-label flex min-h-[44px] cursor-pointer items-center gap-3 rounded-md py-2 transition-colors hover:bg-slate-50/80 sm:py-2.5">
                             <input type="checkbox" name="notify_order_created" id="notify_order_created" {% if notification_settings.notify_order_created %}checked{% endif %} class="form-checkbox shrink-0">
                             <span class="text-sm font-medium text-slate-700">Сповіщати, коли є нове замовлення</span>
                         </label>
-                        <label class="flex min-h-[44px] cursor-pointer items-center gap-3 rounded-md py-2 transition-colors hover:bg-slate-50/80 sm:py-2.5">
+                        <label class="profile-checkbox-label flex min-h-[44px] cursor-pointer items-center gap-3 rounded-md py-2 transition-colors hover:bg-slate-50/80 sm:py-2.5">
                             <input type="checkbox" name="notify_order_created_pause" id="notify_order_created_pause" {% if notification_settings.notify_order_created_pause %}checked{% endif %} class="form-checkbox shrink-0">
                             <span class="text-sm font-medium text-slate-700">Нові — лише в робочі години</span>
                         </label>
-                        <label class="flex min-h-[44px] cursor-pointer items-center gap-3 rounded-md py-2 transition-colors hover:bg-slate-50/80 sm:py-2.5">
+                        <label class="profile-checkbox-label flex min-h-[44px] cursor-pointer items-center gap-3 rounded-md py-2 transition-colors hover:bg-slate-50/80 sm:py-2.5">
                             <input type="checkbox" name="notify_order_finished" id="notify_order_finished" {% if notification_settings.notify_order_finished %}checked{% endif %} class="form-checkbox shrink-0">
                             <span class="text-sm font-medium text-slate-700">Сповіщати, коли замовлення готове</span>
                         </label>
                     </div>
                 </div>
 
-                <div class="pt-2">
+                <div>
                     <button type="submit" id="saveButton" disabled class="btn-primary">
                         Зберегти
                     </button>
@@ -50,10 +46,12 @@
         </div>
     </div>
 
-    <div class="card mt-4">
+    <div class="card">
         <div class="form-card-body">
-            <h2 class="detail-group-title">Безпека</h2>
-            <a href="{% url 'change_password' %}" class="btn-secondary">Змінити пароль</a>
+            <div class="profile-section">
+                <h2 class="detail-group-title profile-section-title">Безпека</h2>
+                <a href="{% url 'change_password' %}" class="btn-secondary">Змінити пароль</a>
+            </div>
         </div>
     </div>
 </div>
