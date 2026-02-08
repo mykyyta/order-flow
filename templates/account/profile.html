@@ -7,21 +7,53 @@
 
 {% include "partials/messages.html" %}
 
-<div class="max-w-xl">
-    <form method="post" id="profileForm" class="space-y-4">
-        {% csrf_token %}
-        <div>
-            <label for="username" class="sr-only">Логін</label>
-            <input type="text" id="username" name="username" value="{{ user.username }}" required class="form-input" placeholder="Логін">
-        </div>
-        <button type="submit" id="saveButton" disabled class="btn-primary">
-            Зберегти
-        </button>
-    </form>
+<div class="mx-auto max-w-xl">
+    <div class="card">
+        <div class="form-card-body">
+            <form method="post" id="profileForm">
+                {% csrf_token %}
 
-    <div class="mt-6 flex flex-wrap gap-3 border-t border-slate-200 pt-6">
+                <!-- Обліковий запис -->
+                <div class="detail-group">
+                    <h2 class="detail-group-title">Обліковий запис</h2>
+                    <div>
+                        <label for="username" class="sr-only">Логін</label>
+                        <input type="text" id="username" name="username" value="{{ user.username }}" required class="form-input" placeholder="Логін">
+                    </div>
+                </div>
+
+                <!-- Сповіщення -->
+                <div class="detail-group">
+                    <h2 class="detail-group-title">Сповіщення</h2>
+                    <div class="space-y-2">
+                        <label class="flex min-h-[44px] cursor-pointer items-center gap-3 rounded-md py-2 transition-colors hover:bg-slate-50/80 sm:py-2.5">
+                            <input type="checkbox" name="notify_order_created" id="notify_order_created" {% if notification_settings.notify_order_created %}checked{% endif %} class="form-checkbox shrink-0">
+                            <span class="text-sm font-medium text-slate-700">Сповіщати, коли є нове замовлення</span>
+                        </label>
+                        <label class="flex min-h-[44px] cursor-pointer items-center gap-3 rounded-md py-2 transition-colors hover:bg-slate-50/80 sm:py-2.5">
+                            <input type="checkbox" name="notify_order_created_pause" id="notify_order_created_pause" {% if notification_settings.notify_order_created_pause %}checked{% endif %} class="form-checkbox shrink-0">
+                            <span class="text-sm font-medium text-slate-700">Нові — лише в робочі години</span>
+                        </label>
+                        <label class="flex min-h-[44px] cursor-pointer items-center gap-3 rounded-md py-2 transition-colors hover:bg-slate-50/80 sm:py-2.5">
+                            <input type="checkbox" name="notify_order_finished" id="notify_order_finished" {% if notification_settings.notify_order_finished %}checked{% endif %} class="form-checkbox shrink-0">
+                            <span class="text-sm font-medium text-slate-700">Сповіщати, коли замовлення готове</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="pt-2">
+                    <button type="submit" id="saveButton" disabled class="btn-primary">
+                        Зберегти
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Безпека -->
+    <div class="mt-6 border-t border-slate-200 pt-6">
+        <h2 class="detail-group-title mb-3">Безпека</h2>
         <a href="{% url 'change_password' %}" class="btn-secondary">Змінити пароль</a>
-        <a href="{% url 'notification_settings' %}" class="btn-secondary">Сповіщення</a>
     </div>
 </div>
 

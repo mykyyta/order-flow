@@ -65,8 +65,7 @@ Account:
    - JS → `static/js/profile.js`.
 7. `change_password` → `change_password` (без змін)
    - Template: `templates/account/change_password.html`
-8. `notification_settings` → `notification_settings` (без змін)
-   - Template: `templates/account/notification_settings.html`
+8. Налаштування сповіщень — об'єднано з профілем (`profile`)
 
 Catalog:
 9. `model_list` → `product_models`
