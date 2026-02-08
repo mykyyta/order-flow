@@ -55,7 +55,19 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function positionDropdown() {
       var rect = trigger.getBoundingClientRect();
-      dropdown.style.top = (rect.bottom + 4) + "px";
+      var maxHeight = 240;
+      var spaceBelow = window.innerHeight - rect.bottom;
+      var spaceAbove = rect.top;
+      var openUp = spaceBelow < maxHeight && spaceAbove > spaceBelow;
+      if (openUp) {
+        dropdown.style.top = (rect.top - maxHeight - 4) + "px";
+        dropdown.style.maxHeight = maxHeight + "px";
+        dropdown.classList.add("form-select-dropdown--up");
+      } else {
+        dropdown.style.top = (rect.bottom + 4) + "px";
+        dropdown.style.maxHeight = "";
+        dropdown.classList.remove("form-select-dropdown--up");
+      }
       dropdown.style.left = rect.left + "px";
       dropdown.style.width = rect.width + "px";
     }
