@@ -1,7 +1,7 @@
 # Implementation Roadmap
 
 Порядок дій для UI-рефакторингу OrderFlow.
-Базується на: style_decisions.md, style_refactor_principles.md.
+Базується на: [docs/design/](design/) (design_components.md, style_decisions.md).
 
 ## Phase 1: Інфраструктура
 

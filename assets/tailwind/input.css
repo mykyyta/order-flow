@@ -424,6 +424,21 @@
     @apply mt-5 flex flex-row-reverse gap-2;
   }
 
+  /* Navigation loading: full-page overlay shown on link/form navigation (same-origin) */
+  .nav-loading-overlay {
+    @apply fixed inset-0 z-[100] flex items-center justify-center bg-white/80 pointer-events-none opacity-0 transition-opacity duration-150;
+  }
+  body.navigating .nav-loading-overlay {
+    @apply opacity-100;
+  }
+  .nav-loading-spinner {
+    @apply w-10 h-10 rounded-full border-2 border-slate-200 border-t-teal-500;
+    animation: nav-spin 0.7s linear infinite;
+  }
+  @keyframes nav-spin {
+    to { transform: rotate(360deg); }
+  }
+
   /* Main content area (authenticated, not centered): fixed max width */
   .main-content {
     max-width: var(--container-2xl);

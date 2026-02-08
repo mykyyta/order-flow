@@ -1,6 +1,17 @@
 # Компоненти та коли їх використовувати
 
-Короткий довідник: який клас або partial взяти, щоб нова сторінка/форма виглядала так само, як решта застосунку. Деталі стилів — у `assets/tailwind/input.css`.
+Єдиний довідник з дизайну UI: який клас або partial взяти, щоб нова сторінка виглядала як решта застосунку. Деталі стилів — у `assets/tailwind/input.css`.
+
+**Покращення гайдлайнів вітаються.** Якщо бачиш можливість зробити їх зрозумілішими або актуальнішими — оновлюй цей документ або пропонуй зміни.
+
+---
+
+## Принципи (коротко)
+
+- Стилі в одному місці: `assets/tailwind/input.css` (`@theme` + компоненти). Теми — `static/css/theme_preview.css`.
+- Layout: контент обмежений (`.main-content`), секції — `.page-sections`; відстані й тіні керуються з `@theme`.
+- Статуси: один словник у `orders/domain/order_statuses.py`, у шаблонах — тег `status_indicator`. Partials — у `templates/partials/`, список нижче.
+- Доступність: tap-target ~44px, видимий focus, стани empty/error з текстом.
 
 ---
 
@@ -12,6 +23,16 @@
 | **Центрована сторінка** (вхід, нове замовлення) | У view передати `page_title_center=True`. Base дасть `.main-centered` і внутрішній `max-w-2xl`. |
 | **Сторінка з однією формою в картці** | Розширюй **`base_form_page.html`** замість `base.html`. Перевизнач блоки `form_content` (форма) і при потребі `form_page_footer` (наприклад посилання «Назад»). Приклад: створення замовлення, редагування замовлення, зміна пароля. |
 | **Вужча колонка для форми вручну** | Якщо не підходить base_form_page (наприклад кілька карток): `div.mx-auto.max-w-xl` → `div.card` → `div.form-card-body`. Приклад: профіль. |
+| **Навігація** | Пункти меню з одного списку: `NAV_ITEMS` у `orders/templatetags/order_ui.py`, у base — `{% get_nav_items as nav_items %}` і цикл з `{% include "partials/nav_item.html" %}` (variant=desktop|mobile). Новий пункт — один запис у NAV_ITEMS. |
+
+---
+
+## Відступи і тіні (одне місце в input.css)
+
+- **Між секціями на сторінці:** обгортка з класом **`.page-sections`**. Відстань задається в `@theme`: `--page-section-gap` (за замовчуванням 1.25rem). Верх контенту під навом — той самий відступ через `.main-content`.
+- **Під messages, фільтром, між формою і link-back:** `mb-4` або `mt-4`.
+- **Між полями в формі:** `space-y-4` на обгортці полів.
+- **Тіні:** у `@theme` — `--shadow-surface`, `--shadow-surface-hover`, `--shadow-floating`. Поля (form-input, form-select, form-textarea), btn-secondary і dropdown використовують їх; картка — `shadow-sm`; primary-кнопка — власна тінь. Змінити силу тіней — лише в input.css.
 
 ---
 
@@ -107,3 +128,21 @@
 ### Новий статус (замовлення)
 - [ ] Додати визначення в `orders/domain/order_statuses.py` (код, label, icon, indicator_class, text_class, badge_class).
 - [ ] У шаблонах нічого не міняти — використовувати `status_indicator` / бейдж як раніше.
+
+---
+
+## Форматування
+
+У корені проєкту — `.editorconfig`: пробіли (не табуляція), 4 пробіли для шаблонів і Python, 2 для CSS/YAML. У шаблонах один рівень вкладеності = +4 пробіли. Рекомендовано Format on Save.
+
+---
+
+## Куди дивитись при зміні
+
+| Задача | Де |
+|--------|-----|
+| Додати нову сторінку/форму | Цей документ — Layout, чеклісти вище |
+| Змінити відступи між блоками або тіні | `assets/tailwind/input.css` — `@theme` (`--page-section-gap`, `--shadow-surface*`) |
+| Змінити колір кнопок/фокусу під тему | `input.css` @theme + `static/css/theme_preview.css` |
+| Додати пункт меню | `orders/templatetags/order_ui.py` — `NAV_ITEMS` |
+| Додати статус замовлення | `orders/domain/order_statuses.py` |

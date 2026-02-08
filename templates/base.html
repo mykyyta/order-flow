@@ -41,6 +41,9 @@
 	    {% block extra_head %}{% endblock %}
 	</head>
 <body class="bg-slate-50 font-sans text-slate-800 antialiased" data-has-nav="{% if request.user.is_authenticated %}1{% else %}0{% endif %}">
+    <div class="nav-loading-overlay" id="nav-loading-overlay" aria-hidden="true">
+        <div class="nav-loading-spinner" aria-label="Завантаження"></div>
+    </div>
     {% if request.user.is_authenticated %}
     {% with current_url=request.resolver_match.url_name %}
     {% get_nav_items as nav_items %}

@@ -1,10 +1,12 @@
 # Дизайн і layout
 
-Документація по UI, компонентах, layout та стилях OrderFlow.
+Вся документація з UI зведена до **одного довідника** + конвенції коду.
 
 | Файл | Опис |
 |------|------|
-| [design_components.md](design_components.md) | Довідник компонентів і чеклісти для нових сторінок/форм — **стартуй звідси**. |
-| [design_system_analysis.md](design_system_analysis.md) | Аналіз дизайн-системи: що вже добре, ризики, рекомендації, рефактори. |
-| [style_decisions.md](style_decisions.md) | Принципи стилю та неймінгу (URL, views, шаблони, CSS/JS, мова). |
-| [style_refactor_principles.md](style_refactor_principles.md) | Принципи UI-рефакторингу: стек, layout, типографіка, кольори, доступність, partials. |
+| [design_components.md](design_components.md) | **Єдиний довідник з дизайну.** Принципи, компоненти (layout, картки, форми, кнопки, таблиці), відступи/тіні, чеклісти для нової сторінки/форми/меню/статусу, таблиця «куди дивитись». |
+| [style_decisions.md](style_decisions.md) | Конвенції коду: неймінг, views, шаблони, CSS/JS, мова інтерфейсу. |
+
+Покращення гайдлайнів вітаються: якщо бачиш можливість зробити їх зрозумілішими або актуальнішими — оновлюй design_components.md або style_decisions.md (або пропонуй зміни).
+
+Форматування: у корені проєкту `.editorconfig`. Деталі — design_components.md, секція «Форматування».

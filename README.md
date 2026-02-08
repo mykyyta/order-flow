@@ -32,9 +32,8 @@ Status model:
 
 ## Docs
 - **Дизайн і layout** — [docs/design/](docs/design/):
-  - **[Компоненти та коли їх використовувати](docs/design/design_components.md)** — довідник по UI-компонентах і чеклісти для нових сторінок/форм.
-  - [Аналіз дизайн-системи](docs/design/design_system_analysis.md) — практики, рекомендації, можливі рефактори.
-  - [Style decisions](docs/design/style_decisions.md), [Style refactor principles](docs/design/style_refactor_principles.md).
+  - **[design_components.md](docs/design/design_components.md)** — єдиний довідник з UI: компоненти, відступи/тіні, чеклісти, куди дивитись при зміні.
+  - [style_decisions.md](docs/design/style_decisions.md) — конвенції коду (неймінг, views, шаблони, CSS/JS, мова).
 - **DevOps / Infra** — [docs/devops/](docs/devops/):
   - [Infrastructure overview](docs/devops/infrastructure_overview.md)
   - [Runbook](docs/devops/runbook.md)

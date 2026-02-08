@@ -10,14 +10,7 @@
 - Без технічних суфіксів (`list_create`, `detail_update`).
 - Без нечітких імен: не `settings` (якщо не Django settings), не `models` (якщо список продуктів), не `data` (якщо зміст конкретний).
 
-Target URL names (поточне → target):
-- `current_orders_list` → `orders_active`
-- `finished_orders_list` → `orders_completed`
-- `order_create` → `orders_create`
-- `order_detail` — без змін
-- `model_list` → `product_models`
-- `color_list` → `colors`
-- `color_detail_update` → `color_edit`
+Приклад URL names: `orders_active`, `orders_completed`, `orders_create`, `order_detail`, `product_models`, `colors`, `color_edit`.
 
 ## 2) Views
 
@@ -33,13 +26,11 @@ Target URL names (поточне → target):
 
 ## 4) CSS / JS
 
-- Tailwind CSS (standalone CLI, без Node).
-- Жодної робочої логіки в inline `<script>`.
-- Жодних постійних стилів в inline `style=""`.
-- Tailwind input: `assets/tailwind/input.css`. Output: `static/css/app.css`.
+- Tailwind CSS (v4, standalone CLI).
+- Input: `assets/tailwind/input.css`. Output: `static/css/app.css`. Токени (кольори, відступи, тіні) — у блоці `@theme` в input.css.
 - Сторінковий JS: `static/js/<page_name>.js`.
-- Кольори, шрифти, кастомні токени — в `tailwind.config.js`.
-- Template tags повертають Tailwind utility-класи, а не Bootstrap-специфічні (`bg-success`).
+- Без постійних стилів у `style=""` і без робочої логіки в inline `<script>`.
+- Template tags повертають Tailwind-класи (наприклад з `order_statuses`).
 
 ## 5) Мова
 

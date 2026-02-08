@@ -1,4 +1,37 @@
 document.addEventListener("DOMContentLoaded", function () {
+  /* Show loading overlay on same-origin navigation (links and forms) so user gets immediate feedback on tap */
+  function isSameOrigin(url) {
+    if (!url || url.startsWith("#")) return false;
+    try {
+      var a = document.createElement("a");
+      a.href = url;
+      return a.hostname === window.location.hostname && a.protocol === window.location.protocol;
+    } catch (_) {
+      return false;
+    }
+  }
+  function showNavLoading() {
+    document.body.classList.add("navigating");
+    var overlay = document.getElementById("nav-loading-overlay");
+    if (overlay) overlay.setAttribute("aria-hidden", "false");
+  }
+  document.addEventListener("click", function (e) {
+    var link = e.target.closest("a[href]");
+    if (!link) return;
+    if (link.target === "_blank" || link.hasAttribute("download")) return;
+    if (link.getAttribute("href") && link.getAttribute("href").startsWith("#")) return;
+    if (link.closest("[data-no-nav-loading]")) return;
+    if (isSameOrigin(link.href)) showNavLoading();
+  }, true);
+  document.addEventListener("submit", function (e) {
+    var form = e.target;
+    if (!form || form.tagName !== "FORM") return;
+    if (form.closest("[data-no-nav-loading]")) return;
+    var action = (form.getAttribute("action") || "").trim();
+    if (!action || action === "#") action = window.location.href;
+    if (isSameOrigin(action)) showNavLoading();
+  }, true);
+
   var toggle = document.getElementById("nav-toggle");
   var menu = document.getElementById("nav-menu");
   var iconMenu = document.getElementById("icon-menu");
