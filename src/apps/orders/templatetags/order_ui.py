@@ -48,6 +48,7 @@ NAV_ITEMS = [
     {"url_name": "orders_completed", "label": "Завершені", "active_on": ("orders_completed",)},
     {"url_name": "product_models", "label": "Моделі", "active_on": ("product_models",)},
     {"url_name": "colors", "label": "Кольори", "active_on": ("colors",)},
+    {"url_name": "materials", "label": "Матеріали", "active_on": ("materials", "material_edit")},
     {"url_name": "profile", "label": "Профіль", "active_on": ("profile", "change_password")},
 ]
 

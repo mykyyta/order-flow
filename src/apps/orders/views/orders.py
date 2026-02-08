@@ -9,7 +9,7 @@ from django.urls import reverse_lazy
 from django.utils.timezone import localtime
 from django.views.decorators.http import require_POST
 
-from apps.catalog.models import Color
+from apps.catalog.models import Color, ProductModel
 from apps.orders.domain.order_statuses import (
     ACTIVE_LIST_ORDER,
     status_choices,
@@ -311,8 +311,12 @@ def order_edit(request, order_id):
     else:
         form = OrderForm(instance=order)
     # Ensure current order color stays in dropdown even if out_of_stock
+    form.fields["model"].queryset = ProductModel.objects.filter(
+        Q(archived_at__isnull=True) | Q(pk=order.model_id)
+    ).order_by("name")
     form.fields["color"].queryset = Color.objects.filter(
-        Q(availability_status__in=["in_stock", "low_stock"]) | Q(pk=order.color_id)
+        (Q(archived_at__isnull=True) & Q(availability_status__in=["in_stock", "low_stock"]))
+        | Q(pk=order.color_id)
     )
     return render(
         request,

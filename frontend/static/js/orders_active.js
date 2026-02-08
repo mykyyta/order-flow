@@ -20,6 +20,8 @@
     var options = Array.from(select.options);
     var initialOptions = options.map(function (option) { return option.value; }).filter(function (v) { return v !== ""; });
     var bulkActionBar = document.getElementById("bulk-action-bar");
+    var commentToggles = Array.from(document.querySelectorAll("[data-toggle-comments]"));
+    var orderRows = Array.from(document.querySelectorAll("[data-order-row]"));
 
     function intersectSets(statuses) {
         if (statuses.length === 0) {
@@ -151,5 +153,88 @@
         openModal(message);
     });
 
+    function setToggleState(toggle, isOn) {
+        toggle.checked = isOn;
+    }
+
+    function isRowExpanded(row) {
+        return row.getAttribute("data-expanded") === "1";
+    }
+
+    function setRowExpanded(row, expanded) {
+        row.setAttribute("data-expanded", expanded ? "1" : "0");
+        var toggle = row.querySelector("[data-order-toggle]");
+        if (toggle) {
+            toggle.setAttribute("aria-expanded", expanded ? "true" : "false");
+        }
+        syncRow(row);
+    }
+
+    function syncRow(row) {
+        var panel = row.querySelector("[data-order-panel]");
+        var comment = row.querySelector("[data-order-comment]");
+        var extra = row.querySelector("[data-order-extra]");
+        var hasComment = Boolean(comment);
+        var expanded = isRowExpanded(row);
+        var showComment = hasComment && expanded;
+        var showExtra = expanded;
+        var showPanel = showComment || showExtra;
+
+        if (panel) {
+            panel.classList.toggle("hidden", !showPanel);
+        }
+        if (comment) {
+            comment.classList.toggle("hidden", !showComment);
+        }
+        if (extra) {
+            extra.classList.toggle("hidden", !showExtra);
+        }
+    }
+
+    function syncAllRows() {
+        orderRows.forEach(function (row) {
+            syncRow(row);
+        });
+    }
+
+    function anyRowExpanded() {
+        return orderRows.some(function (row) { return isRowExpanded(row); });
+    }
+
+    function syncToggleButtons() {
+        var anyOpen = anyRowExpanded();
+        commentToggles.forEach(function (toggle) {
+            setToggleState(toggle, anyOpen);
+        });
+    }
+
+    orderRows.forEach(function (row) {
+        var toggle = row.querySelector("[data-order-toggle]");
+        if (!toggle) return;
+
+        toggle.addEventListener("click", function (event) {
+            var interactive = event.target.closest("input, a, button, label, select, textarea");
+            if (interactive && interactive !== toggle) {
+                return;
+            }
+            setRowExpanded(row, !isRowExpanded(row));
+            syncToggleButtons();
+        });
+
+    });
+
+    commentToggles.forEach(function (toggle) {
+        toggle.addEventListener("change", function () {
+            var anyOpen = anyRowExpanded();
+            var nextExpanded = !anyOpen;
+            orderRows.forEach(function (row) {
+                setRowExpanded(row, nextExpanded);
+            });
+            syncToggleButtons();
+        });
+    });
+
     updateAllowedTransitions();
+    syncAllRows();
+    syncToggleButtons();
 })();

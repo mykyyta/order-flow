@@ -1,13 +1,72 @@
 {% load order_ui %}
-<div class="flex items-center gap-3 border-b border-slate-100 px-3 py-2 hover:bg-slate-50/80 transition-colors">
-    <input class="form-checkbox flex-shrink-0 js-order-checkbox" type="checkbox" name="orders" value="{{ order.id }}" data-current-status="{{ order.current_status }}">
-    <div class="flex flex-1 items-center justify-between gap-3 min-w-0">
-        <div class="flex items-center gap-1.5 min-w-0">
-            <a href="{% url 'order_detail' order.id %}" class="truncate text-sm font-medium text-slate-800 hover:text-teal-600 transition-colors">{{ order.model.name }} · {{ order.color.name }}</a>
-            {% include "partials/order_tags_icons.html" with order=order %}
-        </div>
-        <div class="flex-shrink-0">
-            {% status_indicator order.current_status order.get_current_status_display muted=1 %}
-        </div>
+<div
+    class="relative border-b border-slate-100"
+    data-order-row
+    data-expanded="0"
+    data-has-comment="{% if order.comment %}1{% else %}0{% endif %}"
+>
+    {% if order.comment %}
+    <span
+        class="pointer-events-none absolute left-0 top-0 h-0 w-0 border-solid
+               border-t-[8px] border-r-[8px] border-b-0 border-l-0
+               border-t-slate-400/35 border-r-transparent"
+        aria-hidden="true"
+    ></span>
+    {% endif %}
+    <div class="relative flex items-center gap-3 px-3 py-2 hover:bg-slate-50/80 transition-colors">
+        <input
+            class="form-checkbox flex-shrink-0 js-order-checkbox"
+            type="checkbox"
+            name="orders"
+            value="{{ order.id }}"
+            data-current-status="{{ order.current_status }}"
+            aria-label="Позначити"
+        >
+        <button
+            type="button"
+            class="flex flex-1 items-center justify-between gap-3 min-w-0 text-left
+                   cursor-pointer focus:outline-none"
+            data-order-toggle
+            aria-expanded="false"
+        >
+            <div class="flex items-center gap-1.5 min-w-0">
+                <span class="truncate text-sm font-medium text-slate-800">
+                    {{ order.model.name }} · {{ order.color.name }}
+                </span>
+                {% include "partials/order_tags_icons.html" with order=order %}
+            </div>
+            <div class="flex-shrink-0">
+                {% status_indicator order.current_status order.get_current_status_display muted=1 %}
+            </div>
+        </button>
+    </div>
+
+    <div
+        class="hidden relative border-t border-slate-100 bg-slate-50/70 px-3 py-2
+               pl-11"
+        data-order-panel
+    >
+        {% if order.comment %}
+        <p class="max-h-20 overflow-hidden pr-7 text-[0.75rem] leading-[1.35]
+                  text-slate-700 font-mono whitespace-pre-line"
+           data-order-comment>
+            {{ order.comment }}
+        </p>
+        {% endif %}
+        <a
+            href="{% url 'order_detail' order.id %}"
+            class="absolute right-3 top-1/2 -translate-y-1/2 inline-flex items-center
+                   text-slate-400 transition-colors hover:text-slate-600
+                   focus:outline-none focus:ring-2 focus:ring-teal-500"
+            aria-label="Деталі замовлення"
+            title="Деталі"
+            data-order-extra
+        >
+            <svg class="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                 stroke-linejoin="round">
+                <path d="M9 5l7 7-7 7"/>
+            </svg>
+        </a>
     </div>
 </div>

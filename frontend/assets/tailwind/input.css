@@ -10,6 +10,7 @@
 @source inline("text-amber-600", "bg-amber-100", "text-amber-800");
 @source inline("text-rose-600", "bg-rose-100", "text-rose-800");
 @source inline("text-slate-400", "text-slate-500", "text-slate-700", "bg-slate-100", "bg-emerald-500");
+@source inline("bg-teal-50", "border-teal-200", "text-teal-700");
 /* Layout: ensure nav/main max-width classes are in the build */
 @source inline("max-w-2xl", "max-w-3xl", "max-w-4xl", "max-w-5xl", "mx-auto");
 
@@ -455,4 +456,3 @@
     min-height: calc(100vh - 56px);
   }
 }
-

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Моделі{% endblock %}
+{% block title %}Матеріали{% endblock %}
 
 {% block content %}
 
@@ -8,21 +8,23 @@
 
 <div class="space-y-6">
     <div>
+        {% if materials %}
         <div class="flex flex-wrap gap-2">
-            {% for model in models %}
-            <a href="{% url 'product_model_edit' model.id %}" class="catalog-chip-link catalog-chip-availability-in">{{ model.name }}</a>
-            {% empty %}
-            <p class="text-sm text-slate-500">Поки що моделей немає.</p>
+            {% for material in materials %}
+            <a href="{% url 'material_edit' material.id %}" class="catalog-chip-link catalog-chip-availability-in">{{ material.name }}</a>
             {% endfor %}
         </div>
+        {% else %}
+        {% include "partials/empty_state.html" with message="Поки що матеріалів немає." %}
+        {% endif %}
     </div>
 
     <div class="card form-card-body">
-        <h2 class="section-title mb-4">Додати модель</h2>
+        <h2 class="section-title mb-4">Додати матеріал</h2>
         <form method="post" class="space-y-4">
             {% csrf_token %}
             <div>
-                <label for="id_name" class="sr-only">Назва моделі</label>
+                <label for="id_name" class="sr-only">Назва матеріалу</label>
                 {{ form.name }}
                 {% if form.name.errors %}
                 <p class="form-error">{{ form.name.errors.0 }}</p>

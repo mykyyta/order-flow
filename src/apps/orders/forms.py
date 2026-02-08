@@ -1,6 +1,6 @@
 from django import forms
 
-from apps.catalog.models import Color
+from apps.catalog.models import Color, ProductModel
 from apps.orders.domain.order_statuses import status_choices
 
 from .models import Order
@@ -33,8 +33,12 @@ class OrderForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields["model"].queryset = ProductModel.objects.filter(archived_at__isnull=True).order_by(
+            "name"
+        )
         self.fields["color"].queryset = Color.objects.filter(
-            availability_status__in=["in_stock", "low_stock"]
+            archived_at__isnull=True,
+            availability_status__in=["in_stock", "low_stock"],
         )
 
 

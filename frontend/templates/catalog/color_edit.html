@@ -3,6 +3,12 @@
 {% block title %}Підправити колір{% endblock %}
 
 {% block form_content %}
+{% if color.archived_at %}
+<div class="alert alert-warning mb-4">
+    Цей колір в архіві.
+</div>
+{% endif %}
+
 <form method="post" class="space-y-4">
     {% csrf_token %}
     <div>
@@ -33,6 +39,20 @@
         <a href="{% url 'colors' %}" class="btn-secondary">Скасувати</a>
     </div>
 </form>
+
+<div class="mt-4 flex items-center justify-end gap-3">
+    {% if color.archived_at %}
+    <form method="post" action="{% url 'color_unarchive' color.id %}" class="m-0">
+        {% csrf_token %}
+        <button type="submit" class="btn-secondary">Відновити</button>
+    </form>
+    {% else %}
+    <form method="post" action="{% url 'color_archive' color.id %}" class="m-0">
+        {% csrf_token %}
+        <button type="submit" class="btn-secondary">В архів</button>
+    </form>
+    {% endif %}
+</div>
 {% endblock %}
 
 {% block form_page_footer %}

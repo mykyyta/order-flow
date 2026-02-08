@@ -1,6 +1,7 @@
 """HTTP layer and view tests for orders."""
 import pytest
 from django.urls import reverse
+from django.utils import timezone
 
 from apps.orders.domain.status import STATUS_FINISHED, STATUS_NEW, STATUS_ON_HOLD
 
@@ -18,6 +19,24 @@ def test_transition_map_present_in_page(client):
     assert b"transition-map-data" in response.content
     assert b"bulk-status-form" in response.content
     assert b"clear-selection-btn" in response.content
+
+
+@pytest.mark.django_db(transaction=True)
+def test_active_orders_render_comment_marker(client):
+    user = UserFactory()
+    client.force_login(user, backend=AUTH_BACKEND)
+    model = ProductModelFactory()
+    color = ColorFactory()
+    OrderFactory(
+        model=model,
+        color=color,
+        comment="ready for review",
+        current_status=STATUS_NEW,
+    )
+    response = client.get(reverse("orders_active"))
+    assert response.status_code == 200
+    assert b"data-has-comment=\"1\"" in response.content
+    assert b"data-order-comment" in response.content
 
 
 @pytest.mark.django_db(transaction=True)
@@ -130,6 +149,49 @@ def test_order_detail_renders_status_indicator(client):
     assert response.status_code == 200
     assert b"text-orange-500" in response.content
     assert order.get_current_status_display().encode() in response.content
+
+
+@pytest.mark.django_db(transaction=True)
+def test_orders_create_hides_archived_catalog_items(client):
+    user = UserFactory()
+    client.force_login(user, backend=AUTH_BACKEND)
+
+    active_model = ProductModelFactory(name="Active model")
+    archived_model = ProductModelFactory(name="Archived model", archived_at=timezone.now())
+    active_color = ColorFactory(name="Active color", code=1001, availability_status="in_stock")
+    archived_color = ColorFactory(
+        name="Archived color",
+        code=2002,
+        availability_status="in_stock",
+        archived_at=timezone.now(),
+    )
+
+    response = client.get(reverse("orders_create"))
+    assert response.status_code == 200
+    assert active_model.name.encode() in response.content
+    assert archived_model.name.encode() not in response.content
+    assert active_color.name.encode() in response.content
+    assert archived_color.name.encode() not in response.content
+
+
+@pytest.mark.django_db(transaction=True)
+def test_order_edit_includes_archived_model_and_color_in_dropdown(client):
+    user = UserFactory()
+    client.force_login(user, backend=AUTH_BACKEND)
+
+    model = ProductModelFactory(name="Model to archive")
+    color = ColorFactory(name="Color to archive", code=888, availability_status="in_stock")
+    order = OrderFactory(model=model, color=color, current_status=STATUS_NEW)
+
+    model.archived_at = timezone.now()
+    model.save(update_fields=["archived_at"])
+    color.archived_at = timezone.now()
+    color.save(update_fields=["archived_at"])
+
+    response = client.get(reverse("order_edit", kwargs={"order_id": order.id}))
+    assert response.status_code == 200
+    assert model.name.encode() in response.content
+    assert color.name.encode() in response.content
 
 
 def test_message_alert_class_mapping():
