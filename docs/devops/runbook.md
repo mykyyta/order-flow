@@ -29,7 +29,7 @@ If you need to merge quickly and don't want the PR blocked by Ruff, add label `s
 
 ## Manual migrate
 ```bash
-gcloud run jobs execute orderflow-migrate \
+gcloud run jobs execute pult-migrate \
   --region us-central1 \
   --project orderflow-451220 \
   --wait
@@ -47,18 +47,18 @@ python manage.py healthcheck_app --require-telegram-token --require-delayed-toke
 
 External check:
 ```bash
-SERVICE_URL="$(gcloud run services describe orderflow-app --region us-central1 --project orderflow-451220 --format='value(status.url)')"
+SERVICE_URL="$(gcloud run services describe pult-app --region us-central1 --project orderflow-451220 --format='value(status.url)')"
 curl -fSsL "$SERVICE_URL/" >/dev/null && echo "OK"
 ```
 
 ## Rollback
 1. List revisions:
 ```bash
-gcloud run revisions list --service orderflow-app --region us-central1 --project orderflow-451220
+gcloud run revisions list --service pult-app --region us-central1 --project orderflow-451220
 ```
 2. Route 100% traffic to a known good revision:
 ```bash
-gcloud run services update-traffic orderflow-app \
+gcloud run services update-traffic pult-app \
   --region us-central1 \
   --project orderflow-451220 \
   --to-revisions <GOOD_REVISION>=100
@@ -69,6 +69,6 @@ gcloud run services update-traffic orderflow-app \
 cd /Users/myk/Projects/OrderFlow/infra/environments/prod
 TOKEN="$(gcloud auth print-access-token)"
 terraform init -reconfigure -backend-config=backend.hcl -backend-config="access_token=${TOKEN}"
-TF_VAR_google_access_token="$TOKEN" terraform state pull > /tmp/orderflow-prod-state.json
+TF_VAR_google_access_token="$TOKEN" terraform state pull > /tmp/pult-prod-state.json
 ```
 Restore previous version from GCS if needed, then run `terraform plan` to confirm consistency.

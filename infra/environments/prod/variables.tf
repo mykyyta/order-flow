@@ -25,7 +25,7 @@ variable "environment" {
 variable "service_name" {
   description = "Cloud Run service name"
   type        = string
-  default     = "orderflow-app"
+  default     = "pult-app"
 }
 
 variable "artifact_repository_id" {
@@ -37,7 +37,7 @@ variable "artifact_repository_id" {
 variable "migrate_job_name" {
   description = "Cloud Run job for migrations"
   type        = string
-  default     = "orderflow-migrate"
+  default     = "pult-migrate"
 }
 
 variable "migrate_job_timeout" {

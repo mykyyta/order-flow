@@ -35,8 +35,8 @@ env:
   REGION: ${{ vars.GCP_REGION }}
   REPOSITORY: ${{ vars.ARTIFACT_REPOSITORY }}
   IMAGE_NAME: my-app
-  SERVICE_NAME: orderflow-app
-  MIGRATE_JOB_NAME: orderflow-migrate
+  SERVICE_NAME: pult-app
+  MIGRATE_JOB_NAME: pult-migrate
 
 jobs:
   deploy:

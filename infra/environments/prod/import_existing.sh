@@ -21,7 +21,7 @@ fi
 
 PROJECT_ID="${PROJECT_ID:-orderflow-451220}"
 REGION="${REGION:-us-central1}"
-SERVICE_NAME="${SERVICE_NAME:-orderflow-app}"
+SERVICE_NAME="${SERVICE_NAME:-pult-app}"
 REPOSITORY_ID="${REPOSITORY_ID:-my-repo}"
 
 echo "== terraform init =="

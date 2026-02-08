@@ -65,11 +65,49 @@
 
 ### 2.1 Секрети
 
-- У Secret Manager створити нові секрети з тими самими значеннями:
-  - `pult-django-secret-key`
-  - `pult-database-url`
-  - `pult-telegram-bot-token`
-- Значення взяти з поточних `orderflow-*` секретів (наприклад, через Console або gcloud).
+У Secret Manager створити нові секрети з тими самими значеннями, що в `orderflow-*`.
+
+#### 2.1.1 Через gcloud CLI
+
+Встанови проєкт і регіон (якщо потрібно):
+
+```bash
+export PROJECT_ID=orderflow-451220
+```
+
+**Створити секрети і скопіювати значення з існуючих orderflow-*:**
+
+```bash
+# 1) Django secret key
+gcloud secrets create pult-django-secret-key --project="$PROJECT_ID" --replication-policy="automatic" 2>/dev/null || true
+gcloud secrets versions access latest --secret=orderflow-django-secret-key --project="$PROJECT_ID" | \
+  gcloud secrets versions add pult-django-secret-key --data-file=- --project="$PROJECT_ID"
+
+# 2) Database URL
+gcloud secrets create pult-database-url --project="$PROJECT_ID" --replication-policy="automatic" 2>/dev/null || true
+gcloud secrets versions access latest --secret=orderflow-database-url --project="$PROJECT_ID" | \
+  gcloud secrets versions add pult-database-url --data-file=- --project="$PROJECT_ID"
+
+# 3) Telegram bot token
+gcloud secrets create pult-telegram-bot-token --project="$PROJECT_ID" --replication-policy="automatic" 2>/dev/null || true
+gcloud secrets versions access latest --secret=orderflow-telegram-bot-token --project="$PROJECT_ID" | \
+  gcloud secrets versions add pult-telegram-bot-token --data-file=- --project="$PROJECT_ID"
+```
+
+`2>/dev/null || true` потрібні, щоб не падати, якщо секрет вже існує (наприклад, створений Terraform). Якщо створюєш секрети **до** Terraform apply, прибери `|| true` і переконайся, що секрет ще не створений.
+
+**Альтернатива — скрипт з репо:** `./scripts/create_pult_secrets.sh [PROJECT_ID]` (за замовчуванням `orderflow-451220`). Перед запуском: `chmod +x scripts/create_pult_secrets.sh`.
+
+**Перевірити:** у [Secret Manager](https://console.cloud.google.com/security/secret-manager?project=orderflow-451220) мають з’явитися `pult-django-secret-key`, `pult-database-url`, `pult-telegram-bot-token`, кожен з версією.
+
+Якщо секрети створені **до** першого `terraform apply`, потрібно імпортувати їх у Terraform state (з каталогу `infra/environments/prod` після `terraform init` з prefix `pult/prod`):
+
+```bash
+cd infra/environments/prod
+terraform import 'google_secret_manager_secret.app["django_secret_key"]' projects/$PROJECT_ID/secrets/pult-django-secret-key
+terraform import 'google_secret_manager_secret.app["database_url"]' projects/$PROJECT_ID/secrets/pult-database-url
+terraform import 'google_secret_manager_secret.app["telegram_bot_token"]' projects/$PROJECT_ID/secrets/pult-telegram-bot-token
+```
 
 ### 2.2 Новий Cloud Run service і job
 
@@ -106,11 +144,10 @@
 - [x] Повернути в репо orderflow-app, orderflow-migrate, orderflow-* секрети, TF_STATE_PREFIX orderflow/prod.  
 - [ ] Змержити й задеплоїти; перевірити роботу сайту та міграцій.
 
-**Phase 2 (перехід на pult-*)**  
-- [ ] Створити секрети pult-* в GCP.  
-- [ ] Перемкнути Terraform на pult-* і prefix pult/prod; apply.  
-- [ ] Оновити Deploy workflow на pult-app / pult-migrate.  
-- [ ] Задеплоїти образ на pult-app, запустити pult-migrate.  
+**Phase 2 (код перемкнено на pult-*)**  
+- [ ] Створити секрети pult-* в GCP (скопіювати значення з orderflow-*).  
+- [ ] Terraform init з prefix pult/prod, потім apply (створяться pult-app, pult-migrate).
+- [ ] Задеплоїти образ на pult-app (Deploy workflow), запустити job pult-migrate.
 - [ ] Перемкнути трафік/URL на pult-app.  
 - [ ] Прибрати старі orderflow-app, orderflow-migrate (і за бажанням orderflow-* секрети).
 

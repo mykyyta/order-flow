@@ -18,11 +18,11 @@ env:
   REGION: ${{ vars.GCP_REGION }}
   TF_DIR: infra/environments/prod
   TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
-  TF_STATE_PREFIX: orderflow/prod
+  TF_STATE_PREFIX: pult/prod
   REPOSITORY: ${{ vars.ARTIFACT_REPOSITORY }}
   IMAGE_NAME: my-app
-  SERVICE_NAME: orderflow-app
-  MIGRATE_JOB_NAME: orderflow-migrate
+  SERVICE_NAME: pult-app
+  MIGRATE_JOB_NAME: pult-migrate
 
 jobs:
   apply-lock:

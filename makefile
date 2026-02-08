@@ -1,7 +1,7 @@
 PROJECT_ID ?= orderflow-451220
 REPO ?= my-repo
 APP_NAME ?= my-app
-SERVICE_NAME ?= orderflow-app
+SERVICE_NAME ?= pult-app
 REGION ?= us-central1
 IMAGE ?= us-central1-docker.pkg.dev/$(PROJECT_ID)/$(REPO)/$(APP_NAME)
 PYTHON ?= ./.venv/bin/python

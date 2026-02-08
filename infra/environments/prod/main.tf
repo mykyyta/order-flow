@@ -1,9 +1,9 @@
 locals {
-  name_prefix = "orderflow-${var.environment}"
+  name_prefix = "pult-${var.environment}"
 
   common_labels = merge(
     {
-      app        = "orderflow"
+      app        = "pult"
       env        = var.environment
       managed_by = "terraform"
     },
@@ -12,15 +12,15 @@ locals {
 
   secrets = {
     django_secret_key = {
-      secret_id = "orderflow-django-secret-key"
+      secret_id = "pult-django-secret-key"
       value     = var.secret_values.django_secret_key
     }
     database_url = {
-      secret_id = "orderflow-database-url"
+      secret_id = "pult-database-url"
       value     = var.secret_values.database_url
     }
     telegram_bot_token = {
-      secret_id = "orderflow-telegram-bot-token"
+      secret_id = "pult-telegram-bot-token"
       value     = var.secret_values.telegram_bot_token
     }
   }
@@ -40,7 +40,7 @@ resource "google_artifact_registry_repository" "docker" {
   location      = var.region
   repository_id = var.artifact_repository_id
   format        = "DOCKER"
-  description   = "Pult app container registry"
+  description   = "Pult container registry"
   labels        = local.common_labels
 
   lifecycle {
@@ -210,7 +210,7 @@ resource "google_cloud_run_v2_job" "migrate" {
 
 resource "google_service_account" "terraform_deployer" {
   account_id   = var.terraform_deployer_sa_id
-  display_name = "Pult (orderflow) Terraform Deployer"
+  display_name = "Pult Terraform Deployer"
   description  = "Used by GitHub Actions via Workload Identity Federation"
 }
 

@@ -1,7 +1,7 @@
 # Infrastructure Overview
 
 ## Production platform
-- Runtime: Google Cloud Run (service `orderflow-app`, region `us-central1`).
+- Runtime: Google Cloud Run (service `pult-app`, region `us-central1`).
 - Container registry: Artifact Registry (`my-repo`).
 - Database: Neon PostgreSQL (pooled connection string).
 - Secrets: Google Secret Manager.
@@ -22,5 +22,5 @@
 
 ## Operational model
 - Cloud Run scales to zero for low traffic periods.
-- Migrations run through dedicated Cloud Run Job (`orderflow-migrate`). See [migration_orderflow_to_pult.md](../migration_orderflow_to_pult.md). For already-deployed prod: [migration_plan_prod.md](migration_plan_prod.md).
+- Migrations run through dedicated Cloud Run Job (`pult-migrate`). See [migration_orderflow_to_pult.md](../migration_orderflow_to_pult.md).
 - Current technical debt: move Cloud Run runtime secrets from plaintext env to Secret Manager references end-to-end.
