@@ -70,6 +70,14 @@ class Order(models.Model):
     def __str__(self):
         return f"{self.model.name} ({self.color.name}) - {self.get_status()}"
 
+    class Meta:
+        indexes = [
+            models.Index(
+                fields=["current_status", "-finished_at"],
+                name="orders_completed_idx",
+            ),
+        ]
+
 
 class OrderStatusHistory(models.Model):
     STATUS_CHOICES = STATUS_CHOICES
