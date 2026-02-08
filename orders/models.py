@@ -18,36 +18,10 @@ class CustomUser(AbstractUser):
         return self.username
 
 
-class ProductModel(models.Model):
-    id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=255, unique=True)
-
-    def __str__(self):
-        return f"{self.name}"
-
-
-class Color(models.Model):
-    AVAILABILITY_CHOICES = [
-        ("in_stock", "В наявності"),
-        ("low_stock", "Закінчується"),
-        ("out_of_stock", "Немає"),
-    ]
-
-    id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=255, unique=True)
-    code = models.IntegerField(unique=True)
-    availability_status = models.CharField(
-        max_length=20, choices=AVAILABILITY_CHOICES, default="in_stock"
-    )
-
-    def __str__(self):
-        return f"{self.name}"
-
-
 class Order(models.Model):
     id = models.AutoField(primary_key=True)
-    model = models.ForeignKey(ProductModel, on_delete=models.CASCADE)
-    color = models.ForeignKey(Color, on_delete=models.CASCADE)
+    model = models.ForeignKey("catalog.ProductModel", on_delete=models.CASCADE)
+    color = models.ForeignKey("catalog.Color", on_delete=models.CASCADE)
     embroidery = models.BooleanField(default=False)
     comment = models.TextField(blank=True, null=True)
     urgent = models.BooleanField(default=False)

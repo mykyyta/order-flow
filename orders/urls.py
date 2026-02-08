@@ -1,11 +1,6 @@
 from django.urls import path
+
 from .views import (
-    ColorDetailUpdateView,
-    ColorListCreateView,
-    ProductModelListCreateView,
-    auth_login,
-    auth_logout,
-    change_password,
     order_detail,
     order_edit,
     orders_active,
@@ -13,7 +8,6 @@ from .views import (
     orders_completed,
     orders_create,
     palette_lab,
-    profile_view,
     send_delayed_notifications,
 )
 
@@ -26,13 +20,6 @@ urlpatterns = [
     path("orders/create/", orders_create, name="orders_create"),
     path("orders/<int:order_id>/", order_detail, name="order_detail"),
     path("orders/<int:order_id>/edit/", order_edit, name="order_edit"),
-    path("models/", ProductModelListCreateView.as_view(), name="product_models"),
-    path("colors/", ColorListCreateView.as_view(), name="colors"),
-    path("color/<int:pk>/", ColorDetailUpdateView.as_view(), name="color_edit"),
-    path("login/", auth_login, name="auth_login"),
-    path("logout/", auth_logout, name="auth_logout"),
-    path("profile/", profile_view, name="profile"),
-    path("profile/change-password/", change_password, name="change_password"),
     path(
         "cron/send-delayed-notifications/",
         send_delayed_notifications,

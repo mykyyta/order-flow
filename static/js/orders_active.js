@@ -109,6 +109,7 @@
     }
     function openModal(message) {
         if (modal && modalMessage) {
+            if (typeof window.hideNavLoading === "function") window.hideNavLoading();
             modalMessage.textContent = message;
             modal.setAttribute("aria-hidden", "false");
             modal.classList.remove("hidden");
@@ -124,6 +125,7 @@
             modalConfirm.addEventListener("click", function () {
                 pendingSubmit = true;
                 closeModal();
+                bulkStatusForm.removeAttribute("data-no-nav-loading");
                 bulkStatusForm.submit();
             });
         }

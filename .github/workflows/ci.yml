@@ -42,7 +42,7 @@ jobs:
         run: python manage.py check
 
       - name: Run tests
-        run: python manage.py test orders
+        run: python manage.py test
 
       - name: Ruff lint
         if: github.event_name != 'pull_request' || !contains(github.event.pull_request.labels.*.name, 'skip-lint')

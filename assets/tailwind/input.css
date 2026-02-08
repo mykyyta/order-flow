@@ -404,9 +404,9 @@
   .alert-error {
     @apply border-red-200 bg-red-50 text-red-700;
   }
-  /* Modal (confirmation dialogs) */
+  /* Modal (confirmation dialogs) — above nav-loading overlay so spinner never appears on top */
   .modal-overlay {
-    @apply fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50;
+    @apply fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/50;
   }
   .modal-overlay[aria-hidden="true"] {
     @apply hidden;

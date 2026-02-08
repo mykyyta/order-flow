@@ -23,14 +23,13 @@ from orders.domain.status import (
     STATUS_NEW,
     STATUS_ON_HOLD,
 )
+from catalog.models import Color, ProductModel
 from orders.models import (
-    Color,
     CustomUser,
     DelayedNotificationLog,
     NotificationSetting,
     Order,
     OrderStatusHistory,
-    ProductModel,
 )
 from orders.templatetags.order_ui import message_alert_class
 

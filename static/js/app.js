@@ -11,10 +11,17 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
   function showNavLoading() {
+    if (document.querySelector(".modal-overlay:not(.hidden)")) return;
     document.body.classList.add("navigating");
     var overlay = document.getElementById("nav-loading-overlay");
     if (overlay) overlay.setAttribute("aria-hidden", "false");
   }
+  function hideNavLoading() {
+    document.body.classList.remove("navigating");
+    var overlay = document.getElementById("nav-loading-overlay");
+    if (overlay) overlay.setAttribute("aria-hidden", "true");
+  }
+  window.hideNavLoading = hideNavLoading;
   document.addEventListener("click", function (e) {
     var link = e.target.closest("a[href]");
     if (!link) return;
