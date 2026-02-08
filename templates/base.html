@@ -1,4 +1,5 @@
 {% load static %}
+{% load order_ui %}
 <!DOCTYPE html>
 <html lang="uk" data-theme="lumen_subtle">
 	<head>
@@ -42,6 +43,7 @@
 <body class="bg-slate-50 font-sans text-slate-800 antialiased" data-has-nav="{% if request.user.is_authenticated %}1{% else %}0{% endif %}">
     {% if request.user.is_authenticated %}
     {% with current_url=request.resolver_match.url_name %}
+    {% get_nav_items as nav_items %}
     <nav class="bg-white border-b border-slate-200">
         <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
             <div class="flex h-14 items-center justify-between gap-2">
@@ -54,18 +56,14 @@
 
                 <!-- Desktop navigation -->
                 <div class="hidden md:flex md:items-center md:gap-0.5">
-                    <a href="{% url 'orders_active' %}" class="rounded-md px-3 py-1.5 text-sm font-medium transition-colors {% if current_url == 'orders_active' or current_url == 'index' %}bg-teal-50 text-teal-700{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}" {% if current_url == 'orders_active' or current_url == 'index' %}aria-current="page"{% endif %}>У роботі</a>
-                    <a href="{% url 'orders_completed' %}" class="rounded-md px-3 py-1.5 text-sm font-medium transition-colors {% if current_url == 'orders_completed' %}bg-teal-50 text-teal-700{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}" {% if current_url == 'orders_completed' %}aria-current="page"{% endif %}>Завершені</a>
-                    <a href="{% url 'product_models' %}" class="rounded-md px-3 py-1.5 text-sm font-medium transition-colors {% if current_url == 'product_models' %}bg-teal-50 text-teal-700{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}" {% if current_url == 'product_models' %}aria-current="page"{% endif %}>Моделі</a>
-                    <a href="{% url 'colors' %}" class="rounded-md px-3 py-1.5 text-sm font-medium transition-colors {% if current_url == 'colors' %}bg-teal-50 text-teal-700{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}" {% if current_url == 'colors' %}aria-current="page"{% endif %}>Кольори</a>
-
+                    {% for item in nav_items %}
+                    {% include "partials/nav_item.html" with url_name=item.url_name label=item.label is_active=item.is_active variant="desktop" %}
+                    {% if forloop.counter == 4 %}
                     <span class="mx-1.5 h-5 w-px bg-slate-200" aria-hidden="true"></span>
-
                     <a href="{% url 'orders_create' %}" class="btn-primary px-3 py-1.5">+ Нове замовлення</a>
-
                     <span class="mx-1.5 h-5 w-px bg-slate-200" aria-hidden="true"></span>
-
-                    <a href="{% url 'profile' %}" class="rounded-md px-3 py-1.5 text-sm font-medium transition-colors {% if current_url == 'profile' or current_url == 'change_password' %}bg-teal-50 text-teal-700{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}" {% if current_url == 'profile' or current_url == 'change_password' %}aria-current="page"{% endif %}>Профіль</a>
+                    {% endif %}
+                    {% endfor %}
                     <form method="post" action="{% url 'auth_logout' %}" class="m-0 inline-flex">
                         {% csrf_token %}
                         <button type="submit" class="rounded-md px-3 py-1.5 text-sm font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors">Вийти</button>
@@ -84,14 +82,14 @@
         <!-- Mobile navigation panel (OUTSIDE the h-14 flex — no layout shift) -->
         <div id="nav-menu" class="hidden border-t border-slate-100 md:hidden">
             <div class="space-y-1 px-4 pb-3 pt-2 sm:px-6">
-                <a href="{% url 'orders_active' %}" class="block rounded-md px-3 py-2 text-sm font-medium transition-colors {% if current_url == 'orders_active' or current_url == 'index' %}bg-teal-50 text-teal-700{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}" {% if current_url == 'orders_active' or current_url == 'index' %}aria-current="page"{% endif %}>У роботі</a>
-                <a href="{% url 'orders_completed' %}" class="block rounded-md px-3 py-2 text-sm font-medium transition-colors {% if current_url == 'orders_completed' %}bg-teal-50 text-teal-700{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}" {% if current_url == 'orders_completed' %}aria-current="page"{% endif %}>Завершені</a>
-                <a href="{% url 'product_models' %}" class="block rounded-md px-3 py-2 text-sm font-medium transition-colors {% if current_url == 'product_models' %}bg-teal-50 text-teal-700{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}" {% if current_url == 'product_models' %}aria-current="page"{% endif %}>Моделі</a>
-                <a href="{% url 'colors' %}" class="block rounded-md px-3 py-2 text-sm font-medium transition-colors {% if current_url == 'colors' %}bg-teal-50 text-teal-700{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}" {% if current_url == 'colors' %}aria-current="page"{% endif %}>Кольори</a>
+                {% for item in nav_items %}
+                {% include "partials/nav_item.html" with url_name=item.url_name label=item.label is_active=item.is_active variant="mobile" %}
+                {% if forloop.counter == 4 %}
                 <div class="my-2 border-t border-slate-100"></div>
                 <a href="{% url 'orders_create' %}" class="btn-primary block px-3 py-2 {% if current_url == 'orders_create' %}ring-2 ring-slate-500/30{% endif %}">+ Нове замовлення</a>
                 <div class="my-2 border-t border-slate-100"></div>
-                <a href="{% url 'profile' %}" class="block rounded-md px-3 py-2 text-sm font-medium transition-colors {% if current_url == 'profile' or current_url == 'change_password' %}bg-teal-50 text-teal-700{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}" {% if current_url == 'profile' or current_url == 'change_password' %}aria-current="page"{% endif %}>Профіль</a>
+                {% endif %}
+                {% endfor %}
                 <form method="post" action="{% url 'auth_logout' %}" class="m-0">
                     {% csrf_token %}
                     <button type="submit" class="block w-full rounded-md px-3 py-2 text-left text-sm font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors">Вийти</button>
@@ -101,6 +99,7 @@
     </nav>
     {% endwith %}
     {% endif %}
+    {% comment %}Layout: default = .main-content (max-w-2xl). Centered pages (login, create order) = .main-centered + inner max-w-2xl. See docs/design/design_components.md. {% endcomment %}
     <main class="{% if page_title_center or not request.user.is_authenticated %}main-centered px-4 py-10 sm:px-6 lg:px-8{% else %}main-content mx-auto px-4 py-6 sm:px-6 lg:px-8{% endif %}">
         <div class="{% if page_title_center or not request.user.is_authenticated %}w-full max-w-2xl mx-auto{% endif %}">
             {% block content %}{% endblock %}
