@@ -209,6 +209,25 @@
   .link-availability-in {
     @apply text-sm font-medium text-emerald-600 hover:text-emerald-700 transition-colors;
   }
+  /* Catalog tag/chip for colors and models — on gradient, unified shadow */
+  .catalog-chip-link {
+    @apply inline-flex items-center rounded-md border border-white px-3 py-1.5 text-sm font-medium shadow-sm transition-colors backdrop-blur-sm;
+  }
+  .catalog-chip-link:hover {
+    @apply ring-2 ring-offset-1;
+  }
+  .catalog-chip-availability-in {
+    @apply bg-white/80 text-slate-700 hover:bg-white hover:ring-slate-400/30;
+  }
+  .catalog-chip-availability-low {
+    @apply border-l-2 border-l-amber-300/60 bg-white/80 text-slate-700 hover:bg-amber-50/40 hover:ring-amber-400/20;
+  }
+  .catalog-chip-availability-out {
+    @apply border-l-2 border-l-rose-300/60 bg-white/80 text-slate-700 hover:bg-rose-50/40 hover:ring-rose-400/20;
+  }
+  .catalog-chip-text {
+    @apply inline-flex items-center rounded-md border border-white bg-white/80 px-3 py-1.5 text-sm font-medium text-slate-700 shadow-sm backdrop-blur-sm;
+  }
   .page-title {
     @apply text-lg font-semibold text-slate-900 mb-6;
   }
@@ -251,6 +270,27 @@
   }
   .detail-group-title {
     @apply text-xs font-medium uppercase tracking-wider text-slate-400 pb-2;
+  }
+  /* Profile: harmonious 8pt vertical rhythm */
+  .profile-form-spacing {
+    display: flex;
+    flex-direction: column;
+    gap: 24px; /* section gaps = card padding */
+  }
+  .profile-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px; /* title → content, tight grouping */
+  }
+  .profile-section-title {
+    padding-bottom: 0;
+    margin-bottom: 0;
+  }
+  .profile-checkbox-list {
+    @apply flex flex-col gap-2;
+  }
+  .profile-checkbox-list .profile-checkbox-label:first-child {
+    padding-top: 0;
   }
   .detail-row {
     @apply grid gap-x-4 gap-y-0.5 py-2 sm:grid-cols-[minmax(0,8rem)_1fr] sm:gap-x-6;
