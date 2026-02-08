@@ -72,6 +72,38 @@ resource "google_cloud_run_service" "app" {
       containers {
         image = var.container_image
 
+        env {
+          name = "DJANGO_SETTINGS_MODULE"
+          value = "config.settings.prod"
+        }
+        env {
+          name = "DJANGO_SECRET_KEY"
+          value_from {
+            secret_key_ref {
+              name = google_secret_manager_secret.app["django_secret_key"].secret_id
+              key  = "latest"
+            }
+          }
+        }
+        env {
+          name = "DATABASE_URL"
+          value_from {
+            secret_key_ref {
+              name = google_secret_manager_secret.app["database_url"].secret_id
+              key  = "latest"
+            }
+          }
+        }
+        env {
+          name = "TELEGRAM_BOT_TOKEN"
+          value_from {
+            secret_key_ref {
+              name = google_secret_manager_secret.app["telegram_bot_token"].secret_id
+              key  = "latest"
+            }
+          }
+        }
+
         resources {
           limits = {
             cpu    = var.container_cpu_limit
