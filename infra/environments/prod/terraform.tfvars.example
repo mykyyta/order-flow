@@ -19,7 +19,7 @@ migrate_job_timeout    = 1200
 enable_migrate_job     = false
 manage_secret_versions = false
 
-github_repository      = "mykyyta/order-flow"
+github_repository      = "mykyyta/pult"
 wif_pool_id            = "github-actions-pool"
 wif_provider_id        = "github-actions-provider"
 terraform_deployer_sa_id = "orderflow-tf-deployer"

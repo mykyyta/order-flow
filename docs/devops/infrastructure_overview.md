@@ -6,6 +6,9 @@
 - Database: Neon PostgreSQL (pooled connection string).
 - Secrets: Google Secret Manager.
 
+## GCP project
+- Project ID `orderflow-451220` is immutable. To show a different name in the console (e.g. "Pult"), change the **project display name** in Cloud Console → IAM & Admin → Settings.
+
 ## Infrastructure as code
 - Terraform source: `infra/environments/prod`.
 - Remote state: GCS bucket `orderflow-451220-tfstate`.

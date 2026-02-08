@@ -11,7 +11,7 @@ if ! gh auth status >/dev/null 2>&1; then
   exit 1
 fi
 
-REPO="${1:-mykyyta/order-flow}"
+REPO="${1:-mykyyta/pult}"
 
 set_var() {
   local name="$1"

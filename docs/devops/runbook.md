@@ -4,9 +4,9 @@
 1. Merge PR into `main`.
 2. Check GitHub Actions:
 ```bash
-gh run list --repo mykyyta/order-flow --workflow deploy.yml --branch main --limit 3
-gh run list --repo mykyyta/order-flow --workflow terraform-infra.yml --branch main --limit 3
-gh run view <RUN_ID> --repo mykyyta/order-flow --log-failed
+gh run list --repo mykyyta/pult --workflow deploy.yml --branch main --limit 3
+gh run list --repo mykyyta/pult --workflow terraform-infra.yml --branch main --limit 3
+gh run view <RUN_ID> --repo mykyyta/pult --log-failed
 ```
 
 ## Fast deploy (default)
@@ -18,7 +18,7 @@ Use this only when DB schema is unchanged. If you changed models/migrations, run
 Run deploy workflow manually (recommended from `main`, but you can pick a branch in the UI):
 ```bash
 gh workflow run deploy.yml \
-  --repo mykyyta/order-flow \
+  --repo mykyyta/pult \
   --ref main \
   -f sync_migrate_job_image=true \
   -f run_migrations=true
@@ -74,9 +74,27 @@ No domain by default. To add one:
 
 To remove: set `CUSTOM_DOMAIN` / `custom_domain` to empty and apply again.
 
-## Terraform state recovery
+## WIF / GitHub Actions auth after repo rename
+If the pipeline fails with `Permission 'iam.serviceAccounts.getAccessToken' denied` for the deployer SA, the WIF provider and IAM binding in GCP are still scoped to the **old** repo (e.g. `mykyyta/order-flow`). They must allow the **new** repo (e.g. `mykyyta/pult`).
+
+**Fix:** run Terraform apply **locally** once so that `github_repository` (in `terraform.tfvars` or env) is the new repo. That updates:
+- WIF provider `attribute_condition` to the new repo
+- IAM member `principalSet://.../attribute.repository/<new-repo>` with `roles/iam.workloadIdentityUser` on the deployer SA
+
+From repo root:
 ```bash
-cd /Users/myk/Projects/OrderFlow/infra/environments/prod
+cd infra/environments/prod
+# Ensure backend and vars use the new repo (e.g. github_repository = "mykyyta/pult")
+terraform init -reconfigure -backend-config=backend.hcl -backend-config="access_token=$(gcloud auth print-access-token)"
+terraform plan   # expect: WIF provider + SA IAM member changes
+terraform apply
+```
+After that, re-run the failing workflow.
+
+## Terraform state recovery
+From repo root:
+```bash
+cd infra/environments/prod
 TOKEN="$(gcloud auth print-access-token)"
 terraform init -reconfigure -backend-config=backend.hcl -backend-config="access_token=${TOKEN}"
 TF_VAR_google_access_token="$TOKEN" terraform state pull > /tmp/pult-prod-state.json

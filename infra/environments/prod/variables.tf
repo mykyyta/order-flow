@@ -130,7 +130,7 @@ variable "labels" {
 variable "github_repository" {
   description = "GitHub repository in owner/name format allowed to use WIF"
   type        = string
-  default     = "mykyyta/order-flow"
+  default     = "mykyyta/pult"
 }
 
 variable "wif_pool_id" {
