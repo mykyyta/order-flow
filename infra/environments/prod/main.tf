@@ -73,8 +73,12 @@ resource "google_cloud_run_service" "app" {
         image = var.container_image
 
         env {
-          name = "DJANGO_SETTINGS_MODULE"
+          name  = "DJANGO_SETTINGS_MODULE"
           value = "config.settings.prod"
+        }
+        env {
+          name  = "ALLOWED_HOSTS"
+          value = ".run.app"
         }
         env {
           name = "DJANGO_SECRET_KEY"
@@ -123,7 +127,6 @@ resource "google_cloud_run_service" "app" {
 
   lifecycle {
     prevent_destroy = true
-    ignore_changes  = all
   }
 }
 

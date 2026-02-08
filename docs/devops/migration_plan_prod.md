@@ -100,14 +100,25 @@ gcloud secrets versions access latest --secret=orderflow-telegram-bot-token --pr
 
 **Перевірити:** у [Secret Manager](https://console.cloud.google.com/security/secret-manager?project=orderflow-451220) мають з’явитися `pult-django-secret-key`, `pult-database-url`, `pult-telegram-bot-token`, кожен з версією.
 
-Якщо секрети створені **до** першого `terraform apply`, потрібно імпортувати їх у Terraform state (з каталогу `infra/environments/prod` після `terraform init` з prefix `pult/prod`):
+Якщо ресурси (секрети, Artifact Registry, WIF, service account) **вже існують** у GCP, а state `pult/prod` порожній, Terraform спробує їх створити і поверне 409. Потрібно імпортувати їх у state. З каталогу `infra/environments/prod` після `terraform init` з prefix `pult/prod`:
 
+**Варіант 1 — скрипт:**  
+`chmod +x infra/environments/prod/import_existing_pult_state.sh`  
+`./infra/environments/prod/import_existing_pult_state.sh [PROJECT_ID]`
+
+**Варіант 2 — вручну:**
 ```bash
 cd infra/environments/prod
-terraform import 'google_secret_manager_secret.app["django_secret_key"]' projects/$PROJECT_ID/secrets/pult-django-secret-key
-terraform import 'google_secret_manager_secret.app["database_url"]' projects/$PROJECT_ID/secrets/pult-database-url
-terraform import 'google_secret_manager_secret.app["telegram_bot_token"]' projects/$PROJECT_ID/secrets/pult-telegram-bot-token
+PROJECT_ID=orderflow-451220
+terraform import 'google_artifact_registry_repository.docker' "projects/${PROJECT_ID}/locations/us-central1/repositories/my-repo"
+terraform import 'google_secret_manager_secret.app["django_secret_key"]' "projects/${PROJECT_ID}/secrets/pult-django-secret-key"
+terraform import 'google_secret_manager_secret.app["database_url"]' "projects/${PROJECT_ID}/secrets/pult-database-url"
+terraform import 'google_secret_manager_secret.app["telegram_bot_token"]' "projects/${PROJECT_ID}/secrets/pult-telegram-bot-token"
+terraform import 'google_service_account.terraform_deployer' "projects/${PROJECT_ID}/serviceAccounts/orderflow-tf-deployer@${PROJECT_ID}.iam.gserviceaccount.com"
+terraform import 'google_iam_workload_identity_pool.github_actions' "projects/${PROJECT_ID}/locations/global/workloadIdentityPools/github-actions-pool"
+terraform import 'google_iam_workload_identity_pool_provider.github_actions' "projects/${PROJECT_ID}/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-provider"
 ```
+Потім `terraform apply`.
 
 ### 2.2 Новий Cloud Run service і job
 
