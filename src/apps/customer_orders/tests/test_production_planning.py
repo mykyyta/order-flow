@@ -7,7 +7,7 @@ from apps.customer_orders.models import CustomerOrder, CustomerOrderLine
 from apps.customer_orders.services import create_customer_order
 from apps.inventory.models import StockMovement
 from apps.inventory.services import add_to_stock
-from apps.orders.domain.status import STATUS_FINISHED
+from apps.production.domain.status import STATUS_FINISHED
 from apps.orders.models import Order
 from apps.orders.services import change_order_status
 from apps.orders.tests.conftest import UserFactory

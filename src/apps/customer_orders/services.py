@@ -7,7 +7,7 @@ from django.db import transaction
 from apps.catalog.models import BundleColorMapping, BundleComponent, BundlePresetComponent
 from apps.catalog.variants import resolve_or_create_product_variant
 from apps.customer_orders.models import CustomerOrder, CustomerOrderLine, CustomerOrderLineComponent
-from apps.orders.domain.status import STATUS_FINISHED
+from apps.production.domain.status import STATUS_FINISHED
 
 if TYPE_CHECKING:
     from apps.catalog.models import Color, ProductModel

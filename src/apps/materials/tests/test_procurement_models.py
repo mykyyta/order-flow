@@ -4,19 +4,21 @@ from decimal import Decimal
 import pytest
 from django.db import IntegrityError
 
+from apps.material_inventory.models import MaterialStockMovement, MaterialStockRecord
 from apps.materials.models import (
+    Material,
+    ProductMaterial,
+)
+from apps.orders.tests.conftest import UserFactory
+from apps.procurement.models import (
     GoodsReceipt,
     GoodsReceiptLine,
-    Material,
-    MaterialMovement,
-    MaterialStockRecord,
-    ProductMaterial,
     PurchaseOrder,
     PurchaseOrderLine,
     Supplier,
-    SupplierMaterialOffer,
+    SupplierOffer,
 )
-from apps.orders.tests.conftest import UserFactory
+from apps.warehouses.models import Warehouse
 
 
 @pytest.mark.django_db
@@ -24,13 +26,13 @@ def test_supplier_material_offer_allows_multiple_offers_per_material():
     supplier = Supplier.objects.create(name="Supplier A")
     material = Material.objects.create(name="Felt")
 
-    SupplierMaterialOffer.objects.create(
+    SupplierOffer.objects.create(
         supplier=supplier,
         material=material,
         unit=ProductMaterial.Unit.SQUARE_METER,
         price_per_unit=Decimal("12.50"),
     )
-    SupplierMaterialOffer.objects.create(
+    SupplierOffer.objects.create(
         supplier=supplier,
         material=material,
         unit=ProductMaterial.Unit.SQUARE_METER,
@@ -38,7 +40,7 @@ def test_supplier_material_offer_allows_multiple_offers_per_material():
         min_order_quantity=Decimal("10.000"),
     )
 
-    assert SupplierMaterialOffer.objects.filter(supplier=supplier, material=material).count() == 2
+    assert SupplierOffer.objects.filter(supplier=supplier, material=material).count() == 2
 
 
 @pytest.mark.django_db
@@ -57,6 +59,40 @@ def test_material_stock_record_unique_per_material_color_and_unit():
             unit=ProductMaterial.Unit.SQUARE_METER,
             quantity=Decimal("1.000"),
         )
+
+
+@pytest.mark.django_db
+def test_material_stock_record_allows_same_material_in_different_warehouses():
+    material = Material.objects.create(name="Canvas")
+    wh_a = Warehouse.objects.create(
+        name="Warehouse A",
+        code="WH-A",
+        kind=Warehouse.Kind.STORAGE,
+        is_default_for_production=False,
+        is_active=True,
+    )
+    wh_b = Warehouse.objects.create(
+        name="Warehouse B",
+        code="WH-B",
+        kind=Warehouse.Kind.STORAGE,
+        is_default_for_production=False,
+        is_active=True,
+    )
+
+    MaterialStockRecord.objects.create(
+        warehouse=wh_a,
+        material=material,
+        unit=ProductMaterial.Unit.SQUARE_METER,
+        quantity=Decimal("5.000"),
+    )
+    MaterialStockRecord.objects.create(
+        warehouse=wh_b,
+        material=material,
+        unit=ProductMaterial.Unit.SQUARE_METER,
+        quantity=Decimal("1.000"),
+    )
+
+    assert MaterialStockRecord.objects.filter(material=material).count() == 2
 
 
 @pytest.mark.django_db
@@ -107,10 +143,10 @@ def test_goods_receipt_line_links_purchase_line_and_stock_movement():
         quantity=Decimal("10.000"),
         unit=ProductMaterial.Unit.MILLILITER,
     )
-    movement = MaterialMovement.objects.create(
+    movement = MaterialStockMovement.objects.create(
         stock_record=stock_record,
         quantity_change=Decimal("10.000"),
-        reason=MaterialMovement.Reason.PURCHASE_IN,
+        reason=MaterialStockMovement.Reason.PURCHASE_IN,
         related_purchase_order_line=po_line,
         related_receipt_line=receipt_line,
         created_by=user,

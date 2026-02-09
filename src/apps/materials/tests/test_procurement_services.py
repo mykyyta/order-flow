@@ -3,21 +3,16 @@ from decimal import Decimal
 
 import pytest
 
+from apps.material_inventory.models import MaterialStockMovement, MaterialStockRecord
+from apps.material_inventory.services import add_material_stock, remove_material_stock
 from apps.materials.models import (
     Material,
-    MaterialMovement,
-    MaterialStockRecord,
     ProductMaterial,
-    PurchaseOrder,
-    PurchaseOrderLine,
-    Supplier,
-)
-from apps.materials.procurement_services import (
-    add_material_stock,
-    receive_purchase_order_line,
-    remove_material_stock,
 )
 from apps.orders.tests.conftest import UserFactory
+from apps.procurement.models import PurchaseOrder, PurchaseOrderLine, Supplier
+from apps.procurement.services import receive_purchase_order_line
+from apps.warehouses.models import Warehouse
 
 
 @pytest.mark.django_db
@@ -29,14 +24,16 @@ def test_add_material_stock_creates_stock_and_movement():
         material=material,
         quantity=Decimal("2.500"),
         unit=ProductMaterial.Unit.SQUARE_METER,
-        reason=MaterialMovement.Reason.ADJUSTMENT_IN,
+        reason=MaterialStockMovement.Reason.ADJUSTMENT_IN,
         created_by=user,
     )
 
     assert stock_record.quantity == Decimal("2.500")
-    movement = MaterialMovement.objects.get(stock_record=stock_record)
+    assert stock_record.warehouse is not None
+    assert stock_record.warehouse.code == "MAIN"
+    movement = MaterialStockMovement.objects.get(stock_record=stock_record)
     assert movement.quantity_change == Decimal("2.500")
-    assert movement.reason == MaterialMovement.Reason.ADJUSTMENT_IN
+    assert movement.reason == MaterialStockMovement.Reason.ADJUSTMENT_IN
     assert movement.created_by == user
 
 
@@ -48,7 +45,7 @@ def test_remove_material_stock_fails_when_not_enough():
         material=material,
         quantity=Decimal("1.000"),
         unit=ProductMaterial.Unit.PIECE,
-        reason=MaterialMovement.Reason.ADJUSTMENT_IN,
+        reason=MaterialStockMovement.Reason.ADJUSTMENT_IN,
     )
 
     with pytest.raises(ValueError, match="Недостатньо на складі"):
@@ -56,7 +53,7 @@ def test_remove_material_stock_fails_when_not_enough():
             material=material,
             quantity=Decimal("2.000"),
             unit=ProductMaterial.Unit.PIECE,
-            reason=MaterialMovement.Reason.PRODUCTION_OUT,
+            reason=MaterialStockMovement.Reason.PRODUCTION_OUT,
         )
 
 
@@ -89,8 +86,15 @@ def test_receive_purchase_order_line_updates_stock_and_po_status():
         material=material,
         unit=ProductMaterial.Unit.PIECE,
     )
+    receipt_line.refresh_from_db()
 
     assert receipt_line.quantity == Decimal("6.000")
+    assert receipt_line.receipt.warehouse is not None
+    assert receipt_line.receipt.warehouse.code == "MAIN"
     assert line.received_quantity == Decimal("6.000")
     assert stock_record.quantity == Decimal("6.000")
+    assert stock_record.warehouse is not None
+    assert stock_record.warehouse.code == "MAIN"
     assert purchase_order.status == PurchaseOrder.Status.PARTIALLY_RECEIVED
+
+    assert Warehouse.objects.filter(code="MAIN").exists()

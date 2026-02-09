@@ -216,6 +216,13 @@ class PurchaseOrderLine(models.Model):
 
 
 class MaterialStockRecord(models.Model):
+    warehouse = models.ForeignKey(
+        "warehouses.Warehouse",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="material_stock_records_legacy",
+    )
     material = models.ForeignKey(
         Material,
         on_delete=models.PROTECT,
@@ -237,13 +244,23 @@ class MaterialStockRecord(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=["material", "unit"],
-                condition=models.Q(material_color__isnull=True),
+                condition=models.Q(material_color__isnull=True, warehouse__isnull=True),
                 name="materials_stock_material_unit_null_color_uniq",
             ),
             models.UniqueConstraint(
                 fields=["material", "material_color", "unit"],
-                condition=models.Q(material_color__isnull=False),
+                condition=models.Q(material_color__isnull=False, warehouse__isnull=True),
                 name="materials_stock_material_color_unit_uniq",
+            ),
+            models.UniqueConstraint(
+                fields=["warehouse", "material", "unit"],
+                condition=models.Q(material_color__isnull=True, warehouse__isnull=False),
+                name="materials_stock_warehouse_material_unit_null_color_uniq",
+            ),
+            models.UniqueConstraint(
+                fields=["warehouse", "material", "material_color", "unit"],
+                condition=models.Q(material_color__isnull=False, warehouse__isnull=False),
+                name="materials_stock_warehouse_material_color_unit_uniq",
             ),
         ]
         ordering = ("material__name",)
@@ -269,6 +286,13 @@ class GoodsReceipt(models.Model):
         null=True,
         blank=True,
         related_name="goods_receipts",
+    )
+    warehouse = models.ForeignKey(
+        "warehouses.Warehouse",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="goods_receipts_legacy",
     )
     notes = models.TextField(blank=True)
     received_by = models.ForeignKey(
@@ -332,6 +356,8 @@ class MaterialMovement(models.Model):
     class Reason(models.TextChoices):
         PURCHASE_IN = "purchase_in", "Надходження від постачальника"
         PRODUCTION_OUT = "production_out", "Списання у виробництво"
+        TRANSFER_IN = "transfer_in", "Надходження зі складу"
+        TRANSFER_OUT = "transfer_out", "Переміщення на склад"
         ADJUSTMENT_IN = "adjustment_in", "Коригування +"
         ADJUSTMENT_OUT = "adjustment_out", "Коригування -"
         RETURN_IN = "return_in", "Повернення"
@@ -373,3 +399,77 @@ class MaterialMovement(models.Model):
     def __str__(self) -> str:
         sign = "+" if self.quantity_change > 0 else ""
         return f"{self.stock_record}: {sign}{self.quantity_change}"
+
+
+class MaterialStockTransfer(models.Model):
+    class Status(models.TextChoices):
+        DRAFT = "draft", "Чернетка"
+        IN_TRANSIT = "in_transit", "В дорозі"
+        COMPLETED = "completed", "Завершено"
+        CANCELLED = "cancelled", "Скасовано"
+
+    from_warehouse = models.ForeignKey(
+        "warehouses.Warehouse",
+        on_delete=models.PROTECT,
+        related_name="material_stock_transfers_out",
+    )
+    to_warehouse = models.ForeignKey(
+        "warehouses.Warehouse",
+        on_delete=models.PROTECT,
+        related_name="material_stock_transfers_in",
+    )
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.DRAFT)
+    created_by = models.ForeignKey(
+        "orders.CustomUser",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="created_material_stock_transfers",
+    )
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=~models.Q(from_warehouse=models.F("to_warehouse")),
+                name="materials_materialstocktransfer_from_to_different",
+            ),
+        ]
+        ordering = ("-created_at",)
+
+    def __str__(self) -> str:
+        return f"{self.from_warehouse.code} -> {self.to_warehouse.code} ({self.status})"
+
+
+class MaterialStockTransferLine(models.Model):
+    transfer = models.ForeignKey(
+        MaterialStockTransfer,
+        on_delete=models.CASCADE,
+        related_name="lines",
+    )
+    material = models.ForeignKey(
+        Material,
+        on_delete=models.PROTECT,
+        related_name="stock_transfer_lines",
+    )
+    material_color = models.ForeignKey(
+        MaterialColor,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="stock_transfer_lines",
+    )
+    quantity = models.DecimalField(max_digits=12, decimal_places=3)
+    unit = models.CharField(max_length=8, choices=ProductMaterial.Unit.choices)
+
+    class Meta:
+        ordering = ("transfer_id", "id")
+
+    def clean(self) -> None:
+        if self.material_color and self.material_color.material_id != self.material_id:
+            raise ValidationError("Material color must belong to selected material.")
+
+    def __str__(self) -> str:
+        return f"{self.transfer_id}: {self.material.name} {self.quantity} {self.unit}"
