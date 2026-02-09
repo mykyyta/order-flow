@@ -32,27 +32,30 @@
             <div class="flex flex-1 items-center gap-2">
                 <div class="flex flex-1 items-center justify-between">
                     <span class="text-xs font-medium uppercase tracking-wider text-slate-400">Замовлення</span>
-                    <span class="text-xs font-medium uppercase tracking-wider text-slate-400">Статус</span>
+                    <div class="flex items-center gap-2">
+                        <label class="inline-flex items-center gap-2">
+                            <span class="text-[0.9rem] leading-none" aria-hidden="true">🔎</span>
+                            <span class="relative inline-flex h-4 w-7 items-center">
+                                <input
+                                    type="checkbox"
+                                    class="sr-only peer"
+                                    data-toggle-comments
+                                    aria-label="Нотатки"
+                                >
+                                <span
+                                    class="block h-4 w-7 rounded-full bg-slate-300 transition-colors
+                                           peer-checked:bg-slate-400"
+                                ></span>
+                                <span
+                                    class="block absolute left-[2px] top-[2px] h-3 w-3 rounded-full
+                                           bg-slate-600 shadow-sm transition-transform
+                                           peer-checked:translate-x-3"
+                                ></span>
+                            </span>
+                        </label>
+                        <span class="text-xs font-medium uppercase tracking-wider text-slate-400">Статус</span>
+                    </div>
                 </div>
-                <label class="inline-flex items-center gap-2">
-                    <span class="text-[0.95rem] leading-none" aria-hidden="true">💬</span>
-                    <span class="relative inline-flex h-5 w-9 items-center">
-                        <input
-                            type="checkbox"
-                            class="sr-only peer"
-                            data-toggle-comments
-                            aria-label="Нотатки"
-                        >
-                        <span
-                            class="h-5 w-9 rounded-full bg-slate-200 transition-colors
-                                   peer-checked:bg-teal-500/70"
-                        ></span>
-                        <span
-                            class="absolute left-[2px] top-[2px] h-4 w-4 rounded-full bg-white
-                                   shadow-sm transition-transform peer-checked:translate-x-4"
-                        ></span>
-                    </span>
-                </label>
             </div>
         </div>
 
@@ -61,8 +64,8 @@
             <input type="checkbox" id="select-all-orders-mobile" class="form-checkbox flex-shrink-0" aria-label="Позначити всі">
             <span class="text-xs font-medium text-slate-400">Позначити всі</span>
             <label class="ml-auto inline-flex items-center gap-2">
-                <span class="text-[0.95rem] leading-none" aria-hidden="true">💬</span>
-                <span class="relative inline-flex h-5 w-9 items-center">
+                <span class="text-[0.9rem] leading-none" aria-hidden="true">🔎</span>
+                <span class="relative inline-flex h-4 w-7 items-center">
                     <input
                         type="checkbox"
                         class="sr-only peer"
@@ -70,12 +73,13 @@
                         aria-label="Нотатки"
                     >
                     <span
-                        class="h-5 w-9 rounded-full bg-slate-200 transition-colors
-                               peer-checked:bg-teal-500/70"
+                        class="block h-4 w-7 rounded-full bg-slate-300 transition-colors
+                               peer-checked:bg-slate-400"
                     ></span>
                     <span
-                        class="absolute left-[2px] top-[2px] h-4 w-4 rounded-full bg-white
-                               shadow-sm transition-transform peer-checked:translate-x-4"
+                        class="block absolute left-[2px] top-[2px] h-3 w-3 rounded-full
+                               bg-slate-600 shadow-sm transition-transform
+                               peer-checked:translate-x-3"
                     ></span>
                 </span>
             </label>

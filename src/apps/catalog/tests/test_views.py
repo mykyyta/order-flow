@@ -94,11 +94,13 @@ def test_product_model_archive_and_unarchive(client):
 
     archive_response = client.post(reverse("product_model_archive", kwargs={"pk": model.pk}))
     assert archive_response.status_code == 302
+    assert archive_response.url == reverse("product_model_edit", kwargs={"pk": model.pk})
     model.refresh_from_db()
     assert model.archived_at is not None
 
     unarchive_response = client.post(reverse("product_model_unarchive", kwargs={"pk": model.pk}))
     assert unarchive_response.status_code == 302
+    assert unarchive_response.url == reverse("product_model_edit", kwargs={"pk": model.pk})
     model.refresh_from_db()
     assert model.archived_at is None
 
@@ -114,10 +116,12 @@ def test_color_archive_and_unarchive(client):
 
     archive_response = client.post(reverse("color_archive", kwargs={"pk": color.pk}))
     assert archive_response.status_code == 302
+    assert archive_response.url == reverse("color_edit", kwargs={"pk": color.pk})
     color.refresh_from_db()
     assert color.archived_at is not None
 
     unarchive_response = client.post(reverse("color_unarchive", kwargs={"pk": color.pk}))
     assert unarchive_response.status_code == 302
+    assert unarchive_response.url == reverse("color_edit", kwargs={"pk": color.pk})
     color.refresh_from_db()
     assert color.archived_at is None

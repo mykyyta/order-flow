@@ -47,10 +47,12 @@ def test_materials_create_and_archive_unarchive(client):
 
     archive_response = client.post(reverse("material_archive", kwargs={"pk": material.pk}))
     assert archive_response.status_code == 302
+    assert archive_response.url == reverse("material_edit", kwargs={"pk": material.pk})
     material.refresh_from_db()
     assert material.archived_at is not None
 
     unarchive_response = client.post(reverse("material_unarchive", kwargs={"pk": material.pk}))
     assert unarchive_response.status_code == 302
+    assert unarchive_response.url == reverse("material_edit", kwargs={"pk": material.pk})
     material.refresh_from_db()
     assert material.archived_at is None

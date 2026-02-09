@@ -162,6 +162,9 @@
     }
 
     function setRowExpanded(row, expanded) {
+        if (expanded && row.getAttribute("data-has-comment") !== "1") {
+            return;
+        }
         row.setAttribute("data-expanded", expanded ? "1" : "0");
         var toggle = row.querySelector("[data-order-toggle]");
         if (toggle) {
@@ -215,6 +218,13 @@
         toggle.addEventListener("click", function (event) {
             var interactive = event.target.closest("input, a, button, label, select, textarea");
             if (interactive && interactive !== toggle) {
+                return;
+            }
+            if (row.getAttribute("data-has-comment") !== "1") {
+                var detailUrl = row.getAttribute("data-detail-url");
+                if (detailUrl) {
+                    window.location.assign(detailUrl);
+                }
                 return;
             }
             setRowExpanded(row, !isRowExpanded(row));

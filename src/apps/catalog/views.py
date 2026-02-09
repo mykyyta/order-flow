@@ -124,7 +124,7 @@ def product_model_archive(request, pk: int):
         product_model.archived_at = timezone.now()
         product_model.save(update_fields=["archived_at"])
         messages.success(request, "Готово! Модель відправлено в архів.")
-    return redirect("product_models")
+    return redirect("product_model_edit", pk=pk)
 
 
 @login_required(login_url=reverse_lazy("auth_login"))
@@ -135,7 +135,7 @@ def product_model_unarchive(request, pk: int):
         product_model.archived_at = None
         product_model.save(update_fields=["archived_at"])
         messages.success(request, "Готово! Модель відновлено з архіву.")
-    return redirect("product_models")
+    return redirect("product_model_edit", pk=pk)
 
 
 @login_required(login_url=reverse_lazy("auth_login"))
@@ -146,7 +146,7 @@ def color_archive(request, pk: int):
         color.archived_at = timezone.now()
         color.save(update_fields=["archived_at"])
         messages.success(request, "Готово! Колір відправлено в архів.")
-    return redirect("colors")
+    return redirect("color_edit", pk=pk)
 
 
 @login_required(login_url=reverse_lazy("auth_login"))
@@ -157,4 +157,4 @@ def color_unarchive(request, pk: int):
         color.archived_at = None
         color.save(update_fields=["archived_at"])
         messages.success(request, "Готово! Колір відновлено з архіву.")
-    return redirect("colors")
+    return redirect("color_edit", pk=pk)

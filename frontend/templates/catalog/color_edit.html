@@ -9,7 +9,7 @@
 </div>
 {% endif %}
 
-<form method="post" class="space-y-4">
+<form id="color-edit-form" method="post" class="space-y-4">
     {% csrf_token %}
     <div>
         <label for="id_name" class="sr-only">Назва кольору</label>
@@ -32,15 +32,12 @@
         <p class="form-error">{{ form.availability_status.errors.0 }}</p>
         {% endif %}
     </div>
-    <div class="flex items-center gap-3">
-        <button type="submit" class="btn-primary">
-            Зберегти
-        </button>
-        <a href="{% url 'colors' %}" class="btn-secondary">Скасувати</a>
-    </div>
 </form>
 
-<div class="mt-4 flex items-center justify-end gap-3">
+<div class="mt-4 flex flex-wrap items-center gap-3 pt-1">
+    <button type="submit" form="color-edit-form" class="btn-primary">Зберегти</button>
+    <a href="{% url 'colors' %}" class="btn-secondary">Скасувати</a>
+    <div class="flex-1"></div>
     {% if color.archived_at %}
     <form method="post" action="{% url 'color_unarchive' color.id %}" class="m-0">
         {% csrf_token %}

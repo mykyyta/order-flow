@@ -4,6 +4,7 @@
     data-order-row
     data-expanded="0"
     data-has-comment="{% if order.comment %}1{% else %}0{% endif %}"
+    data-detail-url="{% url 'order_detail' order.id %}"
 >
     {% if order.comment %}
     <span
@@ -41,13 +42,14 @@
         </button>
     </div>
 
+    {% if order.comment %}
     <div
-        class="hidden relative border-t border-slate-100 bg-slate-50/70 px-3 py-2
+        class="hidden relative border-t border-slate-100 bg-slate-50/70 px-3 pt-0 pb-1.5
                pl-11"
         data-order-panel
     >
         {% if order.comment %}
-        <p class="max-h-20 overflow-hidden pr-7 text-[0.75rem] leading-[1.35]
+        <p class="-mt-1.5 max-h-20 overflow-hidden pr-7 text-[0.75rem] leading-[1.35]
                   text-slate-700 font-mono whitespace-pre-line"
            data-order-comment>
             {{ order.comment }}
@@ -69,4 +71,5 @@
             </svg>
         </a>
     </div>
+    {% endif %}
 </div>

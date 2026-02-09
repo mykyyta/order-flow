@@ -67,7 +67,7 @@ def material_archive(request, pk: int):
         material.archived_at = timezone.now()
         material.save(update_fields=["archived_at"])
         messages.success(request, "Готово! Матеріал відправлено в архів.")
-    return redirect("materials")
+    return redirect("material_edit", pk=pk)
 
 
 @login_required(login_url=reverse_lazy("auth_login"))
@@ -78,5 +78,4 @@ def material_unarchive(request, pk: int):
         material.archived_at = None
         material.save(update_fields=["archived_at"])
         messages.success(request, "Готово! Матеріал відновлено з архіву.")
-    return redirect("materials")
-
+    return redirect("material_edit", pk=pk)
