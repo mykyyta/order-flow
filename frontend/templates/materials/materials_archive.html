@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Архів матеріалів{% endblock %}
+
+{% block content %}
+
+{% include "partials/messages.html" %}
+
+<div class="space-y-4">
+    <div class="flex items-center justify-start gap-4">
+        <a href="{% url 'materials' %}" class="link-back">&larr; До активних</a>
+    </div>
+
+    <div>
+        {% if materials %}
+        <div class="flex flex-wrap gap-2">
+            {% for material in materials %}
+            <a href="{% url 'material_edit' material.id %}" class="catalog-chip-link catalog-chip-availability-out">
+                {{ material.name }}
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        {% include "partials/empty_state.html" with message="Архів порожній." %}
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

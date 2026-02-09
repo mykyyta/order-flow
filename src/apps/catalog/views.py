@@ -95,6 +95,35 @@ class ColorDetailUpdateView(LoginRequiredMixin, UpdateView):
         return reverse_lazy("colors")
 
 
+@login_required(login_url=reverse_lazy("auth_login"))
+def product_models_archive(request):
+    product_models = ProductModel.objects.filter(archived_at__isnull=False).order_by("name")
+    return render(
+        request,
+        "catalog/product_models_archive.html",
+        {"page_title": "Архів моделей", "models": product_models},
+    )
+
+
+@login_required(login_url=reverse_lazy("auth_login"))
+def colors_archive(request):
+    colors = Color.objects.filter(archived_at__isnull=False).order_by(
+        models.Case(
+            models.When(availability_status="in_stock", then=0),
+            models.When(availability_status="low_stock", then=1),
+            models.When(availability_status="out_of_stock", then=2),
+            default=3,
+            output_field=models.IntegerField(),
+        ),
+        "name",
+    )
+    return render(
+        request,
+        "catalog/colors_archive.html",
+        {"page_title": "Архів кольорів", "colors": colors},
+    )
+
+
 class ProductModelDetailUpdateView(LoginRequiredMixin, UpdateView):
     login_url = reverse_lazy("auth_login")
     model = ProductModel

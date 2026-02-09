@@ -60,6 +60,16 @@ class MaterialDetailUpdateView(LoginRequiredMixin, UpdateView):
 
 
 @login_required(login_url=reverse_lazy("auth_login"))
+def materials_archive(request):
+    materials = Material.objects.filter(archived_at__isnull=False).order_by("name")
+    return render(
+        request,
+        "materials/materials_archive.html",
+        {"page_title": "Архів матеріалів", "materials": materials},
+    )
+
+
+@login_required(login_url=reverse_lazy("auth_login"))
 @require_POST
 def material_archive(request, pk: int):
     material = get_object_or_404(Material, pk=pk)

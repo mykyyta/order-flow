@@ -46,9 +46,17 @@ def status_indicator(status_value, label="", muted=False):
 NAV_ITEMS = [
     {"url_name": "orders_active", "label": "У роботі", "active_on": ("orders_active", "index")},
     {"url_name": "orders_completed", "label": "Завершені", "active_on": ("orders_completed",)},
-    {"url_name": "product_models", "label": "Моделі", "active_on": ("product_models",)},
-    {"url_name": "colors", "label": "Кольори", "active_on": ("colors",)},
-    {"url_name": "materials", "label": "Матеріали", "active_on": ("materials", "material_edit")},
+    {
+        "url_name": "product_models",
+        "label": "Моделі",
+        "active_on": ("product_models", "product_model_edit", "product_models_archive"),
+    },
+    {"url_name": "colors", "label": "Кольори", "active_on": ("colors", "color_edit", "colors_archive")},
+    {
+        "url_name": "materials",
+        "label": "Матеріали",
+        "active_on": ("materials", "material_edit", "materials_archive"),
+    },
     {"url_name": "profile", "label": "Профіль", "active_on": ("profile", "change_password")},
 ]
 

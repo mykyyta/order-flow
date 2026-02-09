@@ -64,11 +64,13 @@ def test_catalog_lists_hide_archived_by_default(client):
     assert b"Active model" in models_response.content
     assert b"Archived model" not in models_response.content
     assert b'class="catalog-chip-link catalog-chip-availability-in"' in models_response.content
+    assert reverse("product_models_archive").encode() in models_response.content
 
     colors_response = client.get(reverse("colors"))
     assert colors_response.status_code == 200
     assert b"Active color" in colors_response.content
     assert b"Archived color" not in colors_response.content
+    assert reverse("colors_archive").encode() in colors_response.content
 
 
 @pytest.mark.django_db(transaction=True)
@@ -125,3 +127,35 @@ def test_color_archive_and_unarchive(client):
     assert unarchive_response.url == reverse("color_edit", kwargs={"pk": color.pk})
     color.refresh_from_db()
     assert color.archived_at is None
+
+
+@pytest.mark.django_db(transaction=True)
+def test_models_archive_page_shows_only_archived(client):
+    from apps.orders.models import CustomUser
+
+    user = CustomUser.objects.create_user(username="models_archive_viewer", password="pass12345")
+    client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
+
+    ProductModel.objects.create(name="Active model")
+    ProductModel.objects.create(name="Archived model", archived_at=timezone.now())
+
+    response = client.get(reverse("product_models_archive"))
+    assert response.status_code == 200
+    assert b"Archived model" in response.content
+    assert b"Active model" not in response.content
+
+
+@pytest.mark.django_db(transaction=True)
+def test_colors_archive_page_shows_only_archived(client):
+    from apps.orders.models import CustomUser
+
+    user = CustomUser.objects.create_user(username="colors_archive_viewer", password="pass12345")
+    client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
+
+    Color.objects.create(name="Active color", code=500)
+    Color.objects.create(name="Archived color", code=600, archived_at=timezone.now())
+
+    response = client.get(reverse("colors_archive"))
+    assert response.status_code == 200
+    assert b"Archived color" in response.content
+    assert b"Active color" not in response.content
