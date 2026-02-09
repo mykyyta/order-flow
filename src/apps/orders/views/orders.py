@@ -315,9 +315,9 @@ def order_edit(request, order_id):
         Q(archived_at__isnull=True) | Q(pk=order.model_id)
     ).order_by("name")
     form.fields["color"].queryset = Color.objects.filter(
-        (Q(archived_at__isnull=True) & Q(availability_status__in=["in_stock", "low_stock"]))
-        | Q(pk=order.color_id)
-    )
+        Q(pk=order.color_id)
+        | (Q(archived_at__isnull=True) & Q(availability_status__in=["in_stock", "low_stock"]))
+    ).order_by("name")
     return render(
         request,
         "orders/order_edit.html",

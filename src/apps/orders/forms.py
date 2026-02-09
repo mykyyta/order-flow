@@ -12,13 +12,21 @@ FORM_TEXTAREA = "form-textarea"
 FORM_CHECKBOX = "form-checkbox"
 
 
+class HiddenEmptyOptionSelect(forms.Select):
+    def create_option(self, *args, **kwargs):
+        option = super().create_option(*args, **kwargs)
+        if option["value"] in ("", None):
+            option["attrs"]["disabled"] = True
+        return option
+
+
 class OrderForm(forms.ModelForm):
     class Meta:
         model = Order
         fields = ["model", "color", "etsy", "embroidery", "urgent", "comment"]
         widgets = {
-            "model": forms.Select(attrs={"class": FORM_SELECT}),
-            "color": forms.Select(attrs={"class": FORM_SELECT}),
+            "model": HiddenEmptyOptionSelect(attrs={"class": FORM_SELECT}),
+            "color": HiddenEmptyOptionSelect(attrs={"class": FORM_SELECT}),
             "etsy": forms.CheckboxInput(attrs={"class": FORM_CHECKBOX}),
             "urgent": forms.CheckboxInput(attrs={"class": FORM_CHECKBOX}),
             "embroidery": forms.CheckboxInput(attrs={"class": FORM_CHECKBOX}),
@@ -33,12 +41,17 @@ class OrderForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["model"].queryset = ProductModel.objects.filter(archived_at__isnull=True).order_by(
-            "name"
+        self.fields["model"].empty_label = "—"
+        self.fields["color"].empty_label = "—"
+        self.fields["model"].queryset = (
+            ProductModel.objects.filter(archived_at__isnull=True).order_by("name")
         )
-        self.fields["color"].queryset = Color.objects.filter(
-            archived_at__isnull=True,
-            availability_status__in=["in_stock", "low_stock"],
+        self.fields["color"].queryset = (
+            Color.objects.filter(
+                archived_at__isnull=True,
+                availability_status__in=["in_stock", "low_stock"],
+            )
+            .order_by("name")
         )
 
 
