@@ -1,5 +1,7 @@
 """Profile view tests."""
 
+import re
+
 import pytest
 from django.urls import reverse
 
@@ -112,8 +114,12 @@ def test_profile_theme_preview_param_overrides_active_theme(client):
 
 @pytest.mark.django_db(transaction=True)
 def test_profile_theme_preview_default_clears_data_theme(client):
+    """With ?theme=default, <html> must not have data-theme (CSS selectors contain it)."""
     user = UserFactory()
     client.force_login(user, backend=AUTH_BACKEND)
     response = client.get(reverse("profile") + "?theme=default")
     assert response.status_code == 200
-    assert "data-theme=" not in response.content.decode()
+    html = response.content.decode()
+    html_tag = re.search(r"<html[^>]*>", html)
+    assert html_tag, "html tag not found"
+    assert "data-theme" not in html_tag.group(0)
