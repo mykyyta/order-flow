@@ -180,6 +180,7 @@ STATICFILES_DIRS = [PROJECT_ROOT / "frontend" / "static"]
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "orders.CustomUser"
+LOGIN_URL = "auth_login"
 
 CSRF_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_SAMESITE = "Lax"

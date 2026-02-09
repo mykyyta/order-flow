@@ -6,6 +6,7 @@ from django.contrib.auth import (
     logout,
     update_session_auth_hash,
 )
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.shortcuts import redirect, render
@@ -13,7 +14,6 @@ from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from apps.accounts.models import NotificationSetting
-from apps.orders.views import custom_login_required
 
 
 def auth_login(request):
@@ -62,7 +62,7 @@ def auth_logout(request):
     return redirect(reverse("auth_login") + "?logout=1")
 
 
-@custom_login_required
+@login_required
 def profile_view(request):
     user = request.user
     notif_settings, _created = NotificationSetting.objects.get_or_create(user=user)
@@ -98,7 +98,7 @@ def profile_view(request):
     )
 
 
-@custom_login_required
+@login_required
 def change_password(request):
     if request.method == "POST":
         current_password = request.POST.get("current_password")

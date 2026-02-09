@@ -1,5 +1,4 @@
 from apps.orders.views.orders import (
-    custom_login_required,
     order_detail,
     order_edit,
     orders_active,
@@ -11,7 +10,6 @@ from apps.orders.views.orders import (
 from apps.orders.views.notifications import send_delayed_notifications
 
 __all__ = [
-    "custom_login_required",
     "order_detail",
     "order_edit",
     "orders_active",

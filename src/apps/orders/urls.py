@@ -18,8 +18,8 @@ urlpatterns = [
     path("orders/current/bulk-status/", orders_bulk_status, name="orders_bulk_status"),
     path("orders/finished/", orders_completed, name="orders_completed"),
     path("orders/create/", orders_create, name="orders_create"),
-    path("orders/<int:order_id>/", order_detail, name="order_detail"),
-    path("orders/<int:order_id>/edit/", order_edit, name="order_edit"),
+    path("orders/<int:pk>/", order_detail, name="order_detail"),
+    path("orders/<int:pk>/edit/", order_edit, name="order_edit"),
     path(
         "cron/send-delayed-notifications/",
         send_delayed_notifications,

@@ -21,7 +21,7 @@ urlpatterns = [
     path("models/<int:pk>/unarchive/", product_model_unarchive, name="product_model_unarchive"),
     path("colors/", ColorListCreateView.as_view(), name="colors"),
     path("colors/archive/", colors_archive, name="colors_archive"),
-    path("color/<int:pk>/", ColorDetailUpdateView.as_view(), name="color_edit"),
-    path("color/<int:pk>/archive/", color_archive, name="color_archive"),
-    path("color/<int:pk>/unarchive/", color_unarchive, name="color_unarchive"),
+    path("colors/<int:pk>/", ColorDetailUpdateView.as_view(), name="color_edit"),
+    path("colors/<int:pk>/archive/", color_archive, name="color_archive"),
+    path("colors/<int:pk>/unarchive/", color_unarchive, name="color_unarchive"),
 ]

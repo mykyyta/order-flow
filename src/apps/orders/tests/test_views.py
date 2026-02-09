@@ -145,7 +145,7 @@ def test_order_detail_renders_status_indicator(client):
     model = ProductModelFactory()
     color = ColorFactory()
     order = OrderFactory(model=model, color=color, current_status=STATUS_ON_HOLD)
-    response = client.get(reverse("order_detail", kwargs={"order_id": order.id}))
+    response = client.get(reverse("order_detail", kwargs={"pk": order.id}))
     assert response.status_code == 200
     assert b"text-orange-500" in response.content
     assert order.get_current_status_display().encode() in response.content
@@ -188,7 +188,7 @@ def test_order_edit_includes_archived_model_and_color_in_dropdown(client):
     color.archived_at = timezone.now()
     color.save(update_fields=["archived_at"])
 
-    response = client.get(reverse("order_edit", kwargs={"order_id": order.id}))
+    response = client.get(reverse("order_edit", kwargs={"pk": order.id}))
     assert response.status_code == 200
     assert model.name.encode() in response.content
     assert color.name.encode() in response.content
@@ -200,3 +200,115 @@ def test_message_alert_class_mapping():
     assert message_alert_class("success") == "alert alert-success"
     assert message_alert_class("warning extra") == "alert alert-warning"
     assert message_alert_class("unknown") == "alert alert-info"
+
+
+@pytest.mark.django_db(transaction=True)
+def test_palette_lab_renders_page(client):
+    user = UserFactory()
+    client.force_login(user, backend=AUTH_BACKEND)
+    response = client.get(reverse("palette_lab"))
+    assert response.status_code == 200
+    assert b"orders/palette_lab.html" in response.templates[0].origin.name.encode()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_orders_bulk_status_updates_multiple_orders(client):
+    user = UserFactory()
+    client.force_login(user, backend=AUTH_BACKEND)
+    model = ProductModelFactory()
+    color = ColorFactory()
+    order1 = OrderFactory(model=model, color=color, current_status=STATUS_NEW)
+    order2 = OrderFactory(model=model, color=color, current_status=STATUS_NEW)
+
+    response = client.post(
+        reverse("orders_bulk_status"),
+        data={"orders": [order1.id, order2.id], "new_status": "doing"},
+    )
+    assert response.status_code == 302
+    order1.refresh_from_db()
+    order2.refresh_from_db()
+    assert order1.current_status == "doing"
+    assert order2.current_status == "doing"
+
+
+@pytest.mark.django_db(transaction=True)
+def test_orders_bulk_status_empty_selection_shows_error(client):
+    """Empty orders selection causes form validation error."""
+    user = UserFactory()
+    client.force_login(user, backend=AUTH_BACKEND)
+
+    response = client.post(
+        reverse("orders_bulk_status"),
+        data={"orders": [], "new_status": "doing"},
+        follow=True,
+    )
+    assert response.status_code == 200
+    messages_list = list(response.context["messages"])
+    # Form validation fails with generic error
+    assert any("упс" in str(m).lower() for m in messages_list)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_orders_bulk_status_no_status_shows_error(client):
+    """Empty status causes form validation error."""
+    user = UserFactory()
+    client.force_login(user, backend=AUTH_BACKEND)
+    model = ProductModelFactory()
+    color = ColorFactory()
+    order = OrderFactory(model=model, color=color, current_status=STATUS_NEW)
+
+    response = client.post(
+        reverse("orders_bulk_status"),
+        data={"orders": [order.id], "new_status": ""},
+        follow=True,
+    )
+    assert response.status_code == 200
+    messages_list = list(response.context["messages"])
+    # Form validation fails with generic error
+    assert any("упс" in str(m).lower() for m in messages_list)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_orders_bulk_status_invalid_transition_shows_error(client):
+    user = UserFactory()
+    client.force_login(user, backend=AUTH_BACKEND)
+    model = ProductModelFactory()
+    color = ColorFactory()
+    # Order with status "doing" cannot transition back to "new"
+    order = OrderFactory(model=model, color=color, current_status="doing")
+
+    response = client.post(
+        reverse("orders_bulk_status"),
+        data={"orders": [order.id], "new_status": "new"},
+        follow=True,
+    )
+    assert response.status_code == 200
+    messages_list = list(response.context["messages"])
+    assert any("не можна" in str(m).lower() for m in messages_list)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_orders_create_post_creates_order(client):
+    user = UserFactory()
+    client.force_login(user, backend=AUTH_BACKEND)
+    model = ProductModelFactory()
+    color = ColorFactory()
+
+    response = client.post(
+        reverse("orders_create"),
+        data={
+            "model": model.id,
+            "color": color.id,
+            "etsy": False,
+            "embroidery": False,
+            "urgent": False,
+            "comment": "Test order",
+        },
+    )
+    assert response.status_code == 302
+
+    from apps.orders.models import Order
+    order = Order.objects.get(comment="Test order")
+    assert order.model == model
+    assert order.color == color
+    assert order.current_status == STATUS_NEW

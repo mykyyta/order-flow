@@ -1,6 +1,5 @@
-from functools import wraps
-
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Case, IntegerField, Q, Value, When
 from django.shortcuts import get_object_or_404, redirect, render
@@ -59,16 +58,6 @@ def _filtered_current_orders_queryset(*, filter_value: str):
     return queryset, filter_value
 
 
-def custom_login_required(view_func):
-    @wraps(view_func)
-    def wrapper(request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return redirect("auth_login")
-        return view_func(request, *args, **kwargs)
-
-    return wrapper
-
-
 COMBINED_FILTER_OPTIONS = (
     [
         ("", "Усі"),
@@ -82,7 +71,7 @@ COMBINED_FILTER_OPTIONS = (
 )
 
 
-@custom_login_required
+@login_required
 def orders_active(request):
     filter_value = (request.GET.get("filter") or "").strip()
     orders_queryset, filter_value = _filtered_current_orders_queryset(
@@ -117,7 +106,7 @@ def orders_active(request):
     )
 
 
-@custom_login_required
+@login_required
 def palette_lab(request):
     return render(
         request,
@@ -128,7 +117,7 @@ def palette_lab(request):
     )
 
 
-@custom_login_required
+@login_required
 @require_POST
 def orders_bulk_status(request):
     filter_value = (request.GET.get("filter") or "").strip()
@@ -187,7 +176,7 @@ def orders_bulk_status(request):
     return redirect(url)
 
 
-@custom_login_required
+@login_required
 def orders_completed(request):
     search_query = (request.GET.get("q") or "").strip()
     orders = (
@@ -225,7 +214,7 @@ def orders_completed(request):
     )
 
 
-@custom_login_required
+@login_required
 def orders_create(request):
     if request.method == "POST":
         form = OrderForm(request.POST)
@@ -257,9 +246,9 @@ def orders_create(request):
     )
 
 
-@custom_login_required
-def order_detail(request, order_id):
-    order = get_object_or_404(Order, id=order_id)
+@login_required
+def order_detail(request, pk):
+    order = get_object_or_404(Order, id=pk)
     statuses = OrderStatusHistory.objects.filter(order=order).order_by("-changed_at")
 
     order_data = {
@@ -299,15 +288,15 @@ def order_detail(request, order_id):
     )
 
 
-@custom_login_required
-def order_edit(request, order_id):
-    order = get_object_or_404(Order, id=order_id)
+@login_required
+def order_edit(request, pk):
+    order = get_object_or_404(Order, id=pk)
     if request.method == "POST":
         form = OrderForm(request.POST, instance=order)
         if form.is_valid():
             form.save()
             messages.success(request, "Готово! Замовлення оновлено.")
-            return redirect("order_detail", order_id=order.id)
+            return redirect("order_detail", pk=order.id)
     else:
         form = OrderForm(instance=order)
     # Ensure current order color stays in dropdown even if out_of_stock
