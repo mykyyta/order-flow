@@ -12,6 +12,8 @@ gh run view <RUN_ID> --repo mykyyta/pult --log-failed
 ## Deploy behaviour
 On push to `main`, `deploy.yml` builds the image, **runs migrations** (updates migrate job image and executes it), then updates the Cloud Run service.
 
+**Why Cloud Run could show an old container:** Previously, `infra.yml` (on push to `infra/**`) ran `terraform apply` without passing `container_image`. Terraform then set the service (and migrate job) image back to the default `var.container_image` (no SHA tag), so the live image reverted to an older one. This is fixed: Terraform now has `ignore_changes = [template]` on the Cloud Run service and migrate job, so the image is owned only by `deploy.yml`.
+
 ## PR: skip lint (optional)
 If you need to merge quickly and don't want the PR blocked by Ruff, add label `skip-lint` to the PR.
 
