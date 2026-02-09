@@ -47,6 +47,7 @@ credentials/
 # Database
 db.sqlite3
 db.sqlite3-journal
+test_db.sqlite3
 *.db
 *.sql
 *.dump
