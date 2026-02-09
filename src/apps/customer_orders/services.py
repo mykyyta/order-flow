@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Callable
 from django.db import transaction
 
 from apps.catalog.models import BundleColorMapping, BundleComponent, BundlePresetComponent
+from apps.catalog.variants import resolve_or_create_product_variant
 from apps.customer_orders.models import CustomerOrder, CustomerOrderLine, CustomerOrderLineComponent
 from apps.orders.domain.status import STATUS_FINISHED
 
@@ -16,6 +17,7 @@ if TYPE_CHECKING:
 
 Requirement = tuple[
     "ProductModel",
+    int | None,
     "Color | None",
     "MaterialColor | None",
     "MaterialColor | None",
@@ -58,6 +60,15 @@ def create_customer_order(
             _save_bundle_component_colors(line=line, line_data=line_data)
         else:
             _validate_line_material_colors(line=line)
+            product_variant = resolve_or_create_product_variant(
+                product_model_id=line.product_model_id,
+                color_id=line.color_id,
+                primary_material_color_id=line.primary_material_color_id,
+                secondary_material_color_id=line.secondary_material_color_id,
+            )
+            if product_variant is not None and line.product_variant_id is None:
+                line.product_variant = product_variant
+                line.save(update_fields=["product_variant"])
 
     if create_production_orders:
         if created_by is None:
@@ -82,20 +93,29 @@ def create_missing_production_orders(
     from apps.orders.services import create_order
 
     created_orders: list[Order] = []
-    available_stock_cache: dict[tuple[int, int | None, int | None, int | None], int] = {}
+    available_stock_cache: dict[tuple[str, int] | tuple[str, int, int | None, int | None, int | None], int] = {}
 
     for line in customer_order.lines.select_related(
         "product_model",
+        "product_variant",
         "color",
         "primary_material_color",
         "secondary_material_color",
     ):
-        for product_model, color, primary_color, secondary_color, required_qty in _iter_line_requirements(
+        for (
+            product_model,
+            product_variant_id,
+            color,
+            primary_color,
+            secondary_color,
+            required_qty,
+        ) in _iter_line_requirements(
             line=line
         ):
             quantity_to_produce = _resolve_quantity_to_produce(
                 line=line,
                 product_model=product_model,
+                product_variant_id=product_variant_id,
                 color=color,
                 primary_color=primary_color,
                 secondary_color=secondary_color,
@@ -169,6 +189,10 @@ def _save_bundle_component_colors(*, line: CustomerOrderLine, line_data: dict[st
                 order_line=line,
                 component=mapping.component,
                 color=mapping.component_color,
+                product_variant=resolve_or_create_product_variant(
+                    product_model_id=mapping.component_id,
+                    color_id=mapping.component_color_id,
+                ),
             )
         return
 
@@ -187,6 +211,15 @@ def _save_bundle_component_colors(*, line: CustomerOrderLine, line_data: dict[st
             secondary_material_color_id=component_data.get("secondary_material_color_id"),
         )
         _validate_component_material_colors(component_line)
+        component_variant = resolve_or_create_product_variant(
+            product_model_id=component_line.component_id,
+            color_id=component_line.color_id,
+            primary_material_color_id=component_line.primary_material_color_id,
+            secondary_material_color_id=component_line.secondary_material_color_id,
+        )
+        if component_variant is not None and component_line.product_variant_id is None:
+            component_line.product_variant = component_variant
+            component_line.save(update_fields=["product_variant"])
 
 
 def _save_bundle_preset_components(*, line: CustomerOrderLine) -> None:
@@ -213,6 +246,15 @@ def _save_bundle_preset_components(*, line: CustomerOrderLine) -> None:
             secondary_material_color=preset_component.secondary_material_color,
         )
         _validate_component_material_colors(component_line)
+        component_variant = resolve_or_create_product_variant(
+            product_model_id=component_line.component_id,
+            color_id=component_line.color_id,
+            primary_material_color_id=component_line.primary_material_color_id,
+            secondary_material_color_id=component_line.secondary_material_color_id,
+        )
+        if component_variant is not None and component_line.product_variant_id is None:
+            component_line.product_variant = component_variant
+            component_line.save(update_fields=["product_variant"])
 
 
 def _validate_line_material_colors(*, line: CustomerOrderLine) -> None:
@@ -258,6 +300,7 @@ def _iter_line_requirements(*, line: CustomerOrderLine) -> list[Requirement]:
         return [
             (
                 line.product_model,
+                line.product_variant_id,
                 line.color,
                 line.primary_material_color,
                 line.secondary_material_color,
@@ -268,6 +311,7 @@ def _iter_line_requirements(*, line: CustomerOrderLine) -> list[Requirement]:
     components = list(
         line.component_colors.select_related(
             "component",
+            "product_variant",
             "color",
             "primary_material_color",
             "secondary_material_color",
@@ -289,6 +333,7 @@ def _iter_line_requirements(*, line: CustomerOrderLine) -> list[Requirement]:
         requirements.append(
             (
                 component.component,
+                component.product_variant_id,
                 component.color,
                 component.primary_material_color,
                 component.secondary_material_color,
@@ -302,11 +347,12 @@ def _resolve_quantity_to_produce(
     *,
     line: CustomerOrderLine,
     product_model: "ProductModel",
+    product_variant_id: int | None,
     color: "Color | None",
     primary_color: "MaterialColor | None",
     secondary_color: "MaterialColor | None",
     required_qty: int,
-    available_stock_cache: dict[tuple[int, int | None, int | None, int | None], int],
+    available_stock_cache: dict[tuple[str, int] | tuple[str, int, int | None, int | None, int | None], int],
     get_stock_quantity_fn: Callable[..., int],
 ) -> int:
     if line.production_mode == CustomerOrderLine.ProductionMode.FORCE:
@@ -314,20 +360,30 @@ def _resolve_quantity_to_produce(
     if line.production_mode == CustomerOrderLine.ProductionMode.MANUAL:
         return 0
 
-    stock_key = (
-        product_model.id,
-        color.id if color else None,
-        primary_color.id if primary_color else None,
-        secondary_color.id if secondary_color else None,
-    )
+    if product_variant_id is not None:
+        stock_key: tuple[str, int] | tuple[str, int, int | None, int | None, int | None] = (
+            "variant",
+            product_variant_id,
+        )
+    else:
+        stock_key = (
+            "legacy",
+            product_model.id,
+            color.id if color else None,
+            primary_color.id if primary_color else None,
+            secondary_color.id if secondary_color else None,
+        )
     available_qty = available_stock_cache.get(stock_key)
     if available_qty is None:
-        available_qty = get_stock_quantity_fn(
-            product_model_id=product_model.id,
-            color_id=color.id if color else None,
-            primary_material_color_id=primary_color.id if primary_color else None,
-            secondary_material_color_id=secondary_color.id if secondary_color else None,
-        )
+        if product_variant_id is not None:
+            available_qty = get_stock_quantity_fn(product_variant_id=product_variant_id)
+        else:
+            available_qty = get_stock_quantity_fn(
+                product_model_id=product_model.id,
+                color_id=color.id if color else None,
+                primary_material_color_id=primary_color.id if primary_color else None,
+                secondary_material_color_id=secondary_color.id if secondary_color else None,
+            )
 
     used_from_stock = min(required_qty, available_qty)
     available_stock_cache[stock_key] = available_qty - used_from_stock

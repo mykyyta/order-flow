@@ -1,7 +1,9 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 from django.contrib.auth.models import AbstractUser
 from config import settings
+from apps.catalog.variants import product_variant_matches_legacy_fields
 from apps.orders.themes import DEFAULT_THEME, THEME_CHOICES
 from apps.orders.domain.order_statuses import (
     STATUS_FINISHED,
@@ -32,6 +34,13 @@ class CustomUser(AbstractUser):
 class Order(models.Model):
     id = models.AutoField(primary_key=True)
     model = models.ForeignKey("catalog.ProductModel", on_delete=models.PROTECT)
+    product_variant = models.ForeignKey(
+        "catalog.ProductVariant",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="orders",
+    )
     color = models.ForeignKey("catalog.Color", on_delete=models.PROTECT, null=True, blank=True)
     primary_material_color = models.ForeignKey(
         "materials.MaterialColor",
@@ -103,6 +112,25 @@ class Order(models.Model):
         else:
             color_name = "custom"
         return f"{self.model.name} ({color_name}) - {self.get_status()}"
+
+    def _validate_product_variant_consistency(self) -> None:
+        if self.product_variant_id is None:
+            return
+
+        if not product_variant_matches_legacy_fields(
+            product_variant=self.product_variant,
+            product_model_id=self.model_id,
+            color_id=self.color_id,
+            primary_material_color_id=self.primary_material_color_id,
+            secondary_material_color_id=self.secondary_material_color_id,
+        ):
+            raise ValidationError(
+                {"product_variant": "Product variant must match model/color/material colors fields."}
+            )
+
+    def save(self, *args, **kwargs) -> None:
+        self._validate_product_variant_consistency()
+        super().save(*args, **kwargs)
 
     class Meta:
         indexes = [

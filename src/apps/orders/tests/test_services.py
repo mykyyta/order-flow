@@ -3,7 +3,9 @@ from __future__ import annotations
 
 
 import pytest
+from django.core.exceptions import ValidationError
 
+from apps.catalog.models import ProductVariant
 from apps.orders.domain.status import (
     STATUS_DOING,
     STATUS_EMBROIDERY,
@@ -94,6 +96,9 @@ def test_create_order_persists_history(user):
     assert OrderStatusHistory.objects.filter(order=order).first().new_status == STATUS_NEW
     order.refresh_from_db()
     assert order.current_status == STATUS_NEW
+    assert order.product_variant is not None
+    assert order.product_variant.product_id == model.id
+    assert order.product_variant.color_id == color.id
 
 
 @pytest.mark.django_db
@@ -129,3 +134,22 @@ def test_delayed_no_orders_returns_no_orders_to_notify():
     from apps.orders.notifications import send_delayed_order_created_notifications
     result = send_delayed_order_created_notifications()
     assert result in ("no orders to notify", "no users to notify", "delayed notifications sent")
+
+
+@pytest.mark.django_db
+def test_order_rejects_mismatched_product_variant_on_save():
+    model = ProductModelFactory()
+    color = ColorFactory()
+    wrong_variant = ProductVariant.objects.create(
+        product=model,
+        color=ColorFactory(),
+    )
+
+    from apps.orders.models import Order
+
+    with pytest.raises(ValidationError, match="must match"):
+        Order.objects.create(
+            model=model,
+            color=color,
+            product_variant=wrong_variant,
+        )

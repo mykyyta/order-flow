@@ -1,4 +1,7 @@
+from django.core.exceptions import ValidationError
 from django.db import models
+
+from apps.catalog.variants import product_variant_matches_legacy_fields
 
 
 class StockRecord(models.Model):
@@ -6,6 +9,13 @@ class StockRecord(models.Model):
         "catalog.ProductModel",
         on_delete=models.PROTECT,
         limit_choices_to={"is_bundle": False},
+    )
+    product_variant = models.ForeignKey(
+        "catalog.ProductVariant",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="stock_records_legacy",
     )
     color = models.ForeignKey(
         "catalog.Color",
@@ -53,6 +63,25 @@ class StockRecord(models.Model):
         else:
             color_name = "custom"
         return f"{self.product_model.name} ({color_name}): {self.quantity}"
+
+    def _validate_product_variant_consistency(self) -> None:
+        if self.product_variant_id is None:
+            return
+
+        if not product_variant_matches_legacy_fields(
+            product_variant=self.product_variant,
+            product_model_id=self.product_model_id,
+            color_id=self.color_id,
+            primary_material_color_id=self.primary_material_color_id,
+            secondary_material_color_id=self.secondary_material_color_id,
+        ):
+            raise ValidationError(
+                {"product_variant": "Product variant must match product/color/material colors fields."}
+            )
+
+    def save(self, *args, **kwargs) -> None:
+        self._validate_product_variant_consistency()
+        super().save(*args, **kwargs)
 
 
 class StockMovement(models.Model):

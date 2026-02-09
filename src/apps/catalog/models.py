@@ -49,6 +49,102 @@ class Color(models.Model):
         return f"{self.name}"
 
 
+class ProductVariant(models.Model):
+    product = models.ForeignKey(
+        ProductModel,
+        on_delete=models.CASCADE,
+        related_name="variants",
+    )
+    color = models.ForeignKey(
+        Color,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="product_variants",
+    )
+    primary_material_color = models.ForeignKey(
+        "materials.MaterialColor",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="product_variants_primary",
+    )
+    secondary_material_color = models.ForeignKey(
+        "materials.MaterialColor",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="product_variants_secondary",
+    )
+    sku = models.CharField(max_length=128, blank=True)
+    is_active = models.BooleanField(default=True)
+    legacy_id = models.IntegerField(null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["product", "color"],
+                condition=(
+                    models.Q(color__isnull=False)
+                    & models.Q(primary_material_color__isnull=True)
+                    & models.Q(secondary_material_color__isnull=True)
+                ),
+                name="catalog_productvariant_product_color_uniq",
+            ),
+            models.UniqueConstraint(
+                fields=["product", "primary_material_color"],
+                condition=(
+                    models.Q(color__isnull=True)
+                    & models.Q(primary_material_color__isnull=False)
+                    & models.Q(secondary_material_color__isnull=True)
+                ),
+                name="catalog_productvariant_primary_only_uniq",
+            ),
+            models.UniqueConstraint(
+                fields=["product", "primary_material_color", "secondary_material_color"],
+                condition=(
+                    models.Q(color__isnull=True)
+                    & models.Q(primary_material_color__isnull=False)
+                    & models.Q(secondary_material_color__isnull=False)
+                ),
+                name="catalog_productvariant_primary_secondary_uniq",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    (
+                        models.Q(color__isnull=False)
+                        & models.Q(primary_material_color__isnull=True)
+                    )
+                    | (
+                        models.Q(color__isnull=True)
+                        & models.Q(primary_material_color__isnull=False)
+                    )
+                ),
+                name="catalog_productvariant_color_xor_primary",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(secondary_material_color__isnull=True)
+                    | models.Q(primary_material_color__isnull=False)
+                ),
+                name="catalog_productvariant_secondary_requires_primary",
+            ),
+        ]
+        ordering = ("product_id", "id")
+
+    def __str__(self) -> str:
+        if self.primary_material_color:
+            primary_name = self.primary_material_color.name
+            if self.secondary_material_color:
+                return f"{self.product.name} ({primary_name} / {self.secondary_material_color.name})"
+            return f"{self.product.name} ({primary_name})"
+        if self.color:
+            return f"{self.product.name} ({self.color.name})"
+        return f"{self.product.name} (custom)"
+
+
 class BundleComponent(models.Model):
     bundle = models.ForeignKey(
         ProductModel,

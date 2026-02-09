@@ -1,0 +1,72 @@
+{% comment %}
+Universal badge/tag component.
+
+Usage:
+  {% include "partials/badge.html" with label="Нове" variant="success" %}
+  {% include "partials/badge.html" with label="Архів" variant="muted" size="sm" %}
+  {% include "partials/badge.html" with label="Etsy" variant="warning" icon="external" %}
+
+Parameters:
+  - label: badge text (required)
+  - variant: color variant (default: "default")
+      - default: slate/gray
+      - primary: teal/brand
+      - success: green
+      - warning: amber/yellow
+      - danger: red
+      - info: blue
+      - muted: light gray
+  - size: "sm", "md" (default: "md")
+  - icon: optional icon name (see action_menu_icon.html)
+  - pill: rounded-full instead of rounded-md (default: False)
+  - dot: show color dot instead of full bg (default: False)
+{% endcomment %}
+
+{% with variant=variant|default:"default" size=size|default:"md" %}
+<span class="
+    inline-flex items-center gap-1 font-medium
+    {% if pill %}rounded-full{% else %}rounded-md{% endif %}
+    {% if size == 'sm' %}px-2 py-0.5 text-xs{% else %}px-2.5 py-1 text-xs{% endif %}
+    {% if dot %}
+        bg-white border
+        {% if variant == 'success' %}border-emerald-200 text-emerald-700
+        {% elif variant == 'warning' %}border-amber-200 text-amber-700
+        {% elif variant == 'danger' %}border-red-200 text-red-700
+        {% elif variant == 'info' %}border-blue-200 text-blue-700
+        {% elif variant == 'primary' %}border-teal-200 text-teal-700
+        {% elif variant == 'muted' %}border-slate-200 text-slate-500
+        {% else %}border-slate-200 text-slate-600
+        {% endif %}
+    {% else %}
+        {% if variant == 'success' %}bg-emerald-100 text-emerald-800
+        {% elif variant == 'warning' %}bg-amber-100 text-amber-800
+        {% elif variant == 'danger' %}bg-red-100 text-red-800
+        {% elif variant == 'info' %}bg-blue-100 text-blue-800
+        {% elif variant == 'primary' %}bg-teal-100 text-teal-800
+        {% elif variant == 'muted' %}bg-slate-100 text-slate-600
+        {% else %}bg-slate-100 text-slate-700
+        {% endif %}
+    {% endif %}
+">
+    {% if dot %}
+    <span class="h-1.5 w-1.5 rounded-full
+        {% if variant == 'success' %}bg-emerald-500
+        {% elif variant == 'warning' %}bg-amber-500
+        {% elif variant == 'danger' %}bg-red-500
+        {% elif variant == 'info' %}bg-blue-500
+        {% elif variant == 'primary' %}bg-teal-500
+        {% elif variant == 'muted' %}bg-slate-400
+        {% else %}bg-slate-500
+        {% endif %}
+    "></span>
+    {% endif %}
+    {% if icon %}
+    <svg class="h-3 w-3 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        {% if icon == "external" %}<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>{% endif %}
+        {% if icon == "check" %}<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>{% endif %}
+        {% if icon == "clock" %}<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>{% endif %}
+    </svg>
+    {% endif %}
+    {{ label }}
+</span>
+{% endwith %}

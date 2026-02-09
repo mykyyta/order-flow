@@ -31,7 +31,15 @@
 }
 
 /* Form design system - one place for all form controls */
+/* Alpine.js cloak - hide elements until Alpine initializes */
+[x-cloak] { display: none !important; }
+
 @layer components {
+  /* Action menu item (dropdown) */
+  .action-menu-item {
+    @apply flex w-full items-center px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors;
+  }
+
   .form-label {
     @apply block text-sm font-semibold text-slate-700 mb-1;
   }

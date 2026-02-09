@@ -1,4 +1,7 @@
+from django.core.exceptions import ValidationError
 from django.db import models
+
+from apps.catalog.variants import product_variant_matches_legacy_fields
 
 
 class CustomerOrder(models.Model):
@@ -49,6 +52,13 @@ class CustomerOrderLine(models.Model):
     product_model = models.ForeignKey(
         "catalog.ProductModel",
         on_delete=models.PROTECT,
+    )
+    product_variant = models.ForeignKey(
+        "catalog.ProductVariant",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="sales_order_lines_legacy",
     )
     color = models.ForeignKey(
         "catalog.Color",
@@ -107,6 +117,25 @@ class CustomerOrderLine(models.Model):
             color_str = "custom"
         return f"{self.product_model.name} ({color_str}) x {self.quantity}"
 
+    def _validate_product_variant_consistency(self) -> None:
+        if self.product_variant_id is None:
+            return
+
+        if not product_variant_matches_legacy_fields(
+            product_variant=self.product_variant,
+            product_model_id=self.product_model_id,
+            color_id=self.color_id,
+            primary_material_color_id=self.primary_material_color_id,
+            secondary_material_color_id=self.secondary_material_color_id,
+        ):
+            raise ValidationError(
+                {"product_variant": "Product variant must match product/color/material colors fields."}
+            )
+
+    def save(self, *args, **kwargs) -> None:
+        self._validate_product_variant_consistency()
+        super().save(*args, **kwargs)
+
 
 class CustomerOrderLineComponent(models.Model):
     order_line = models.ForeignKey(
@@ -117,6 +146,13 @@ class CustomerOrderLineComponent(models.Model):
     component = models.ForeignKey(
         "catalog.ProductModel",
         on_delete=models.PROTECT,
+    )
+    product_variant = models.ForeignKey(
+        "catalog.ProductVariant",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="sales_order_line_components_legacy",
     )
     color = models.ForeignKey(
         "catalog.Color",
@@ -148,3 +184,22 @@ class CustomerOrderLineComponent(models.Model):
         if self.color:
             return f"{self.component.name} -> {self.color.name}"
         return f"{self.component.name} -> custom"
+
+    def _validate_product_variant_consistency(self) -> None:
+        if self.product_variant_id is None:
+            return
+
+        if not product_variant_matches_legacy_fields(
+            product_variant=self.product_variant,
+            product_model_id=self.component_id,
+            color_id=self.color_id,
+            primary_material_color_id=self.primary_material_color_id,
+            secondary_material_color_id=self.secondary_material_color_id,
+        ):
+            raise ValidationError(
+                {"product_variant": "Product variant must match component/color/material colors fields."}
+            )
+
+    def save(self, *args, **kwargs) -> None:
+        self._validate_product_variant_consistency()
+        super().save(*args, **kwargs)

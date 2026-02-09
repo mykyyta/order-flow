@@ -1,0 +1,46 @@
+{% comment %}
+Section card - card with optional header and actions.
+
+Usage:
+  {% include "partials/section_card.html" with title="Деталі" %}
+    {% block card_content %}
+      <p>Content here</p>
+    {% endblock %}
+  {% endinclude %}
+
+  Or with actions:
+  {% include "partials/section_card.html" with title="Матеріали" action_url="/materials/add/" action_label="Додати" %}
+
+Parameters:
+  - title: card header title (optional)
+  - subtitle: card header subtitle (optional)
+  - action_url: URL for header action button
+  - action_label: label for header action button
+  - padding: apply padding to content (default: True)
+  - divided: show divider between header and content (default: True if title)
+{% endcomment %}
+
+<div class="card">
+    {% if title %}
+    <div class="flex items-center justify-between gap-4 px-4 py-3 {% if divided|default:True %}border-b border-slate-100{% endif %}">
+        <div>
+            <h3 class="text-sm font-semibold text-slate-900">{{ title }}</h3>
+            {% if subtitle %}
+            <p class="mt-0.5 text-xs text-slate-500">{{ subtitle }}</p>
+            {% endif %}
+        </div>
+        {% if action_url %}
+        <a href="{{ action_url }}" class="text-sm font-medium text-teal-600 hover:text-teal-700">
+            {{ action_label|default:"Додати" }}
+        </a>
+        {% endif %}
+        {% block card_header_actions %}{% endblock %}
+    </div>
+    {% endif %}
+
+    <div class="{% if padding|default:True %}p-4{% endif %}">
+        {% block card_content %}{% endblock %}
+    </div>
+
+    {% block card_footer %}{% endblock %}
+</div>

@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 from django.db import transaction
 
+from apps.catalog.variants import resolve_or_create_product_variant
 from apps.orders.domain.status import STATUS_FINISHED, STATUS_NEW, validate_status
 from apps.orders.models import Order, OrderStatusHistory
 from apps.orders.notifications import send_order_created, send_order_finished
@@ -34,8 +35,18 @@ def create_order(
     if color is None and primary_material_color is None:
         raise ValueError("Order requires color or primary material color")
 
+    product_variant = resolve_or_create_product_variant(
+        product_model_id=model.id,
+        color_id=color.id if color else None,
+        primary_material_color_id=primary_material_color.id if primary_material_color else None,
+        secondary_material_color_id=(
+            secondary_material_color.id if secondary_material_color else None
+        ),
+    )
+
     order = Order.objects.create(
         model=model,
+        product_variant=product_variant,
         color=color,
         primary_material_color=primary_material_color,
         secondary_material_color=secondary_material_color,
@@ -76,10 +87,8 @@ def _handle_finished_order(*, order: Order, changed_by: "CustomUser") -> None:
     from apps.inventory.services import add_to_stock
 
     add_to_stock(
+        product_variant_id=order.product_variant_id,
         product_model_id=order.model_id,
-        color_id=order.color_id,
-        primary_material_color_id=order.primary_material_color_id,
-        secondary_material_color_id=order.secondary_material_color_id,
         quantity=1,
         reason=StockMovement.Reason.PRODUCTION_IN,
         production_order=order,

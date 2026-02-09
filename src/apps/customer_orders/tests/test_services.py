@@ -1,8 +1,10 @@
 """Tests for customer order services."""
 import pytest
+from django.core.exceptions import ValidationError
 
 from apps.catalog.models import BundleColorMapping, BundleComponent
 from apps.catalog.models import BundlePreset, BundlePresetComponent
+from apps.catalog.models import ProductVariant
 from apps.customer_orders.models import (
     CustomerOrder,
     CustomerOrderLine,
@@ -34,6 +36,9 @@ def test_create_customer_order_creates_plain_line():
     line = CustomerOrderLine.objects.get(customer_order=order)
     assert line.product_model_id == model.id
     assert line.color_id == color.id
+    assert line.product_variant is not None
+    assert line.product_variant.product_id == model.id
+    assert line.product_variant.color_id == color.id
     assert line.quantity == 3
     assert line.production_mode == CustomerOrderLine.ProductionMode.AUTO
     assert line.production_status == CustomerOrderLine.ProductionStatus.PENDING
@@ -81,6 +86,7 @@ def test_create_customer_order_expands_fixed_bundle_mapping():
     assert components.count() == 2
     assert list(components.values_list("component_id", flat=True)) == sorted([clutch.id, strap.id])
     assert set(components.values_list("color_id", flat=True)) == {black.id}
+    assert not components.filter(product_variant__isnull=True).exists()
 
 
 @pytest.mark.django_db
@@ -232,3 +238,54 @@ def test_create_customer_order_expands_bundle_preset_components():
     assert len(components) == 2
     assert components[0].primary_material_color is not None
     assert components[1].primary_material_color is not None
+
+
+@pytest.mark.django_db
+def test_customer_order_line_rejects_mismatched_product_variant_on_save():
+    customer_order = CustomerOrder.objects.create(
+        source=CustomerOrder.Source.SITE,
+        customer_info="Mismatch line",
+    )
+    model = ProductModelFactory(is_bundle=False)
+    color = ColorFactory()
+    wrong_variant = ProductVariant.objects.create(
+        product=model,
+        color=ColorFactory(),
+    )
+
+    with pytest.raises(ValidationError, match="must match"):
+        CustomerOrderLine.objects.create(
+            customer_order=customer_order,
+            product_model=model,
+            color=color,
+            product_variant=wrong_variant,
+            quantity=1,
+        )
+
+
+@pytest.mark.django_db
+def test_customer_order_component_rejects_mismatched_product_variant_on_save():
+    customer_order = CustomerOrder.objects.create(
+        source=CustomerOrder.Source.SITE,
+        customer_info="Mismatch component",
+    )
+    bundle = ProductModelFactory(is_bundle=True)
+    component = ProductModelFactory(is_bundle=False)
+    line = CustomerOrderLine.objects.create(
+        customer_order=customer_order,
+        product_model=bundle,
+        color=ColorFactory(),
+    )
+    component_color = ColorFactory()
+    wrong_variant = ProductVariant.objects.create(
+        product=ProductModelFactory(is_bundle=False),
+        color=component_color,
+    )
+
+    with pytest.raises(ValidationError, match="must match"):
+        CustomerOrderLineComponent.objects.create(
+            order_line=line,
+            component=component,
+            color=component_color,
+            product_variant=wrong_variant,
+        )

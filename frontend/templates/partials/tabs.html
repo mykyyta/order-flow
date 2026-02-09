@@ -1,0 +1,68 @@
+{% comment %}
+Horizontal tabs component.
+
+Usage:
+  {% include "partials/tabs.html" with tabs=tab_items active=current_tab %}
+
+  Where tab_items is a list:
+  [
+    {"id": "active", "label": "Активні", "url": "/orders/", "count": 12},
+    {"id": "completed", "label": "Завершені", "url": "/orders/completed/"},
+    {"id": "archive", "label": "Архів", "url": "/orders/archive/", "badge": "42"},
+  ]
+
+Parameters:
+  - tabs: list of tab items (required)
+  - active: id of active tab
+  - variant: "default", "pills", "underline" (default: "underline")
+  - size: "sm", "md" (default: "md")
+{% endcomment %}
+
+{% with variant=variant|default:"underline" size=size|default:"md" %}
+<nav class="flex {% if variant == 'pills' %}gap-1{% else %}gap-4 border-b border-slate-200{% endif %}" aria-label="Tabs">
+    {% for tab in tabs %}
+    <a
+        href="{{ tab.url }}"
+        class="
+            {% if size == 'sm' %}text-sm{% else %}text-sm{% endif %}
+            font-medium transition-colors
+            {% if variant == 'pills' %}
+                rounded-md px-3 py-1.5
+                {% if tab.id == active %}
+                    bg-teal-100 text-teal-800
+                {% else %}
+                    text-slate-600 hover:bg-slate-100 hover:text-slate-900
+                {% endif %}
+            {% elif variant == 'underline' %}
+                px-1 py-3 border-b-2 -mb-px
+                {% if tab.id == active %}
+                    border-teal-500 text-teal-600
+                {% else %}
+                    border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300
+                {% endif %}
+            {% else %}
+                px-3 py-2
+                {% if tab.id == active %}
+                    text-slate-900
+                {% else %}
+                    text-slate-500 hover:text-slate-700
+                {% endif %}
+            {% endif %}
+        "
+        {% if tab.id == active %}aria-current="page"{% endif %}
+    >
+        {{ tab.label }}
+        {% if tab.count %}
+        <span class="ml-1.5 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
+            {{ tab.count }}
+        </span>
+        {% endif %}
+        {% if tab.badge %}
+        <span class="ml-1.5 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
+            {{ tab.badge }}
+        </span>
+        {% endif %}
+    </a>
+    {% endfor %}
+</nav>
+{% endwith %}

@@ -1,0 +1,79 @@
+{% comment %}
+Filter bar with optional search and filter dropdowns.
+
+Usage:
+  {% include "partials/filter_bar.html" with search=True search_placeholder="Пошук..." filters=filter_form %}
+
+  OR with manual filters:
+  {% include "partials/filter_bar.html" with search=True %}
+    {% block extra_filters %}
+      <select name="status" class="form-select">...</select>
+    {% endblock %}
+  {% endinclude %}
+
+Parameters:
+  - search: show search input (default: False)
+  - search_name: input name (default: "q")
+  - search_value: current search value
+  - search_placeholder: placeholder text (default: "Пошук...")
+  - filters: Django form with filter fields
+  - action_url: form action URL (default: current page)
+  - show_clear: show clear button (default: True if any filter active)
+  - clear_url: URL to clear all filters
+{% endcomment %}
+
+<form
+    method="get"
+    action="{{ action_url|default:'' }}"
+    class="flex flex-wrap items-stretch gap-2"
+    x-data="{ hasFilters: {{ search_value|yesno:'true,false' }} }"
+>
+    {# Search input #}
+    {% if search %}
+    <div class="relative min-w-0 flex-1 sm:max-w-xs">
+        <input
+            type="search"
+            name="{{ search_name|default:'q' }}"
+            value="{{ search_value|default:'' }}"
+            placeholder="{{ search_placeholder|default:'Пошук...' }}"
+            class="form-input w-full pl-9"
+            x-on:input="hasFilters = $el.value.length > 0"
+        >
+        <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
+    </div>
+    {% endif %}
+
+    {# Filter dropdowns from form #}
+    {% if filters %}
+    {% for field in filters %}
+    <div class="min-w-0 sm:w-auto">
+        {{ field }}
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    {# Extra filters slot #}
+    {% block extra_filters %}{% endblock %}
+
+    {# Submit button #}
+    <button type="submit" class="btn-secondary shrink-0 px-4">
+        Показати
+    </button>
+
+    {# Clear button #}
+    {% if clear_url %}
+    <a
+        href="{{ clear_url }}"
+        class="btn-secondary flex h-10 w-10 shrink-0 items-center justify-center px-0"
+        :class="{ 'pointer-events-none opacity-40': !hasFilters }"
+        aria-label="Очистити фільтри"
+        title="Очистити"
+    >
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+    </a>
+    {% endif %}
+</form>

@@ -1,6 +1,8 @@
 """Tests for inventory services."""
 import pytest
+from django.core.exceptions import ValidationError
 
+from apps.catalog.models import ProductVariant
 from apps.inventory.models import StockMovement, StockRecord
 from apps.inventory.services import add_to_stock, get_stock_quantity, remove_from_stock
 from apps.orders.tests.conftest import UserFactory
@@ -31,6 +33,9 @@ def test_add_to_stock_creates_record_and_movement():
     )
 
     assert record.quantity == 4
+    assert record.product_variant is not None
+    assert record.product_variant.product_id == model.id
+    assert record.product_variant.color_id == color.id
     assert StockRecord.objects.get(product_model=model, color=color).quantity == 4
 
     movement = StockMovement.objects.get(stock_record=record)
@@ -137,3 +142,81 @@ def test_add_and_remove_stock_by_material_colors():
         ).quantity
         == 2
     )
+
+
+@pytest.mark.django_db
+def test_stock_record_rejects_mismatched_product_variant_on_save():
+    model = ProductModelFactory(is_bundle=False)
+    color = ColorFactory()
+    wrong_variant = ProductVariant.objects.create(
+        product=model,
+        color=ColorFactory(),
+    )
+
+    with pytest.raises(ValidationError, match="must match"):
+        StockRecord.objects.create(
+            product_model=model,
+            color=color,
+            product_variant=wrong_variant,
+            quantity=1,
+        )
+
+
+@pytest.mark.django_db
+def test_get_stock_quantity_accepts_product_variant_id():
+    model = ProductModelFactory(is_bundle=False)
+    color = ColorFactory()
+    variant = ProductVariant.objects.create(product=model, color=color)
+    user = UserFactory()
+
+    add_to_stock(
+        product_variant_id=variant.id,
+        quantity=2,
+        reason=StockMovement.Reason.ADJUSTMENT_IN,
+        user=user,
+    )
+
+    assert get_stock_quantity(product_variant_id=variant.id) == 2
+
+
+@pytest.mark.django_db
+def test_add_to_stock_accepts_product_variant_id_without_legacy_fields():
+    model = ProductModelFactory(is_bundle=False)
+    color = ColorFactory()
+    variant = ProductVariant.objects.create(product=model, color=color)
+    user = UserFactory()
+
+    record = add_to_stock(
+        product_variant_id=variant.id,
+        quantity=3,
+        reason=StockMovement.Reason.PRODUCTION_IN,
+        user=user,
+    )
+
+    assert record.product_variant_id == variant.id
+    assert record.product_model_id == model.id
+    assert record.color_id == color.id
+    assert record.quantity == 3
+
+
+@pytest.mark.django_db
+def test_remove_from_stock_accepts_product_variant_id():
+    model = ProductModelFactory(is_bundle=False)
+    color = ColorFactory()
+    variant = ProductVariant.objects.create(product=model, color=color)
+    user = UserFactory()
+
+    add_to_stock(
+        product_variant_id=variant.id,
+        quantity=5,
+        reason=StockMovement.Reason.ADJUSTMENT_IN,
+        user=user,
+    )
+    record = remove_from_stock(
+        product_variant_id=variant.id,
+        quantity=2,
+        reason=StockMovement.Reason.ORDER_OUT,
+        user=user,
+    )
+
+    assert record.quantity == 3

@@ -131,3 +131,37 @@ def test_manual_mode_does_not_create_production_orders():
     assert Order.objects.filter(customer_order_line=line).count() == 0
     assert line.production_status == CustomerOrderLine.ProductionStatus.PENDING
     assert customer_order.status == CustomerOrder.Status.PRODUCTION
+
+
+@pytest.mark.django_db
+def test_auto_mode_resolves_stock_by_product_variant_id(monkeypatch):
+    user = UserFactory()
+    model = ProductModelFactory(is_bundle=False)
+    color = ColorFactory()
+    captured_kwargs: dict[str, int | None] = {}
+
+    def fake_get_stock_quantity(**kwargs):
+        captured_kwargs.update(kwargs)
+        return 1
+
+    monkeypatch.setattr("apps.inventory.services.get_stock_quantity", fake_get_stock_quantity)
+
+    with patch("apps.orders.services.send_order_created"):
+        customer_order = create_customer_order(
+            source=CustomerOrder.Source.WHOLESALE,
+            customer_info="Variant stock lookup",
+            lines_data=[
+                {
+                    "product_model_id": model.id,
+                    "color_id": color.id,
+                    "quantity": 1,
+                }
+            ],
+            create_production_orders=True,
+            created_by=user,
+        )
+
+    line = customer_order.lines.get()
+    assert line.product_variant_id is not None
+    assert captured_kwargs == {"product_variant_id": line.product_variant_id}
+    assert Order.objects.filter(customer_order_line=line).count() == 0
