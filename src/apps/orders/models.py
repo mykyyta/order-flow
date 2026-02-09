@@ -2,6 +2,7 @@ from django.db import models
 from django.utils import timezone
 from django.contrib.auth.models import AbstractUser
 from config import settings
+from apps.orders.themes import DEFAULT_THEME, THEME_CHOICES
 from apps.orders.domain.order_statuses import (
     STATUS_FINISHED,
     STATUS_NEW,
@@ -17,6 +18,12 @@ class CustomUser(AbstractUser):
     telegram_id = models.CharField(
         max_length=50, blank=True, null=True, unique=True, verbose_name="Telegram ID"
     )
+    theme = models.CharField(
+        max_length=32,
+        choices=THEME_CHOICES,
+        default=DEFAULT_THEME,
+        verbose_name="Theme",
+    )
 
     def __str__(self):
         return self.username
@@ -24,8 +31,8 @@ class CustomUser(AbstractUser):
 
 class Order(models.Model):
     id = models.AutoField(primary_key=True)
-    model = models.ForeignKey("catalog.ProductModel", on_delete=models.CASCADE)
-    color = models.ForeignKey("catalog.Color", on_delete=models.CASCADE)
+    model = models.ForeignKey("catalog.ProductModel", on_delete=models.PROTECT)
+    color = models.ForeignKey("catalog.Color", on_delete=models.PROTECT)
     embroidery = models.BooleanField(default=False)
     comment = models.TextField(blank=True, null=True)
     urgent = models.BooleanField(default=False)

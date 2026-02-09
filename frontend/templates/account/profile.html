@@ -20,6 +20,16 @@
                 </div>
 
                 <div class="profile-section">
+                    <h2 class="detail-group-title profile-section-title">Тема</h2>
+                    <label for="theme" class="sr-only">Тема</label>
+                    <select id="theme" name="theme" class="form-select">
+                        {% for value, label in theme_choices %}
+                            <option value="{{ value }}" {% if user.theme == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="profile-section">
                     <h2 class="detail-group-title profile-section-title">Сповіщення</h2>
                     <div class="profile-checkbox-list">
                         <label class="profile-checkbox-label flex min-h-[44px] cursor-pointer items-center gap-3 rounded-md py-2 transition-colors hover:bg-slate-50/80 sm:py-2.5">

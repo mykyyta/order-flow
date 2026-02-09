@@ -9,11 +9,13 @@ from django.contrib.auth import (
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from apps.accounts.models import NotificationSetting
+from apps.orders.themes import THEME_CHOICES, normalize_theme
 
 
 def auth_login(request):
@@ -63,28 +65,51 @@ def auth_logout(request):
 
 
 @login_required
+@transaction.atomic
 def profile_view(request):
     user = request.user
     notif_settings, _created = NotificationSetting.objects.get_or_create(user=user)
 
     if request.method == "POST":
         new_username = (request.POST.get("username") or "").strip()
+        raw_theme = request.POST.get("theme")
+        if raw_theme is None:
+            new_theme = user.theme
+        else:
+            new_theme = normalize_theme(raw_theme)
+            if new_theme is None:
+                messages.error(request, "Невідома тема.")
+                return redirect("profile")
 
         if not new_username:
             messages.error(request, "Логін не може бути порожнім.")
             return redirect("profile")
 
+        update_fields: list[str] = []
         if new_username != user.username:
             user_model = get_user_model()
-            if user_model.objects.filter(username__iexact=new_username).exclude(pk=user.pk).exists():
+            if (
+                user_model.objects.filter(username__iexact=new_username)
+                .exclude(pk=user.pk)
+                .exists()
+            ):
                 messages.error(request, "Такий логін вже зайнятий.")
                 return redirect("profile")
             user.username = new_username
-            user.save(update_fields=["username"])
+            update_fields.append("username")
+
+        if new_theme != user.theme:
+            user.theme = new_theme
+            update_fields.append("theme")
+
+        if update_fields:
+            user.save(update_fields=update_fields)
 
         notif_settings.notify_order_created = request.POST.get("notify_order_created") == "on"
         notif_settings.notify_order_finished = request.POST.get("notify_order_finished") == "on"
-        notif_settings.notify_order_created_pause = request.POST.get("notify_order_created_pause") == "on"
+        notif_settings.notify_order_created_pause = (
+            request.POST.get("notify_order_created_pause") == "on"
+        )
         notif_settings.save()
 
         messages.success(request, "Готово! Налаштування збережено.")
@@ -94,7 +119,12 @@ def profile_view(request):
     return render(
         request,
         "account/profile.html",
-        {"page_title": "Профіль", "user": user, "notification_settings": notif_settings},
+        {
+            "page_title": "Профіль",
+            "user": user,
+            "notification_settings": notif_settings,
+            "theme_choices": THEME_CHOICES,
+        },
     )
 
 

@@ -9,7 +9,7 @@ MANAGE ?= $(PYTHON) src/manage.py
 
 TAILWIND ?= bin/tailwindcss
 
-.PHONY: dev dev-detached down logs migrate shell test check lint format ruff-check ruff-format build push deploy tw-install tw-watch tw-build
+.PHONY: dev dev-detached down logs migrate shell test check lint format ruff-check ruff-format build push deploy tw-install tw-watch tw-build dev-refresh
 
 dev:
 	docker compose up --build
@@ -80,3 +80,6 @@ tw-watch: tw-build
 tw-build:
 	@test -f $(TAILWIND) || (echo "Run: make tw-install" && exit 1)
 	$(TAILWIND) -i frontend/assets/tailwind/input.css -o frontend/static/css/app.css --minify
+
+# Full refresh: restart containers, rebuild CSS, run migrations.
+dev-refresh: down dev-detached tw-build migrate

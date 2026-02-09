@@ -131,6 +131,7 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "django.template.context_processors.tz",
                 "config.context_processors.site_brand",
+                "config.context_processors.theme",
             ],
         },
     },

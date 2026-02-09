@@ -1,7 +1,7 @@
 {% load static %}
 {% load order_ui %}
 <!DOCTYPE html>
-<html lang="uk" data-theme="lumen_subtle">
+<html lang="uk"{% if active_theme %} data-theme="{{ active_theme }}"{% endif %}>
 	<head>
 	    <meta charset="UTF-8">
 	    <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -9,39 +9,36 @@
 	    <link rel="preconnect" href="https://fonts.googleapis.com">
 	    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 	    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
-	    <script>
-	      (function () {
-	        // Theme preview: set ?theme=lumen_subtle (or theme=default to clear).
-	        // Stored in localStorage; default is lumen_subtle for a subtle backdrop.
-	        var params = new URLSearchParams(window.location.search);
-	        var themeParam = params.get("theme");
-	        var stored = null;
-	        try {
-	          stored = window.localStorage.getItem("theme");
-	        } catch (_err) {
-	          stored = null;
-	        }
-	        var theme = themeParam || stored || "lumen_subtle";
-
-	        if (theme === "default" || theme === "none") {
-	          document.documentElement.removeAttribute("data-theme");
-	          try {
-	            window.localStorage.removeItem("theme");
-	          } catch (_err) {}
-	          return;
-	        }
-
-	        document.documentElement.setAttribute("data-theme", theme);
-	        if (themeParam) {
-	          try {
-	            window.localStorage.setItem("theme", themeParam);
-	          } catch (_err) {}
-	        }
-	      })();
-		    </script>
 		    <link href="{% static 'css/app.css' %}" rel="stylesheet">
 		    <link href="{% static 'css/brand.css' %}" rel="stylesheet">
-		    <link href="{% static 'css/theme_preview.css' %}" rel="stylesheet">
+		    <link href="{% static 'css/theme_preview.css' %}?v=20260209-night-3" rel="stylesheet">
+            <style>
+              /* Critical fallback: guarantees a true dark surface for lumen_night even with stale static cache. */
+              html[data-theme="lumen_night"] {
+                --color-slate-50: #0a0a0d;
+                --color-slate-100: #0f1015;
+                --color-slate-200: #171a22;
+                --color-slate-300: #252a38;
+                --color-slate-400: #3a4257;
+                --color-slate-500: #58637d;
+                --color-slate-600: #7a879f;
+                --color-slate-700: #aab3c4;
+                --color-slate-800: #d5dae4;
+                --color-slate-900: #f1f5f9;
+              }
+              [data-theme="lumen_night"] body {
+                background-color: #0a0a0d;
+                color: #e8e9ee;
+              }
+              [data-theme="lumen_night"] nav {
+                background-color: rgba(18, 20, 26, 0.78);
+                border-bottom-color: rgba(148, 163, 184, 0.16);
+              }
+              [data-theme="lumen_night"] .bg-white,
+              [data-theme="lumen_night"] .card {
+                background-color: rgba(18, 20, 26, 0.82);
+              }
+            </style>
 		    {% block extra_head %}{% endblock %}
 	</head>
 <body class="bg-slate-50 font-sans text-slate-800 antialiased" data-has-nav="{% if request.user.is_authenticated %}1{% else %}0{% endif %}">

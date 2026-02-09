@@ -54,12 +54,13 @@ Open:
 - `http://localhost:8000`
 
 ## UI Theme Preview / Palette Lab
-Theme preview is controlled via URL param `?theme=<name>` and is persisted in `localStorage`.
+Theme preview is controlled via URL param `?theme=<name>` (for quick checks).
 
 Available preview themes:
-- `soft_indigo` (muted multi-accent)
-- `soft_warm` (muted warm multi-accent)
-- `dune_lite` (warm “spice”)
+- `lumen_subtle`
+- `lumen_warm`
+- `lumen_night`
+- `dune_lite`
 
 Palette lab page (requires login):
 - `http://localhost:8000/palette/`

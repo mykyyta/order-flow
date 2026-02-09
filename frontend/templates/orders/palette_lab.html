@@ -15,56 +15,18 @@
         <div class="space-y-1">
           <div class="text-sm font-medium text-slate-900">Теми</div>
           <div class="text-sm text-slate-600">
-            Перемикай теми через <span class="font-mono">?theme=...</span> (запам’ятовується в localStorage).
-            Рекомендовано для «неяскравої» сучасної палітри: <span class="font-mono">soft_indigo</span>.
+            Перемикай теми через <span class="font-mono">?theme=...</span> (тимчасово, для перегляду).
           </div>
         </div>
 
         <div class="flex flex-wrap gap-2">
           <a class="btn-secondary px-3 py-2" href="?theme=default">Default</a>
-          <a class="btn-secondary px-3 py-2" href="?theme=lumen">lumen</a>
-          <a class="btn-secondary px-3 py-2" href="?theme=lumen_cool">lumen_cool</a>
-          <a class="btn-secondary px-3 py-2" href="?theme=lumen_warm">lumen_warm</a>
-          <a class="btn-secondary px-3 py-2" href="?theme=lumen_subtle">lumen_subtle</a>
-          <a class="btn-secondary px-3 py-2" href="?theme=soft_indigo">soft_indigo</a>
-          <a class="btn-secondary px-3 py-2" href="?theme=soft_warm">soft_warm</a>
-          <a class="btn-secondary px-3 py-2" href="?theme=dune_lite">dune_lite</a>
+          <a class="btn-secondary px-3 py-2" href="?theme=lumen_subtle">Lumen (Subtle)</a>
+          <a class="btn-secondary px-3 py-2" href="?theme=lumen_warm">Lumen (Warm)</a>
+          <a class="btn-secondary px-3 py-2" href="?theme=lumen_night">Lumen (Night)</a>
+          <a class="btn-secondary px-3 py-2" href="?theme=dune_lite">Dune Lite</a>
         </div>
 
-        <div class="rounded-md border border-slate-200 bg-slate-50 p-4">
-          <div class="text-sm font-medium text-slate-900">Редактор (для soft_*)</div>
-          <div class="mt-1 text-sm text-slate-600">
-            Зміни нижче підкручують базові кольори (<span class="font-mono">--of-*</span>) і одразу перераховують м’які відтінки через <span class="font-mono">color-mix()</span>.
-          </div>
-
-          <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
-            <div>
-              <label class="form-label" for="pick-brand">Brand</label>
-              <input id="pick-brand" type="color" class="form-input h-10 px-2 py-1" />
-            </div>
-            <div>
-              <label class="form-label" for="pick-info">Info</label>
-              <input id="pick-info" type="color" class="form-input h-10 px-2 py-1" />
-            </div>
-            <div>
-              <label class="form-label" for="pick-success">Success</label>
-              <input id="pick-success" type="color" class="form-input h-10 px-2 py-1" />
-            </div>
-            <div>
-              <label class="form-label" for="pick-warning">Warning</label>
-              <input id="pick-warning" type="color" class="form-input h-10 px-2 py-1" />
-            </div>
-            <div>
-              <label class="form-label" for="pick-danger">Danger</label>
-              <input id="pick-danger" type="color" class="form-input h-10 px-2 py-1" />
-            </div>
-          </div>
-
-          <div class="mt-4 flex flex-wrap items-center gap-2">
-            <button type="button" class="btn-secondary px-3 py-2" id="btn-reset-overrides">Reset overrides</button>
-            <div class="text-xs text-slate-500" id="overrides-hint"></div>
-          </div>
-        </div>
       </div>
     </div>
 

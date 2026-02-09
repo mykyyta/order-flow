@@ -644,3 +644,264 @@ html[data-theme="lumen_subtle"] .status-mark.text-blue-500::before {
   opacity: 0;
   filter: none;
 }
+
+/*
+Lumen Night: modern dark with subtle glows (emoji-friendly) + gradients.
+*/
+html[data-theme="lumen_night"] {
+  /* Neutral dark (gray/black), with a soft “lumen” glow. */
+  --of-bg: #0a0a0d;
+  --of-surface: rgba(18, 20, 26, 0.78);
+  --of-ink: #e8e9ee;
+
+  /* Keep accents intentionally muted to avoid colorful cast around emoji. */
+  --of-brand: #64748b; /* slate */
+  --of-info: #8fa1bc; /* steel blue */
+  --of-success: #7e9f91; /* muted sage */
+  --of-warning: #b7a07d; /* muted sand */
+  --of-danger: #b28a98; /* muted mauve */
+
+  --of-selection: var(--of-info);
+  --of-logo-a: color-mix(in oklab, var(--of-info) 52%, #e2e8f0);
+  --of-logo-b: color-mix(in oklab, var(--of-brand) 55%, #e2e8f0);
+
+  /* Dark-mode slate scale (used by tailwind utilities across templates). */
+  --color-slate-50: #0a0a0d;
+  --color-slate-100: #0f1015;
+  --color-slate-200: #171a22;
+  --color-slate-300: #252a38;
+  --color-slate-400: #3a4257;
+  --color-slate-500: #58637d;
+  --color-slate-600: #7a879f;
+  --color-slate-700: #aab3c4;
+  --color-slate-800: #d5dae4;
+  --color-slate-900: #f1f5f9;
+
+  --color-teal-50: color-mix(in oklab, var(--of-brand) 10%, var(--of-bg));
+  --color-teal-500: color-mix(in oklab, var(--of-brand) 88%, white);
+  --color-teal-600: var(--of-brand);
+  --color-teal-700: color-mix(in oklab, var(--of-brand) 86%, black);
+
+  --color-primary: var(--of-brand);
+  --color-primary-dark: color-mix(in oklab, var(--of-brand) 86%, black);
+  --color-primary-muted: color-mix(in oklab, var(--of-brand) 12%, var(--of-bg));
+  --color-primary-focus: color-mix(in oklab, var(--of-brand) 62%, white);
+}
+
+[data-theme="lumen_night"] body {
+  background-color: var(--of-bg);
+  background-image:
+    radial-gradient(
+      900px circle at 10% 0%,
+      color-mix(in oklab, var(--of-brand) 8%, var(--of-bg)) 0%,
+      transparent 64%
+    ),
+    radial-gradient(
+      860px circle at 100% 12%,
+      color-mix(in oklab, var(--of-info) 6%, var(--of-bg)) 0%,
+      transparent 66%
+    ),
+    radial-gradient(
+      980px circle at 78% 110%,
+      color-mix(in oklab, var(--of-success) 4%, var(--of-bg)) 0%,
+      transparent 68%
+    ),
+    radial-gradient(1200px circle at 40% 120%, rgba(255, 255, 255, 0.015) 0%, transparent 58%);
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  color: var(--of-ink);
+}
+
+[data-theme="lumen_night"] nav {
+  background-color: rgba(18, 20, 26, 0.78);
+  border-bottom-color: rgba(148, 163, 184, 0.16);
+  backdrop-filter: saturate(1.2) blur(12px);
+}
+
+[data-theme="lumen_night"] .nav-logo .brand-wordmark {
+  background-image: linear-gradient(90deg, var(--of-logo-a), var(--of-logo-b));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+[data-theme="lumen_night"] .brand-emoji-wrap {
+  background: linear-gradient(180deg, rgba(36, 40, 52, 0.9), rgba(20, 22, 30, 0.95));
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.45),
+    0 1px 0 rgba(255, 255, 255, 0.06) inset;
+}
+
+[data-theme="lumen_night"] .bg-slate-50 {
+  background-color: var(--of-bg);
+}
+
+[data-theme="lumen_night"] .bg-white {
+  background-color: var(--of-surface);
+}
+
+[data-theme="lumen_night"] .border-slate-100 {
+  border-color: rgba(148, 163, 184, 0.12);
+}
+[data-theme="lumen_night"] .border-slate-200 {
+  border-color: rgba(148, 163, 184, 0.14);
+}
+[data-theme="lumen_night"] .border-slate-300 {
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+[data-theme="lumen_night"] .text-slate-900 {
+  color: #f1f5f9;
+}
+[data-theme="lumen_night"] .text-slate-800 {
+  color: #e5e7eb;
+}
+[data-theme="lumen_night"] .text-slate-700 {
+  color: #cbd5e1;
+}
+[data-theme="lumen_night"] .text-slate-600 {
+  color: #94a3b8;
+}
+[data-theme="lumen_night"] .text-slate-500 {
+  color: #64748b;
+}
+[data-theme="lumen_night"] .text-slate-400 {
+  color: #475569;
+}
+
+[data-theme="lumen_night"] .card {
+  background-color: rgba(18, 20, 26, 0.82);
+  border-color: rgba(148, 163, 184, 0.18);
+  box-shadow:
+    0 1px 0 0 rgba(255, 255, 255, 0.06),
+    0 14px 40px -28px rgba(0, 0, 0, 0.7);
+}
+
+[data-theme="lumen_night"] .btn-secondary {
+  background-color: rgba(18, 20, 26, 0.52);
+  border-color: rgba(148, 163, 184, 0.2);
+  color: #e5e7eb;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.05),
+    0 10px 24px -20px rgba(0, 0, 0, 0.75);
+}
+[data-theme="lumen_night"] .btn-secondary:hover:not(:disabled) {
+  background-color: rgba(30, 33, 42, 0.72);
+}
+
+[data-theme="lumen_night"] .btn-primary {
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.05),
+    0 12px 24px -20px rgba(0, 0, 0, 0.78);
+}
+[data-theme="lumen_night"] .btn-primary:hover:not(:disabled) {
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.06),
+    0 14px 28px -20px rgba(0, 0, 0, 0.8);
+}
+[data-theme="lumen_night"] .btn-primary:active:not(:disabled) {
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.04),
+    0 8px 18px -18px rgba(0, 0, 0, 0.82);
+}
+
+[data-theme="lumen_night"] .form-input,
+[data-theme="lumen_night"] .form-select,
+[data-theme="lumen_night"] .form-select-trigger,
+[data-theme="lumen_night"] .form-textarea {
+  background-color: rgba(18, 20, 26, 0.62);
+  border-color: rgba(148, 163, 184, 0.2);
+  color: #e5e7eb;
+}
+[data-theme="lumen_night"] .form-input::placeholder {
+  color: rgba(148, 163, 184, 0.9);
+}
+[data-theme="lumen_night"] .form-textarea::placeholder {
+  color: rgba(148, 163, 184, 0.9);
+}
+[data-theme="lumen_night"] .form-select,
+[data-theme="lumen_night"] .form-select-trigger {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+}
+[data-theme="lumen_night"] .form-select-dropdown {
+  background-color: rgba(18, 20, 26, 0.96);
+  border-color: rgba(148, 163, 184, 0.2);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.05),
+    0 16px 36px -20px rgba(0, 0, 0, 0.82);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.45) rgba(18, 20, 26, 0.3);
+}
+[data-theme="lumen_night"] .form-select-dropdown::-webkit-scrollbar {
+  width: 10px;
+}
+[data-theme="lumen_night"] .form-select-dropdown::-webkit-scrollbar-track {
+  background: rgba(18, 20, 26, 0.35);
+}
+[data-theme="lumen_night"] .form-select-dropdown::-webkit-scrollbar-thumb {
+  background-color: rgba(148, 163, 184, 0.45);
+  border-radius: 9999px;
+  border: 2px solid rgba(18, 20, 26, 0.35);
+}
+[data-theme="lumen_night"] .form-select-dropdown::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(148, 163, 184, 0.62);
+}
+[data-theme="lumen_night"] .form-select-option {
+  color: #e5e7eb;
+}
+[data-theme="lumen_night"] .form-select-option:hover {
+  background-color: rgba(148, 163, 184, 0.12);
+}
+[data-theme="lumen_night"] .form-select-option[aria-selected="true"] {
+  background-color: rgba(100, 116, 139, 0.35);
+  color: #f1f5f9;
+}
+
+[data-theme="lumen_night"] .form-checkbox {
+  background-color: rgba(18, 20, 26, 0.62);
+  border-color: rgba(148, 163, 184, 0.24);
+}
+[data-theme="lumen_night"] .form-checkbox:hover {
+  border-color: rgba(148, 163, 184, 0.36);
+}
+[data-theme="lumen_night"] .form-checkbox:checked,
+[data-theme="lumen_night"] .form-checkbox:indeterminate {
+  border-color: var(--of-selection, var(--color-primary));
+  background-color: color-mix(in oklab, var(--of-selection, var(--color-primary)) 26%, #0b1020);
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23e2e8f0' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round'%3e%3cpath d='M5 12l5 5L20 7'/%3e%3c/svg%3e");
+}
+[data-theme="lumen_night"] .form-checkbox:indeterminate {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3e%3cpath d='M5 12h14' stroke='%23e2e8f0' stroke-width='2.25' stroke-linecap='round'/%3e%3c/svg%3e");
+}
+
+[data-theme="lumen_night"] .hover\\:bg-slate-50:hover {
+  background-color: rgba(148, 163, 184, 0.08);
+}
+
+[data-theme="lumen_night"] .catalog-chip-link,
+[data-theme="lumen_night"] .catalog-chip-text {
+  border-color: rgba(148, 163, 184, 0.2);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.04),
+    0 8px 18px -16px rgba(0, 0, 0, 0.7);
+}
+[data-theme="lumen_night"] .catalog-chip-availability-in,
+[data-theme="lumen_night"] .catalog-chip-availability-low,
+[data-theme="lumen_night"] .catalog-chip-availability-out {
+  background-color: rgba(30, 33, 42, 0.75);
+  color: #d5dae4;
+}
+[data-theme="lumen_night"] .catalog-chip-availability-in:hover,
+[data-theme="lumen_night"] .catalog-chip-availability-low:hover,
+[data-theme="lumen_night"] .catalog-chip-availability-out:hover {
+  background-color: rgba(42, 46, 58, 0.86);
+}
+
+[data-theme="lumen_night"] .data-table thead {
+  background-color: rgba(26, 29, 38, 0.88);
+}
+[data-theme="lumen_night"] .data-table tbody {
+  background-color: rgba(18, 20, 26, 0.78);
+}
+[data-theme="lumen_night"] .data-table tbody tr:hover {
+  background-color: rgba(148, 163, 184, 0.08);
+}
