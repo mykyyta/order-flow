@@ -48,7 +48,18 @@ class MaterialDetailUpdateView(LoginRequiredMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["page_title"] = "Підправити матеріал"
-        context["material"] = self.object
+        context["object"] = self.object
+        context["form_id"] = "material-edit-form"
+        context["cancel_url"] = reverse_lazy("materials")
+        context["archive_url"] = reverse_lazy(
+            "material_archive", kwargs={"pk": self.object.pk}
+        )
+        context["unarchive_url"] = reverse_lazy(
+            "material_unarchive", kwargs={"pk": self.object.pk}
+        )
+        context["back_url"] = reverse_lazy("materials")
+        context["back_label"] = "Назад до матеріалів"
+        context["archived_message"] = "Цей матеріал в архіві."
         return context
 
     def form_valid(self, form):
@@ -65,7 +76,12 @@ def materials_archive(request):
     return render(
         request,
         "materials/materials_archive.html",
-        {"page_title": "Архів матеріалів", "materials": materials},
+        {
+            "page_title": "Архів матеріалів",
+            "items": materials,
+            "back_url": reverse_lazy("materials"),
+            "empty_message": "Архів порожній.",
+        },
     )
 
 

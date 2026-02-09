@@ -8,17 +8,8 @@
     {% csrf_token %}
 
     <div class="space-y-4">
-        <div>
-            <label for="id_model" class="form-label">Модель</label>
-            {{ form.model }}
-            {% if form.model.errors %}<p class="form-error">{{ form.model.errors.0 }}</p>{% endif %}
-        </div>
-
-        <div>
-            <label for="id_color" class="form-label">Колір</label>
-            {{ form.color }}
-            {% if form.color.errors %}<p class="form-error">{{ form.color.errors.0 }}</p>{% endif %}
-        </div>
+        {% include "partials/form_field.html" with field=form.model label="Модель" %}
+        {% include "partials/form_field.html" with field=form.color label="Колір" %}
 
         <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
             {% include "partials/form_checkbox_option.html" with field=form.etsy label="Etsy" %}
@@ -29,11 +20,7 @@
             {% endif %}
         </div>
 
-        <div>
-            <label for="id_comment" class="sr-only">Коментар</label>
-            {{ form.comment }}
-            {% if form.comment.errors %}<p class="form-error">{{ form.comment.errors.0 }}</p>{% endif %}
-        </div>
+        {% include "partials/form_field.html" with field=form.comment %}
 
         <div class="flex flex-wrap items-center gap-3 pt-1">
             <button type="submit" class="btn-primary">Зберегти</button>

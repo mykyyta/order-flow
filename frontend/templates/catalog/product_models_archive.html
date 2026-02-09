@@ -1,27 +1,11 @@
-{% extends "base.html" %}
+{% extends "base_archive_page.html" %}
 
 {% block title %}Архів моделей{% endblock %}
 
-{% block content %}
-
-{% include "partials/messages.html" %}
-
-<div class="space-y-4">
-    <div class="flex items-center justify-start gap-4">
-        <a href="{% url 'product_models' %}" class="link-back">&larr; До активних</a>
-    </div>
-
-    <div>
-        {% if models %}
-        <div class="flex flex-wrap gap-2">
-            {% for model in models %}
-            <a href="{% url 'product_model_edit' model.id %}" class="catalog-chip-link catalog-chip-availability-out">{{ model.name }}</a>
-            {% endfor %}
-        </div>
-        {% else %}
-        {% include "partials/empty_state.html" with message="Архів порожній." %}
-        {% endif %}
-    </div>
-</div>
-
+{% block archive_items %}
+    {% for model in items %}
+    <a href="{% url 'product_model_edit' model.id %}" class="catalog-chip-link catalog-chip-availability-out">
+        {{ model.name }}
+    </a>
+    {% endfor %}
 {% endblock %}

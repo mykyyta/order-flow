@@ -1,0 +1,55 @@
+{% extends "base_form_page.html" %}
+{% comment %}
+Base template for catalog edit pages (color, product_model, material).
+Provides: archived warning, form structure, action buttons, back link.
+
+Required context from view:
+  - object: the edited object (must have archived_at field)
+  - form: Django form instance
+  - form_id: unique form ID for submit button
+  - cancel_url: URL for cancel button
+  - archive_url: URL for archive action
+  - unarchive_url: URL for unarchive action
+  - back_url: URL for back link
+  - back_label: text for back link
+
+Child templates override:
+  - block archived_message: custom archived warning text
+  - block form_fields: form field includes
+{% endcomment %}
+
+{% block form_content %}
+{% if object.archived_at %}
+<div class="alert alert-warning mb-4">
+    {% block archived_message %}Цей запис в архіві.{% endblock %}
+</div>
+{% endif %}
+
+<form id="{{ form_id }}" method="post" class="space-y-4">
+    {% csrf_token %}
+    {% block form_fields %}{% endblock %}
+</form>
+
+<div class="mt-4 flex flex-wrap items-center gap-3 pt-1">
+    <button type="submit" form="{{ form_id }}" class="btn-primary">Зберегти</button>
+    <a href="{{ cancel_url }}" class="btn-secondary">Скасувати</a>
+    <div class="flex-1"></div>
+    {% if object.archived_at %}
+    <form method="post" action="{{ unarchive_url }}" class="m-0">
+        {% csrf_token %}
+        <button type="submit" class="btn-secondary">Відновити</button>
+    </form>
+    {% else %}
+    <form method="post" action="{{ archive_url }}" class="m-0">
+        {% csrf_token %}
+        <button type="submit" class="btn-secondary">В архів</button>
+    </form>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block form_page_footer %}
+<p class="mt-4">
+    <a href="{{ back_url }}" class="link-back">{{ back_label }}</a>
+</p>
+{% endblock %}

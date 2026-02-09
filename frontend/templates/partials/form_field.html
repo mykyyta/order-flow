@@ -1,0 +1,17 @@
+{% comment %}
+Form field wrapper: optional label + field widget + error message.
+Pass: field (required), label (optional - if provided, shows visible label).
+
+Usage:
+  {% include "partials/form_field.html" with field=form.name label="Назва" %}
+  {% include "partials/form_field.html" with field=form.comment %}
+{% endcomment %}
+<div>
+    {% if label %}
+    <label for="{{ field.id_for_label }}" class="form-label">{{ label }}</label>
+    {% endif %}
+    {{ field }}
+    {% if field.errors %}
+    <p class="form-error">{{ field.errors.0 }}</p>
+    {% endif %}
+</div>

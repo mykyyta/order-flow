@@ -84,7 +84,16 @@ class ColorDetailUpdateView(LoginRequiredMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["page_title"] = "Підправити колір"
-        context["color"] = self.object
+        context["object"] = self.object
+        context["form_id"] = "color-edit-form"
+        context["cancel_url"] = reverse_lazy("colors")
+        context["archive_url"] = reverse_lazy("color_archive", kwargs={"pk": self.object.pk})
+        context["unarchive_url"] = reverse_lazy(
+            "color_unarchive", kwargs={"pk": self.object.pk}
+        )
+        context["back_url"] = reverse_lazy("colors")
+        context["back_label"] = "Назад до кольорів"
+        context["archived_message"] = "Цей колір в архіві."
         return context
 
     def form_valid(self, form):
@@ -101,7 +110,12 @@ def product_models_archive(request):
     return render(
         request,
         "catalog/product_models_archive.html",
-        {"page_title": "Архів моделей", "models": product_models},
+        {
+            "page_title": "Архів моделей",
+            "items": product_models,
+            "back_url": reverse_lazy("product_models"),
+            "empty_message": "Архів порожній.",
+        },
     )
 
 
@@ -120,7 +134,12 @@ def colors_archive(request):
     return render(
         request,
         "catalog/colors_archive.html",
-        {"page_title": "Архів кольорів", "colors": colors},
+        {
+            "page_title": "Архів кольорів",
+            "items": colors,
+            "back_url": reverse_lazy("colors"),
+            "empty_message": "Архів порожній.",
+        },
     )
 
 
@@ -134,7 +153,18 @@ class ProductModelDetailUpdateView(LoginRequiredMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["page_title"] = "Підправити модель"
-        context["product_model"] = self.object
+        context["object"] = self.object
+        context["form_id"] = "product-model-edit-form"
+        context["cancel_url"] = reverse_lazy("product_models")
+        context["archive_url"] = reverse_lazy(
+            "product_model_archive", kwargs={"pk": self.object.pk}
+        )
+        context["unarchive_url"] = reverse_lazy(
+            "product_model_unarchive", kwargs={"pk": self.object.pk}
+        )
+        context["back_url"] = reverse_lazy("product_models")
+        context["back_label"] = "Назад до моделей"
+        context["archived_message"] = "Ця модель в архіві."
         return context
 
     def form_valid(self, form):

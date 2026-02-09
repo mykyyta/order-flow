@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% comment %}
+Base template for archive list pages (colors, product_models, materials).
+Provides: messages, back link, chip list or empty state.
+
+Required context from view:
+  - back_url: URL for back link
+  - items: list of archived objects
+  - empty_message: message when archive is empty (optional, default: "Архів порожній.")
+
+Child templates override:
+  - block archive_items: the items loop and rendering
+{% endcomment %}
+
+{% block content %}
+
+{% include "partials/messages.html" %}
+
+<div class="space-y-4">
+    <div class="flex items-center justify-start gap-4">
+        <a href="{{ back_url }}" class="link-back">&larr; До активних</a>
+    </div>
+
+    <div>
+        {% if items %}
+        <div class="flex flex-wrap gap-2">
+            {% block archive_items %}{% endblock %}
+        </div>
+        {% else %}
+        {% include "partials/empty_state.html" with message=empty_message|default:"Архів порожній." %}
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

@@ -1,59 +1,11 @@
-{% extends "base_form_page.html" %}
+{% extends "base_edit_page.html" %}
 
 {% block title %}Підправити колір{% endblock %}
 
-{% block form_content %}
-{% if color.archived_at %}
-<div class="alert alert-warning mb-4">
-    Цей колір в архіві.
-</div>
-{% endif %}
+{% block archived_message %}{{ archived_message }}{% endblock %}
 
-<form id="color-edit-form" method="post" class="space-y-4">
-    {% csrf_token %}
-    <div>
-        <label for="id_name" class="sr-only">Назва кольору</label>
-        {{ form.name }}
-        {% if form.name.errors %}
-        <p class="form-error">{{ form.name.errors.0 }}</p>
-        {% endif %}
-    </div>
-    <div>
-        <label for="id_code" class="sr-only">Код кольору</label>
-        {{ form.code }}
-        {% if form.code.errors %}
-        <p class="form-error">{{ form.code.errors.0 }}</p>
-        {% endif %}
-    </div>
-    <div>
-        <label for="id_availability_status" class="sr-only">Наявність</label>
-        {{ form.availability_status }}
-        {% if form.availability_status.errors %}
-        <p class="form-error">{{ form.availability_status.errors.0 }}</p>
-        {% endif %}
-    </div>
-</form>
-
-<div class="mt-4 flex flex-wrap items-center gap-3 pt-1">
-    <button type="submit" form="color-edit-form" class="btn-primary">Зберегти</button>
-    <a href="{% url 'colors' %}" class="btn-secondary">Скасувати</a>
-    <div class="flex-1"></div>
-    {% if color.archived_at %}
-    <form method="post" action="{% url 'color_unarchive' color.id %}" class="m-0">
-        {% csrf_token %}
-        <button type="submit" class="btn-secondary">Відновити</button>
-    </form>
-    {% else %}
-    <form method="post" action="{% url 'color_archive' color.id %}" class="m-0">
-        {% csrf_token %}
-        <button type="submit" class="btn-secondary">В архів</button>
-    </form>
-    {% endif %}
-</div>
-{% endblock %}
-
-{% block form_page_footer %}
-<p class="mt-4">
-    <a href="{% url 'colors' %}" class="link-back">Назад до кольорів</a>
-</p>
+{% block form_fields %}
+    {% include "partials/form_field.html" with field=form.name %}
+    {% include "partials/form_field.html" with field=form.code %}
+    {% include "partials/form_field.html" with field=form.availability_status %}
 {% endblock %}

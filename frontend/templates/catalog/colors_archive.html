@@ -1,29 +1,11 @@
-{% extends "base.html" %}
+{% extends "base_archive_page.html" %}
 
 {% block title %}Архів кольорів{% endblock %}
 
-{% block content %}
-
-{% include "partials/messages.html" %}
-
-<div class="space-y-4">
-    <div class="flex items-center justify-start gap-4">
-        <a href="{% url 'colors' %}" class="link-back">&larr; До активних</a>
-    </div>
-
-    <div>
-        {% if colors %}
-        <div class="flex flex-wrap gap-2">
-            {% for color in colors %}
-            <a href="{% url 'color_edit' color.id %}" class="catalog-chip-link catalog-chip-availability-out">
-                {{ color.name }} ({{ color.code }})
-            </a>
-            {% endfor %}
-        </div>
-        {% else %}
-        {% include "partials/empty_state.html" with message="Архів порожній." %}
-        {% endif %}
-    </div>
-</div>
-
+{% block archive_items %}
+    {% for color in items %}
+    <a href="{% url 'color_edit' color.id %}" class="catalog-chip-link catalog-chip-availability-out">
+        {{ color.name }} ({{ color.code }})
+    </a>
+    {% endfor %}
 {% endblock %}

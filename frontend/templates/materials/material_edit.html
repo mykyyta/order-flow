@@ -1,45 +1,9 @@
-{% extends "base_form_page.html" %}
+{% extends "base_edit_page.html" %}
 
 {% block title %}Підправити матеріал{% endblock %}
 
-{% block form_content %}
-{% if material.archived_at %}
-<div class="alert alert-warning mb-4">
-    Цей матеріал в архіві.
-</div>
-{% endif %}
+{% block archived_message %}{{ archived_message }}{% endblock %}
 
-<form id="material-edit-form" method="post" class="space-y-4">
-    {% csrf_token %}
-    <div>
-        <label for="id_name" class="sr-only">Назва матеріалу</label>
-        {{ form.name }}
-        {% if form.name.errors %}
-        <p class="form-error">{{ form.name.errors.0 }}</p>
-        {% endif %}
-    </div>
-</form>
-
-<div class="mt-4 flex flex-wrap items-center gap-3 pt-1">
-    <button type="submit" form="material-edit-form" class="btn-primary">Зберегти</button>
-    <a href="{% url 'materials' %}" class="btn-secondary">Скасувати</a>
-    <div class="flex-1"></div>
-    {% if material.archived_at %}
-    <form method="post" action="{% url 'material_unarchive' material.id %}" class="m-0">
-        {% csrf_token %}
-        <button type="submit" class="btn-secondary">Відновити</button>
-    </form>
-    {% else %}
-    <form method="post" action="{% url 'material_archive' material.id %}" class="m-0">
-        {% csrf_token %}
-        <button type="submit" class="btn-secondary">В архів</button>
-    </form>
-    {% endif %}
-</div>
-{% endblock %}
-
-{% block form_page_footer %}
-<p class="mt-4">
-    <a href="{% url 'materials' %}" class="link-back">Назад до матеріалів</a>
-</p>
+{% block form_fields %}
+    {% include "partials/form_field.html" with field=form.name %}
 {% endblock %}
