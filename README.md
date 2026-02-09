@@ -34,6 +34,9 @@ Status model:
 - **Дизайн і layout** — [docs/design/](docs/design/):
   - **[design_components.md](docs/design/design_components.md)** — єдиний довідник з UI: компоненти, відступи/тіні, чеклісти, куди дивитись при зміні.
   - [style_decisions.md](docs/design/style_decisions.md) — конвенції коду (неймінг, views, шаблони, CSS/JS, мова).
+- **Data model V2**:
+  - [v2_model_design_proposal.md](docs/v2_model_design_proposal.md) — цільова структура апок,
+    моделі, принципи orchestration, multi-warehouse і план імпорту з legacy.
 - **DevOps / Infra** — [docs/devops/](docs/devops/):
   - [Infrastructure overview](docs/devops/infrastructure_overview.md)
   - [Runbook](docs/devops/runbook.md)

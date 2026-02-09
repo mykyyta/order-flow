@@ -32,7 +32,21 @@ class CustomUser(AbstractUser):
 class Order(models.Model):
     id = models.AutoField(primary_key=True)
     model = models.ForeignKey("catalog.ProductModel", on_delete=models.PROTECT)
-    color = models.ForeignKey("catalog.Color", on_delete=models.PROTECT)
+    color = models.ForeignKey("catalog.Color", on_delete=models.PROTECT, null=True, blank=True)
+    primary_material_color = models.ForeignKey(
+        "materials.MaterialColor",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="orders_primary_colors",
+    )
+    secondary_material_color = models.ForeignKey(
+        "materials.MaterialColor",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="orders_secondary_colors",
+    )
     embroidery = models.BooleanField(default=False)
     comment = models.TextField(blank=True, null=True)
     urgent = models.BooleanField(default=False)
@@ -44,6 +58,13 @@ class Order(models.Model):
         choices=STATUS_CHOICES,
         default=STATUS_NEW,
         db_index=True,
+    )
+    customer_order_line = models.ForeignKey(
+        "customer_orders.CustomerOrderLine",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="production_orders",
     )
 
     def get_status(self):
@@ -73,7 +94,15 @@ class Order(models.Model):
         return None
 
     def __str__(self):
-        return f"{self.model.name} ({self.color.name}) - {self.get_status()}"
+        if self.primary_material_color:
+            color_name = self.primary_material_color.name
+            if self.secondary_material_color:
+                color_name = f"{color_name} / {self.secondary_material_color.name}"
+        elif self.color:
+            color_name = self.color.name
+        else:
+            color_name = "custom"
+        return f"{self.model.name} ({color_name}) - {self.get_status()}"
 
     class Meta:
         indexes = [
