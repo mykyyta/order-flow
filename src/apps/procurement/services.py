@@ -11,7 +11,7 @@ from apps.procurement.models import GoodsReceipt, GoodsReceiptLine, PurchaseOrde
 from apps.warehouses.services import resolve_warehouse_id
 
 if TYPE_CHECKING:
-    from apps.orders.models import CustomUser
+    from django.contrib.auth.models import AbstractBaseUser
 
 
 @transaction.atomic
@@ -20,7 +20,7 @@ def receive_purchase_order_line(
     purchase_order_line: PurchaseOrderLine,
     quantity: Decimal,
     warehouse_id: int | None = None,
-    received_by: "CustomUser | None" = None,
+    received_by: "AbstractBaseUser | None" = None,
     notes: str = "",
 ) -> GoodsReceiptLine:
     resolved_warehouse_id = resolve_warehouse_id(warehouse_id=warehouse_id)

@@ -3,7 +3,7 @@ from __future__ import annotations
 from django.core.management.base import BaseCommand
 from django.db.models import OuterRef, Subquery
 
-from apps.orders.domain.status import STATUS_FINISHED
+from apps.production.domain.status import STATUS_FINISHED
 from apps.orders.models import Order, OrderStatusHistory
 
 

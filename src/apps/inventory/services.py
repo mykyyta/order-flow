@@ -18,8 +18,10 @@ from apps.inventory.models import (
 from apps.warehouses.services import resolve_warehouse_id
 
 if TYPE_CHECKING:
-    from apps.customer_orders.models import CustomerOrderLine
-    from apps.orders.models import CustomUser, Order
+    from django.contrib.auth.models import AbstractBaseUser
+
+    from apps.production.models import ProductionOrder
+    from apps.sales.models import SalesOrderLine
 
 
 class StockKey(TypedDict):
@@ -68,9 +70,9 @@ def add_to_stock(
     color_id: int | None = None,
     primary_material_color_id: int | None = None,
     secondary_material_color_id: int | None = None,
-    production_order: "Order | None" = None,
-    customer_order_line: "CustomerOrderLine | None" = None,
-    user: "CustomUser | None" = None,
+    production_order: "ProductionOrder | None" = None,
+    customer_order_line: "SalesOrderLine | None" = None,
+    user: "AbstractBaseUser | None" = None,
     notes: str = "",
 ) -> StockRecord:
     stock_key = _resolve_stock_key(
@@ -123,8 +125,8 @@ def remove_from_stock(
     color_id: int | None = None,
     primary_material_color_id: int | None = None,
     secondary_material_color_id: int | None = None,
-    customer_order_line: "CustomerOrderLine | None" = None,
-    user: "CustomUser | None" = None,
+    customer_order_line: "SalesOrderLine | None" = None,
+    user: "AbstractBaseUser | None" = None,
     notes: str = "",
 ) -> StockRecord:
     stock_key = _resolve_stock_key(
@@ -236,8 +238,8 @@ def add_to_wip_stock(
     quantity: int,
     reason: str,
     warehouse_id: int | None = None,
-    production_order: "Order | None" = None,
-    user: "CustomUser | None" = None,
+    production_order: "ProductionOrder | None" = None,
+    user: "AbstractBaseUser | None" = None,
     notes: str = "",
 ) -> WIPStockRecord:
     if quantity <= 0:
@@ -269,8 +271,8 @@ def remove_from_wip_stock(
     quantity: int,
     reason: str,
     warehouse_id: int | None = None,
-    production_order: "Order | None" = None,
-    user: "CustomUser | None" = None,
+    production_order: "ProductionOrder | None" = None,
+    user: "AbstractBaseUser | None" = None,
     notes: str = "",
 ) -> WIPStockRecord:
     if quantity <= 0:
@@ -309,7 +311,7 @@ def transfer_finished_stock(
     to_warehouse_id: int,
     product_variant_id: int,
     quantity: int,
-    user: "CustomUser | None" = None,
+    user: "AbstractBaseUser | None" = None,
     notes: str = "",
 ) -> FinishedStockTransfer:
     if from_warehouse_id == to_warehouse_id:

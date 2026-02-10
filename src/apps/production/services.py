@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from apps.orders.services import change_order_status, create_order
-
 if TYPE_CHECKING:
+    from django.contrib.auth.models import AbstractBaseUser
+
     from apps.catalog.models import Color, ProductModel
-    from apps.customer_orders.models import CustomerOrderLine
     from apps.materials.models import MaterialColor
-    from apps.orders.models import CustomUser, Order
+    from apps.production.models import ProductionOrder
+    from apps.sales.models import SalesOrderLine
 
 
 def create_production_order(
@@ -21,10 +21,12 @@ def create_production_order(
     urgent: bool,
     etsy: bool,
     comment: str | None,
-    created_by: "CustomUser",
+    created_by: "AbstractBaseUser",
     orders_url: str | None,
-    customer_order_line: "CustomerOrderLine | None" = None,
-) -> "Order":
+    customer_order_line: "SalesOrderLine | None" = None,
+) -> "ProductionOrder":
+    from apps.orders.services import create_order
+
     return create_order(
         model=model,
         color=color,
@@ -37,17 +39,21 @@ def create_production_order(
         created_by=created_by,
         orders_url=orders_url,
         customer_order_line=customer_order_line,
+        via_v2_context=True,
     )
 
 
 def change_production_order_status(
     *,
-    production_orders: list["Order"],
+    production_orders: list["ProductionOrder"],
     new_status: str,
-    changed_by: "CustomUser",
+    changed_by: "AbstractBaseUser",
 ) -> None:
+    from apps.orders.services import change_order_status
+
     change_order_status(
         orders=production_orders,
         new_status=new_status,
         changed_by=changed_by,
+        via_v2_context=True,
     )

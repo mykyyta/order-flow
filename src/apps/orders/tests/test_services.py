@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import pytest
 from django.core.exceptions import ValidationError
+from django.test import override_settings
 
 from apps.catalog.models import ProductVariant
+from apps.cutover import LegacyWritesFrozenError
 from apps.orders.domain.status import (
     STATUS_DOING,
     STATUS_EMBROIDERY,
@@ -152,4 +154,33 @@ def test_order_rejects_mismatched_product_variant_on_save():
             model=model,
             color=color,
             product_variant=wrong_variant,
+        )
+
+
+@pytest.mark.django_db
+@override_settings(FREEZE_LEGACY_WRITES=True)
+def test_create_order_is_blocked_when_legacy_writes_are_frozen(user):
+    with pytest.raises(LegacyWritesFrozenError, match="orders.services.create_order"):
+        create_order(
+            model=ProductModelFactory(),
+            color=ColorFactory(),
+            embroidery=False,
+            urgent=False,
+            etsy=False,
+            comment=None,
+            created_by=user,
+            orders_url=None,
+        )
+
+
+@pytest.mark.django_db
+@override_settings(FREEZE_LEGACY_WRITES=True)
+def test_change_order_status_is_blocked_when_legacy_writes_are_frozen(user):
+    order = OrderFactory()
+
+    with pytest.raises(LegacyWritesFrozenError, match="orders.services.change_order_status"):
+        change_order_status(
+            orders=[order],
+            new_status=STATUS_DOING,
+            changed_by=user,
         )

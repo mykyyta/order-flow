@@ -29,7 +29,7 @@ catalog/            # Product, ProductVariant, бандли, норми мате
 sales/              # SalesOrder, SalesOrderLine
 production/         # ProductionOrder (cutting/finishing/full), статуси
 warehouses/         # Warehouse довідник
-inventory/          # Готова продукція (FinishedStock*) + напівфабрикати (WIPStock*)
+product_inventory/  # Готова продукція (Product/FinishedStock*) + WIP (runtime alias to apps.inventory)
 materials/          # Material, MaterialColor довідники
 procurement/        # Supplier, PurchaseOrder, GoodsReceipt
 material_inventory/ # Матеріали на складах: MaterialStock*

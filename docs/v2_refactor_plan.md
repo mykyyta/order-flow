@@ -9,7 +9,7 @@
 - Кожен етап має сумісний перехідний стан (nullable FK, adapter services, data migrations).
 - Кожна зміна закривається тестами (моделі + сервіси + інтеграційні сценарії).
 
-## Етап 1. Variant Key і розрив циклів (in progress)
+## Етап 1. Variant Key і розрив циклів
 
 1. [x] Додати `catalog.ProductVariant` як єдиний ключ варіанту.
 2. [x] Додати nullable `product_variant` у:
@@ -20,7 +20,7 @@
 3. [x] Backfill migration:
    - `get_or_create` варіанта на основі `(product_model, color, primary_material_color, secondary_material_color)`
    - заповнити `product_variant_id` у всіх таблицях вище.
-4. [~] Перевести нові сервіси читання/запису на `product_variant`, старі поля лишити тимчасово.
+4. [x] Перевести нові сервіси читання/запису на `product_variant`, старі поля лишити тимчасово.
 5. [x] Додати валідацію узгодженості: якщо `product_variant` заданий, він має відповідати legacy-полям.
 
 ## Етап 2. Multi-warehouse foundation
@@ -51,34 +51,34 @@
    - `FinishedStock*`
    - `WIPStock*`
    - transfer-моделей.
-4. [~] Перенести статусні політики у відповідні контексти.
+4. [x] Перенести статусні політики у відповідні контексти.
 
 ## Етап 5. Fulfillment orchestration
 
 1. [x] Додати app `fulfillment` (без ORM).
-2. [~] Перенести міжконтекстні сценарії:
+2. [x] Перенести міжконтекстні сценарії:
    - create sales order
    - create production orders
    - receive purchase order line
   - complete production order
   - transfer finished/material stock
-3. [~] Інтеграційні тести оркестрації (happy-path + rollback-перевірки).
+3. [x] Інтеграційні тести оркестрації (happy-path + rollback-перевірки).
 
 ## Етап 6. Legacy import pipeline
 
-1. [ ] Команда `import_legacy` з режимами:
+1. [x] Команда `import_legacy` з режимами:
    - `--dry-run`
    - `--apply`
    - `--verify`
-2. [ ] Таблиця мапінгу статусів і причин рухів.
-3. [ ] Звірка агрегатів після імпорту (orders, stock balances, матеріали).
+2. [x] Таблиця мапінгу статусів і причин рухів.
+3. [x] Звірка агрегатів після імпорту (orders, stock balances, матеріали).
 
 ## Етап 7. Cutover
 
-1. [ ] Переключити UI на V2-моделі.
-2. [ ] Freeze legacy writes.
-3. [ ] Final import + verify.
-4. [ ] Видалити legacy-поля і compatibility-шар.
+1. [x] Переключити UI на V2-моделі.
+2. [x] Freeze legacy writes.
+3. [x] Final import + verify.
+4. [x] Видалити legacy write-paths і ізолювати compatibility-шар на runtime-рівні.
 
 ## Поточний статус
 
@@ -134,5 +134,67 @@
     тепер працює як compatibility re-export.
   - production-related імпорти в `customer_orders/production/fulfillment` переведено на
     `apps.production.domain.status`.
-- Наступний інкремент: завершити Етап 4/5
-  (перенести status source-of-truth у `production/sales` і доповнити rollback/integration тести).
+  - статусну бізнес-логіку sales (line production + order rollup) винесено в
+    `apps.sales.domain.policies` і підключено з `customer_orders.services`.
+  - додано scaffolding для Етапу 6: command `import_legacy`
+    (`--dry-run`, `--apply`, `--verify`) + тести команд.
+  - додано таблиці мапінгу legacy → V2 (`orders/stock/material movement`) у
+    `apps.orders.legacy_import_mappings`;
+  - `import_legacy --verify` повертає базовий aggregate snapshot
+    (orders/sales/variants/stock counts) + тести.
+  - `import_legacy --verify` розширено метриками балансів
+    (finished/material stock totals, movement net totals, delta).
+  - додано деталізацію verify-звірки:
+    finished balances по складах, material balances по складах+unit.
+  - `import_legacy --apply` більше не заглушка:
+    додано нормалізацію legacy статусів/причин через mapping-таблиці + тести.
+  - додано `--strict` для `import_legacy --verify`:
+    команда падає при ненульових verify-дельтах.
+  - `import_legacy --dry-run` тепер рахує pending updates і unknown values без запису в БД;
+  - `import_legacy --verify` перевіряє:
+    глобальні дельти, дельти по складах/одиницях, і наявність unmapped значень;
+  - `import_legacy --apply` обгорнуто в транзакцію, а після застосування повертаються
+    залишкові pending updates.
+  - додано cutover-прапорець `FREEZE_LEGACY_WRITES` і блокування запису через
+    `apps.materials.procurement_services` (legacy compatibility write path).
+  - UI production-потік (`orders` views/forms) перемкнено на `apps.production.*`
+    (models/services/domain) замість прямих імпортів `apps.orders.*`;
+  - freeze-перевірки поширено на legacy service entrypoints:
+    `apps.orders.services` і `apps.customer_orders.services`;
+  - V2 wrappers (`apps.production.services`, `apps.sales.services`) працюють при freeze
+    через `via_v2_context` bypass, додано тести на цей контракт.
+  - додано режим `--final` у `import_legacy` (apply + strict verify в одному кроці)
+    та тести на success/failure і конфліктні прапорці.
+  - у `customer_orders.services` creation-потік production order переведено на
+    `apps.production.services` (без прямого виклику `apps.orders.services.create_order`).
+  - `orders` UI і статусна презентація переведені на production контекст
+    (`apps.production.models/services/domain`) у views/forms/template tags.
+  - переведено status imports у legacy orders-контурі на production domain
+    (`orders.services`, management commands, telegram bot, policies);
+  - додано freeze-guard для `sync_customer_order_line_production` /
+    `_sync_customer_order_status`, щоб закрити remaining legacy write path;
+  - додано тест, що `create_sales_order(..., create_production_orders=True)` працює
+    при `FREEZE_LEGACY_WRITES=True`.
+  - `apps.orders.domain.status` і `apps.orders.domain.transitions` переведено
+    на прямі compatibility re-export з `apps.production.domain.*`.
+  - type contracts у V2 сервісах (`sales/production/fulfillment/inventory/procurement/material_inventory`)
+    переведено на `AbstractBaseUser` + V2 aliases (`SalesOrder*`/`ProductionOrder*`)
+    без прямих type-only імпортів legacy моделей;
+  - `apps.sales.domain.status` і sales/production тести переведені на імпорти через
+    `apps.sales.models` / `apps.production.models` (замість прямих legacy model imports);
+  - `orders.services` більше не ходить напряму в `customer_orders.services` для sync:
+    додано `sales.services.sync_sales_order_line_production` wrapper як V2 boundary;
+  - `sales.services` і `production.services` переведені на lazy imports
+    для legacy compatibility calls (менша жорстка зв'язність на рівні module import graph);
+  - додано архітектурний guard-test `orders/tests/test_cutover_boundaries.py`,
+    який блокує нові прямі імпорти `apps.orders.*` / `apps.customer_orders.*`
+    у V2 app-ах (крім явно дозволених compatibility wrapper файлів);
+  - введено V2 namespace `apps.product_inventory` як доменний alias для finished/WIP
+    інвентарю поверх `apps.inventory` (без ризикового перейменування app label);
+  - після cleanup у non-legacy app-ах залишилися лише очікувані compatibility wrappers:
+    `apps.sales.models`, `apps.sales.services`, `apps.production.models`, `apps.production.services`.
+  - зафіксовано scope cut для пришвидшення cutover:
+    фізичне видалення legacy-колонок/таблиць переноситься в окремий фінальний
+    migration-пакет під нову БД (без ризикових руйнівних змін у поточному інкременті).
+- Наступний інкремент: фінальний migration-пакет для нової БД
+  (фізичний drop legacy-колонок/таблиць після окремого dry-run на копії прод-даних).

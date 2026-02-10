@@ -4,13 +4,13 @@ from django.utils import timezone
 from django.contrib.auth.models import AbstractUser
 from config import settings
 from apps.catalog.variants import product_variant_matches_legacy_fields
-from apps.orders.themes import DEFAULT_THEME, THEME_CHOICES
-from apps.orders.domain.order_statuses import (
+from apps.production.domain.order_statuses import (
     STATUS_FINISHED,
     STATUS_NEW,
     get_allowed_transitions,
     status_choices,
 )
+from apps.orders.themes import DEFAULT_THEME, THEME_CHOICES
 from apps.orders.exceptions import InvalidStatusTransition
 
 STATUS_CHOICES = status_choices(include_legacy=True, include_terminal=True)

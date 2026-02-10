@@ -190,6 +190,7 @@ STATICFILES_DIRS = [PROJECT_ROOT / "frontend" / "static"]
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "orders.CustomUser"
 LOGIN_URL = "auth_login"
+FREEZE_LEGACY_WRITES = env_bool("FREEZE_LEGACY_WRITES", False)
 
 CSRF_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_SAMESITE = "Lax"

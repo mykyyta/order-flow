@@ -6,15 +6,17 @@ from typing import TYPE_CHECKING
 from django.db import transaction
 
 from apps.catalog.variants import resolve_or_create_product_variant
-from apps.orders.domain.status import STATUS_FINISHED, STATUS_NEW, validate_status
+from apps.cutover import ensure_legacy_writes_allowed
+from apps.production.domain.status import STATUS_FINISHED, STATUS_NEW, validate_status
 from apps.orders.models import Order, OrderStatusHistory
 from apps.orders.notifications import send_order_created, send_order_finished
 
 if TYPE_CHECKING:
+    from django.contrib.auth.models import AbstractBaseUser
+
     from apps.catalog.models import Color, ProductModel
-    from apps.customer_orders.models import CustomerOrderLine
     from apps.materials.models import MaterialColor
-    from apps.orders.models import CustomUser
+    from apps.sales.models import SalesOrderLine
 
 
 @transaction.atomic
@@ -28,10 +30,15 @@ def create_order(
     urgent: bool,
     etsy: bool,
     comment: str | None,
-    created_by: "CustomUser",
+    created_by: "AbstractBaseUser",
     orders_url: str | None,
-    customer_order_line: "CustomerOrderLine | None" = None,
+    customer_order_line: "SalesOrderLine | None" = None,
+    via_v2_context: bool = False,
 ) -> Order:
+    ensure_legacy_writes_allowed(
+        operation="orders.services.create_order",
+        via_v2_context=via_v2_context,
+    )
     if color is None and primary_material_color is None:
         raise ValueError("Order requires color or primary material color")
 
@@ -71,18 +78,32 @@ def change_order_status(
     *,
     orders: list[Order],
     new_status: str,
-    changed_by: "CustomUser",
+    changed_by: "AbstractBaseUser",
+    via_v2_context: bool = False,
 ) -> None:
+    ensure_legacy_writes_allowed(
+        operation="orders.services.change_order_status",
+        via_v2_context=via_v2_context,
+    )
     normalized = validate_status(new_status)
     for order in orders:
         order.transition_to(normalized, changed_by)
         order.save()
         if normalized == STATUS_FINISHED:
-            _handle_finished_order(order=order, changed_by=changed_by)
+            _handle_finished_order(
+                order=order,
+                changed_by=changed_by,
+                via_v2_context=via_v2_context,
+            )
             send_order_finished(order=order)
 
 
-def _handle_finished_order(*, order: Order, changed_by: "CustomUser") -> None:
+def _handle_finished_order(
+    *,
+    order: Order,
+    changed_by: "AbstractBaseUser",
+    via_v2_context: bool,
+) -> None:
     from apps.inventory.models import StockMovement
     from apps.inventory.services import add_to_stock
 
@@ -99,6 +120,9 @@ def _handle_finished_order(*, order: Order, changed_by: "CustomUser") -> None:
     if order.customer_order_line_id is None:
         return
 
-    from apps.customer_orders.services import sync_customer_order_line_production
+    from apps.sales.services import sync_sales_order_line_production
 
-    sync_customer_order_line_production(order.customer_order_line)
+    sync_sales_order_line_production(
+        line=order.customer_order_line,
+        via_v2_context=via_v2_context,
+    )

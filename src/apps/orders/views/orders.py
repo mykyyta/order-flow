@@ -9,18 +9,18 @@ from django.utils.timezone import localtime
 from django.views.decorators.http import require_POST
 
 from apps.catalog.models import Color, ProductModel
-from apps.orders.domain.order_statuses import (
+from apps.production.domain.order_statuses import (
     ACTIVE_LIST_ORDER,
     status_choices,
     status_choices_for_active_page,
     status_label_map,
     transition_map as build_transition_map,
 )
-from apps.orders.domain.status import STATUS_FINISHED
+from apps.production.domain.status import STATUS_FINISHED
+from apps.production.models import ProductionOrder, ProductionOrderStatusHistory
+from apps.production.services import change_production_order_status, create_production_order
 from apps.orders.exceptions import InvalidStatusTransition
 from apps.orders.forms import OrderForm, OrderStatusUpdateForm
-from apps.orders.models import Order, OrderStatusHistory
-from apps.orders.services import change_order_status, create_order
 
 STATUS_LABELS = status_label_map(include_legacy=True)
 CURRENT_STATUS_OPTIONS = status_choices(include_legacy=False, include_terminal=False)
@@ -37,7 +37,7 @@ def _filtered_current_orders_queryset(*, filter_value: str):
         output_field=IntegerField(),
     )
     queryset = (
-        Order.objects.select_related("model", "color")
+        ProductionOrder.objects.select_related("model", "color")
         .exclude(current_status=STATUS_FINISHED)
         .annotate(_status_rank=status_rank)
         .order_by("_status_rank", "-created_at", "-id")
@@ -152,8 +152,8 @@ def orders_bulk_status(request):
         return redirect(url)
 
     try:
-        change_order_status(
-            orders=list(selected_orders),
+        change_production_order_status(
+            production_orders=list(selected_orders),
             new_status=new_status,
             changed_by=request.user,
         )
@@ -180,7 +180,7 @@ def orders_bulk_status(request):
 def orders_completed(request):
     search_query = (request.GET.get("q") or "").strip()
     orders = (
-        Order.objects.only("id", "finished_at", "model_id", "color_id")
+        ProductionOrder.objects.only("id", "finished_at", "model_id", "color_id")
         .select_related("model", "color")
         .filter(current_status=STATUS_FINISHED)
         .order_by("-finished_at")
@@ -220,7 +220,7 @@ def orders_create(request):
         form = OrderForm(request.POST)
         if form.is_valid():
             orders_url = request.build_absolute_uri(reverse_lazy("orders_active"))
-            create_order(
+            create_production_order(
                 model=form.cleaned_data["model"],
                 color=form.cleaned_data["color"],
                 etsy=form.cleaned_data["etsy"],
@@ -248,8 +248,8 @@ def orders_create(request):
 
 @login_required
 def order_detail(request, pk):
-    order = get_object_or_404(Order, id=pk)
-    statuses = OrderStatusHistory.objects.filter(order=order).order_by("-changed_at")
+    order = get_object_or_404(ProductionOrder, id=pk)
+    statuses = ProductionOrderStatusHistory.objects.filter(order=order).order_by("-changed_at")
 
     order_data = {
         "id": order.id,
@@ -267,7 +267,7 @@ def order_detail(request, pk):
             {
                 "id": status.id,
                 "new_status": status.new_status,
-                "new_status_display": dict(OrderStatusHistory.STATUS_CHOICES).get(
+                "new_status_display": dict(ProductionOrderStatusHistory.STATUS_CHOICES).get(
                     status.new_status, "Unknown"
                 ),
                 "changed_by": status.changed_by.username if status.changed_by else "Unknown",
@@ -290,7 +290,7 @@ def order_detail(request, pk):
 
 @login_required
 def order_edit(request, pk):
-    order = get_object_or_404(Order, id=pk)
+    order = get_object_or_404(ProductionOrder, id=pk)
     if request.method == "POST":
         form = OrderForm(request.POST, instance=order)
         if form.is_valid():

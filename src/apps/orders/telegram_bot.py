@@ -19,7 +19,7 @@ if not TELEGRAM_BOT_TOKEN:
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.local")
 django.setup()
 
-from apps.orders.domain.status import STATUS_FINISHED  # noqa: E402
+from apps.production.domain.status import STATUS_FINISHED  # noqa: E402
 from apps.orders.models import Order  # noqa: E402
 
 

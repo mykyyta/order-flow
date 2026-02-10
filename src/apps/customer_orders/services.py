@@ -6,13 +6,17 @@ from django.db import transaction
 
 from apps.catalog.models import BundleColorMapping, BundleComponent, BundlePresetComponent
 from apps.catalog.variants import resolve_or_create_product_variant
+from apps.cutover import ensure_legacy_writes_allowed
 from apps.customer_orders.models import CustomerOrder, CustomerOrderLine, CustomerOrderLineComponent
 from apps.production.domain.status import STATUS_FINISHED
+from apps.sales.domain.policies import resolve_line_production_status, resolve_sales_order_status
 
 if TYPE_CHECKING:
+    from django.contrib.auth.models import AbstractBaseUser
+
     from apps.catalog.models import Color, ProductModel
     from apps.materials.models import MaterialColor
-    from apps.orders.models import CustomUser, Order
+    from apps.production.models import ProductionOrder
 
 
 Requirement = tuple[
@@ -33,9 +37,14 @@ def create_customer_order(
     lines_data: list[dict[str, object]],
     notes: str = "",
     create_production_orders: bool = False,
-    created_by: "CustomUser | None" = None,
+    created_by: "AbstractBaseUser | None" = None,
     orders_url: str | None = None,
+    via_v2_context: bool = False,
 ) -> CustomerOrder:
+    ensure_legacy_writes_allowed(
+        operation="customer_orders.services.create_customer_order",
+        via_v2_context=via_v2_context,
+    )
     order = CustomerOrder.objects.create(
         source=source,
         customer_info=customer_info,
@@ -77,6 +86,7 @@ def create_customer_order(
             customer_order=order,
             created_by=created_by,
             orders_url=orders_url,
+            via_v2_context=via_v2_context,
         )
 
     return order
@@ -86,13 +96,18 @@ def create_customer_order(
 def create_missing_production_orders(
     *,
     customer_order: CustomerOrder,
-    created_by: "CustomUser",
+    created_by: "AbstractBaseUser",
     orders_url: str | None = None,
-) -> list["Order"]:
+    via_v2_context: bool = False,
+) -> list["ProductionOrder"]:
+    ensure_legacy_writes_allowed(
+        operation="customer_orders.services.create_missing_production_orders",
+        via_v2_context=via_v2_context,
+    )
     from apps.inventory.services import get_stock_quantity
-    from apps.orders.services import create_order
+    from apps.production.services import create_production_order
 
-    created_orders: list[Order] = []
+    created_orders: list[ProductionOrder] = []
     available_stock_cache: dict[tuple[str, int] | tuple[str, int, int | None, int | None, int | None], int] = {}
 
     for line in customer_order.lines.select_related(
@@ -125,7 +140,7 @@ def create_missing_production_orders(
             )
             for _ in range(quantity_to_produce):
                 created_orders.append(
-                    create_order(
+                    create_production_order(
                         model=product_model,
                         color=color,
                         primary_material_color=primary_color,
@@ -140,34 +155,43 @@ def create_missing_production_orders(
                     )
                 )
 
-        sync_customer_order_line_production(line)
+        sync_customer_order_line_production(
+            line,
+            via_v2_context=via_v2_context,
+        )
 
-    _sync_customer_order_status(customer_order)
+    _sync_customer_order_status(
+        customer_order,
+        via_v2_context=via_v2_context,
+    )
     return created_orders
 
 
-def sync_customer_order_line_production(line: CustomerOrderLine) -> None:
+def sync_customer_order_line_production(
+    line: CustomerOrderLine,
+    *,
+    via_v2_context: bool = False,
+) -> None:
+    ensure_legacy_writes_allowed(
+        operation="customer_orders.services.sync_customer_order_line_production",
+        via_v2_context=via_v2_context,
+    )
     total_orders = line.production_orders.count()
-
-    if total_orders == 0:
-        if line.production_mode == CustomerOrderLine.ProductionMode.MANUAL:
-            new_status = CustomerOrderLine.ProductionStatus.PENDING
-        else:
-            new_status = CustomerOrderLine.ProductionStatus.DONE
-    else:
-        finished_orders = line.production_orders.filter(current_status=STATUS_FINISHED).count()
-        if finished_orders == 0:
-            new_status = CustomerOrderLine.ProductionStatus.PENDING
-        elif finished_orders < total_orders:
-            new_status = CustomerOrderLine.ProductionStatus.IN_PROGRESS
-        else:
-            new_status = CustomerOrderLine.ProductionStatus.DONE
+    finished_orders = line.production_orders.filter(current_status=STATUS_FINISHED).count()
+    new_status = resolve_line_production_status(
+        production_mode=line.production_mode,
+        total_orders=total_orders,
+        finished_orders=finished_orders,
+    )
 
     if line.production_status != new_status:
         line.production_status = new_status
         line.save(update_fields=["production_status"])
 
-    _sync_customer_order_status(line.customer_order)
+    _sync_customer_order_status(
+        line.customer_order,
+        via_v2_context=via_v2_context,
+    )
 
 
 def _save_bundle_component_colors(*, line: CustomerOrderLine, line_data: dict[str, object]) -> None:
@@ -390,24 +414,22 @@ def _resolve_quantity_to_produce(
     return required_qty - used_from_stock
 
 
-def _sync_customer_order_status(customer_order: CustomerOrder) -> None:
-    terminal_statuses = {
-        CustomerOrder.Status.SHIPPED,
-        CustomerOrder.Status.COMPLETED,
-        CustomerOrder.Status.CANCELLED,
-    }
-    if customer_order.status in terminal_statuses:
-        return
-
+def _sync_customer_order_status(
+    customer_order: CustomerOrder,
+    *,
+    via_v2_context: bool = False,
+) -> None:
+    ensure_legacy_writes_allowed(
+        operation="customer_orders.services._sync_customer_order_status",
+        via_v2_context=via_v2_context,
+    )
     lines = list(customer_order.lines.all())
-    if not lines:
+    new_status = resolve_sales_order_status(
+        current_status=customer_order.status,
+        line_production_statuses=(line.production_status for line in lines),
+    )
+    if new_status is None:
         return
 
-    if all(line.production_status == CustomerOrderLine.ProductionStatus.DONE for line in lines):
-        new_status = CustomerOrder.Status.READY
-    else:
-        new_status = CustomerOrder.Status.PRODUCTION
-
-    if customer_order.status != new_status:
-        customer_order.status = new_status
-        customer_order.save(update_fields=["status", "updated_at"])
+    customer_order.status = new_status
+    customer_order.save(update_fields=["status", "updated_at"])

@@ -16,7 +16,7 @@ from apps.materials.models import Material, MaterialColor
 from apps.warehouses.services import resolve_warehouse_id
 
 if TYPE_CHECKING:
-    from apps.orders.models import CustomUser
+    from django.contrib.auth.models import AbstractBaseUser
     from apps.procurement.models import GoodsReceiptLine, PurchaseOrderLine
 
 
@@ -31,7 +31,7 @@ def add_material_stock(
     material_color: MaterialColor | None = None,
     related_purchase_order_line: PurchaseOrderLine | None = None,
     related_receipt_line: GoodsReceiptLine | None = None,
-    created_by: "CustomUser | None" = None,
+    created_by: "AbstractBaseUser | None" = None,
     notes: str = "",
 ) -> MaterialStockRecord:
     resolved_warehouse_id = resolve_warehouse_id(warehouse_id=warehouse_id)
@@ -70,7 +70,7 @@ def remove_material_stock(
     reason: str,
     material_color: MaterialColor | None = None,
     related_purchase_order_line: PurchaseOrderLine | None = None,
-    created_by: "CustomUser | None" = None,
+    created_by: "AbstractBaseUser | None" = None,
     notes: str = "",
 ) -> MaterialStockRecord:
     resolved_warehouse_id = resolve_warehouse_id(warehouse_id=warehouse_id)
@@ -114,7 +114,7 @@ def transfer_material_stock(
     quantity: Decimal,
     unit: str,
     material_color: MaterialColor | None = None,
-    created_by: "CustomUser | None" = None,
+    created_by: "AbstractBaseUser | None" = None,
     notes: str = "",
 ) -> MaterialStockTransfer:
     if from_warehouse_id == to_warehouse_id:

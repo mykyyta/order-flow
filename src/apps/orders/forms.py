@@ -1,9 +1,8 @@
 from django import forms
 
 from apps.catalog.models import Color, ProductModel
-from apps.orders.domain.order_statuses import status_choices
-
-from .models import Order
+from apps.production.domain.order_statuses import status_choices
+from apps.production.models import ProductionOrder
 
 # Design system: one class set for all form controls (see assets/tailwind/input.css)
 FORM_INPUT = "form-input"
@@ -22,7 +21,7 @@ class HiddenEmptyOptionSelect(forms.Select):
 
 class OrderForm(forms.ModelForm):
     class Meta:
-        model = Order
+        model = ProductionOrder
         fields = ["model", "color", "etsy", "embroidery", "urgent", "comment"]
         widgets = {
             "model": HiddenEmptyOptionSelect(attrs={"class": FORM_SELECT}),
@@ -57,7 +56,7 @@ class OrderForm(forms.ModelForm):
 
 class OrderStatusUpdateForm(forms.Form):
     orders = forms.ModelMultipleChoiceField(
-        queryset=Order.objects.all(),
+        queryset=ProductionOrder.objects.all(),
         widget=forms.CheckboxSelectMultiple,
         label="Позначити замовлення",
     )

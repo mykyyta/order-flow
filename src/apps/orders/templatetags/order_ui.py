@@ -1,5 +1,5 @@
 from django import template
-from apps.orders.domain.order_statuses import status_ui_map
+from apps.production.domain.order_statuses import status_ui_map
 
 register = template.Library()
 

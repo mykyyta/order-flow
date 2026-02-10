@@ -1,18 +1,21 @@
 """Tests for customer order services."""
 import pytest
 from django.core.exceptions import ValidationError
+from django.test import override_settings
 
 from apps.catalog.models import BundleColorMapping, BundleComponent
 from apps.catalog.models import BundlePreset, BundlePresetComponent
 from apps.catalog.models import ProductVariant
+from apps.cutover import LegacyWritesFrozenError
 from apps.customer_orders.models import (
     CustomerOrder,
     CustomerOrderLine,
     CustomerOrderLineComponent,
 )
-from apps.customer_orders.services import create_customer_order
+from apps.customer_orders.services import create_customer_order, sync_customer_order_line_production
 from apps.catalog.tests.conftest import ColorFactory, ProductModelFactory
 from apps.materials.models import Material, MaterialColor
+from apps.sales.services import create_sales_order
 
 
 
@@ -196,6 +199,64 @@ def test_create_customer_order_rejects_primary_color_from_wrong_material():
                 }
             ],
         )
+
+
+@pytest.mark.django_db
+@override_settings(FREEZE_LEGACY_WRITES=True)
+def test_create_customer_order_is_blocked_when_legacy_writes_are_frozen():
+    with pytest.raises(LegacyWritesFrozenError, match="customer_orders.services.create_customer_order"):
+        create_customer_order(
+            source=CustomerOrder.Source.WHOLESALE,
+            customer_info="blocked",
+            lines_data=[
+                {
+                    "product_model_id": ProductModelFactory(is_bundle=False).id,
+                    "color_id": ColorFactory().id,
+                    "quantity": 1,
+                }
+            ],
+        )
+
+
+@pytest.mark.django_db
+@override_settings(FREEZE_LEGACY_WRITES=True)
+def test_create_sales_order_works_when_legacy_writes_are_frozen():
+    order = create_sales_order(
+        source=CustomerOrder.Source.WHOLESALE,
+        customer_info="V2 order",
+        lines_data=[
+            {
+                "product_model_id": ProductModelFactory(is_bundle=False).id,
+                "color_id": ColorFactory().id,
+                "quantity": 1,
+            }
+        ],
+    )
+
+    assert order.lines.count() == 1
+
+
+@pytest.mark.django_db
+def test_sync_customer_order_line_production_is_blocked_when_legacy_writes_are_frozen():
+    order = create_customer_order(
+        source=CustomerOrder.Source.WHOLESALE,
+        customer_info="sync blocked",
+        lines_data=[
+            {
+                "product_model_id": ProductModelFactory(is_bundle=False).id,
+                "color_id": ColorFactory().id,
+                "quantity": 1,
+            }
+        ],
+    )
+    line = order.lines.get()
+
+    with override_settings(FREEZE_LEGACY_WRITES=True):
+        with pytest.raises(
+            LegacyWritesFrozenError,
+            match="customer_orders.services.sync_customer_order_line_production",
+        ):
+            sync_customer_order_line_production(line)
 
 
 @pytest.mark.django_db

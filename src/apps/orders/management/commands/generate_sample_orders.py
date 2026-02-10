@@ -3,7 +3,7 @@
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
-from apps.orders.domain.status import (
+from apps.production.domain.status import (
     STATUS_ALMOST_FINISHED,
     STATUS_EMBROIDERY,
     STATUS_FINISHED,

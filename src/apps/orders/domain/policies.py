@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Optional
 
-from apps.orders.domain.status import STATUS_FINISHED
+from apps.production.domain.status import STATUS_FINISHED
 
 
 def compute_finished_at(

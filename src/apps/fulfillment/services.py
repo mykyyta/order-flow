@@ -3,20 +3,24 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from apps.customer_orders.services import create_missing_production_orders
-from apps.inventory.models import WIPStockMovement
-from apps.inventory.services import remove_from_wip_stock, transfer_finished_stock
 from apps.material_inventory.services import transfer_material_stock
+from apps.product_inventory.models import WIPStockMovement
+from apps.product_inventory.services import remove_from_wip_stock, transfer_product_stock
 from apps.procurement.services import receive_purchase_order_line
 from apps.production.domain.status import STATUS_FINISHED
 from apps.production.services import change_production_order_status
+from apps.sales.services import (
+    create_production_orders_for_sales_order as create_production_orders_for_sales_order_v2,
+)
 from apps.sales.services import create_sales_order
 
 if TYPE_CHECKING:
+    from django.contrib.auth.models import AbstractBaseUser
+
     from decimal import Decimal
 
     from apps.materials.models import Material, MaterialColor
-    from apps.orders.models import CustomUser, Order
+    from apps.production.models import ProductionOrder
     from apps.procurement.models import PurchaseOrderLine
     from apps.sales.models import SalesOrder
 
@@ -28,7 +32,7 @@ def create_sales_order_orchestrated(
     lines_data: list[dict[str, object]],
     notes: str = "",
     create_production_orders_now: bool = False,
-    created_by: "CustomUser | None" = None,
+    created_by: "AbstractBaseUser | None" = None,
     orders_url: str | None = None,
 ) -> "SalesOrder":
     return create_sales_order(
@@ -45,11 +49,11 @@ def create_sales_order_orchestrated(
 def create_production_orders_for_sales_order(
     *,
     sales_order: "SalesOrder",
-    created_by: "CustomUser",
+    created_by: "AbstractBaseUser",
     orders_url: str | None = None,
-) -> list["Order"]:
-    return create_missing_production_orders(
-        customer_order=sales_order,
+) -> list["ProductionOrder"]:
+    return create_production_orders_for_sales_order_v2(
+        sales_order=sales_order,
         created_by=created_by,
         orders_url=orders_url,
     )
@@ -60,7 +64,7 @@ def receive_purchase_order_line_orchestrated(
     purchase_order_line: "PurchaseOrderLine",
     quantity: Decimal,
     warehouse_id: int | None = None,
-    received_by: "CustomUser | None" = None,
+    received_by: "AbstractBaseUser | None" = None,
     notes: str = "",
 ):
     return receive_purchase_order_line(
@@ -74,8 +78,8 @@ def receive_purchase_order_line_orchestrated(
 
 def complete_production_order(
     *,
-    production_order: "Order",
-    changed_by: "CustomUser",
+    production_order: "ProductionOrder",
+    changed_by: "AbstractBaseUser",
 ) -> None:
     change_production_order_status(
         production_orders=[production_order],
@@ -88,7 +92,7 @@ def scrap_wip(
     *,
     product_variant_id: int,
     quantity: int,
-    user: "CustomUser | None" = None,
+    user: "AbstractBaseUser | None" = None,
     warehouse_id: int | None = None,
     notes: str = "",
 ):
@@ -108,10 +112,10 @@ def transfer_finished_stock_orchestrated(
     to_warehouse_id: int,
     product_variant_id: int,
     quantity: int,
-    user: "CustomUser | None" = None,
+    user: "AbstractBaseUser | None" = None,
     notes: str = "",
 ):
-    return transfer_finished_stock(
+    return transfer_product_stock(
         from_warehouse_id=from_warehouse_id,
         to_warehouse_id=to_warehouse_id,
         product_variant_id=product_variant_id,
@@ -129,7 +133,7 @@ def transfer_material_stock_orchestrated(
     quantity: "Decimal",
     unit: str,
     material_color: "MaterialColor | None" = None,
-    user: "CustomUser | None" = None,
+    user: "AbstractBaseUser | None" = None,
     notes: str = "",
 ):
     return transfer_material_stock(

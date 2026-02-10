@@ -1,7 +1,5 @@
-from __future__ import annotations
-
-from apps.orders.domain.order_statuses import (  # noqa: F401
-    ACTIVE_STATUS_CODES,
+from apps.production.domain.status import (  # noqa: F401
+    ALLOWED_STATUSES,
     STATUS_ALMOST_FINISHED,
     STATUS_DECIDING,
     STATUS_DOING,
@@ -9,19 +7,6 @@ from apps.orders.domain.order_statuses import (  # noqa: F401
     STATUS_FINISHED,
     STATUS_NEW,
     STATUS_ON_HOLD,
+    normalize_status,
+    validate_status,
 )
-
-ALLOWED_STATUSES = {
-    *ACTIVE_STATUS_CODES,
-}
-
-
-def normalize_status(value: str) -> str:
-    return value.strip().lower()
-
-
-def validate_status(value: str) -> str:
-    normalized = normalize_status(value)
-    if normalized not in ALLOWED_STATUSES:
-        raise ValueError(f"Unknown status: {value}")
-    return normalized
