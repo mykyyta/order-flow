@@ -11,7 +11,7 @@ from apps.production.services import change_production_order_status
 from apps.sales.services import (
     create_production_orders_for_sales_order as create_production_orders_for_sales_order_v2,
 )
-from apps.sales.services import create_sales_order
+from apps.sales.services import create_sales_order, sync_sales_order_line_production
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import AbstractBaseUser
@@ -62,7 +62,7 @@ def receive_purchase_order_line_orchestrated(
     *,
     purchase_order_line: "PurchaseOrderLine",
     quantity: Decimal,
-    warehouse_id: int | None = None,
+    warehouse_id: int,
     received_by: "AbstractBaseUser | None" = None,
     notes: str = "",
 ):
@@ -84,6 +84,7 @@ def complete_production_order(
         production_orders=[production_order],
         new_status=STATUS_DONE,
         changed_by=changed_by,
+        on_sales_line_done=sync_sales_order_line_production,
     )
 
 
@@ -91,8 +92,8 @@ def scrap_wip(
     *,
     variant_id: int,
     quantity: int,
+    warehouse_id: int,
     user: "AbstractBaseUser | None" = None,
-    warehouse_id: int | None = None,
     notes: str = "",
 ):
     return remove_from_wip_stock(

@@ -29,6 +29,7 @@ from apps.accounts.tests.conftest import UserFactory
 from apps.materials.models import GoodsReceiptLine, PurchaseOrder, PurchaseOrderLine, Supplier
 from apps.sales.models import SalesOrder
 from apps.warehouses.models import Warehouse
+from apps.warehouses.services import get_default_warehouse
 
 
 @pytest.mark.django_db
@@ -96,10 +97,12 @@ def test_receive_purchase_order_line_orchestrated_updates_received_quantity():
         quantity=Decimal("10.000"),
         unit=BOM.Unit.PIECE,
     )
+    warehouse = get_default_warehouse()
 
     receive_purchase_order_line_orchestrated(
         purchase_order_line=line,
         quantity=Decimal("4.000"),
+        warehouse_id=warehouse.id,
         received_by=user,
     )
     line.refresh_from_db()
@@ -138,7 +141,9 @@ def test_scrap_wip_orchestrated():
     user = UserFactory()
     model = ProductFactory(is_bundle=False)
     variant = Variant.objects.create(product=model, color=ColorFactory())
+    warehouse = get_default_warehouse()
     add_to_wip_stock(
+        warehouse_id=warehouse.id,
         variant_id=variant.id,
         quantity=3,
         reason=WIPStockMovement.Reason.CUTTING_IN,
@@ -148,6 +153,7 @@ def test_scrap_wip_orchestrated():
     record = scrap_wip(
         variant_id=variant.id,
         quantity=1,
+        warehouse_id=warehouse.id,
         user=user,
     )
 
@@ -255,11 +261,13 @@ def test_receive_purchase_order_line_orchestrated_rolls_back_when_quantity_excee
         quantity=Decimal("2.000"),
         unit=BOM.Unit.PIECE,
     )
+    warehouse = get_default_warehouse()
 
     with pytest.raises(ValueError, match="remaining quantity"):
         receive_purchase_order_line_orchestrated(
             purchase_order_line=line,
             quantity=Decimal("3.000"),
+            warehouse_id=warehouse.id,
             received_by=user,
         )
 

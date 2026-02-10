@@ -14,14 +14,17 @@ from apps.materials.models import (
 )
 from apps.accounts.tests.conftest import UserFactory
 from apps.warehouses.models import Warehouse
+from apps.warehouses.services import get_default_warehouse
 
 
 @pytest.mark.django_db
 def test_add_material_stock_creates_stock_and_movement():
     material = Material.objects.create(name="Felt")
     user = UserFactory()
+    warehouse = get_default_warehouse()
 
     stock_record = add_material_stock(
+        warehouse_id=warehouse.id,
         material=material,
         quantity=Decimal("2.500"),
         unit=BOM.Unit.SQUARE_METER,
@@ -41,8 +44,10 @@ def test_add_material_stock_creates_stock_and_movement():
 @pytest.mark.django_db
 def test_remove_material_stock_fails_when_not_enough():
     material = Material.objects.create(name="Leather")
+    warehouse = get_default_warehouse()
 
     add_material_stock(
+        warehouse_id=warehouse.id,
         material=material,
         quantity=Decimal("1.000"),
         unit=BOM.Unit.PIECE,
@@ -51,6 +56,7 @@ def test_remove_material_stock_fails_when_not_enough():
 
     with pytest.raises(ValueError, match="Недостатньо на складі"):
         remove_material_stock(
+            warehouse_id=warehouse.id,
             material=material,
             quantity=Decimal("2.000"),
             unit=BOM.Unit.PIECE,
@@ -75,10 +81,12 @@ def test_receive_purchase_order_line_updates_stock_and_po_status():
         unit=BOM.Unit.PIECE,
         unit_price=Decimal("1.00"),
     )
+    warehouse = get_default_warehouse()
 
     receipt_line = receive_purchase_order_line(
         purchase_order_line=line,
         quantity=Decimal("6.000"),
+        warehouse_id=warehouse.id,
         received_by=user,
     )
     line.refresh_from_db()

@@ -10,7 +10,7 @@ MANAGE ?= $(PYTHON) src/manage.py
 TAILWIND ?= bin/tailwindcss
 TAILWIND_VERSION ?= v4.1.18
 
-.PHONY: help dev dev-detached down down-clean down-reset ps logs logs-db shell manage migrate bootstrap-local init-local dev-bootstrap dev-refresh dev-refresh-ui test check lint format ruff-check ruff-format build push deploy tw-install tw-watch tw-build
+.PHONY: help dev dev-detached down down-clean down-reset ps logs logs-db shell manage migrate createsuperuser bootstrap-local init-local dev-bootstrap dev-refresh dev-refresh-ui test check lint format ruff-check ruff-format build push deploy tw-install tw-watch tw-build
 
 help: ## Show available commands
 	@awk 'BEGIN {FS = ":.*##"; printf "\nAvailable commands:\n\n"} /^[a-zA-Z0-9_.-]+:.*##/ { printf "  %-18s %s\n", $$1, $$2 } END { print "" }' $(MAKEFILE_LIST)
@@ -48,6 +48,9 @@ manage: ## Run arbitrary Django command in container: make manage cmd="check"
 
 migrate: ## Apply migrations and sync apps without migrations (user_settings/ui)
 	docker compose run --rm web python src/manage.py migrate --run-syncdb
+
+createsuperuser: ## Create Django superuser (interactive)
+	docker compose run --rm web python src/manage.py createsuperuser
 
 bootstrap-local: ## Seed local admin + base catalog + sample production orders
 	docker compose run --rm web python src/manage.py bootstrap_local \

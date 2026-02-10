@@ -14,14 +14,16 @@ from apps.accounts.tests.conftest import UserFactory
 from apps.catalog.tests.conftest import ColorFactory, ProductFactory
 from apps.materials.models import Material, MaterialColor
 from apps.warehouses.models import Warehouse
+from apps.warehouses.services import get_default_warehouse
 
 
 @pytest.mark.django_db
 def test_get_stock_quantity_returns_zero_when_missing():
     model = ProductFactory(is_bundle=False)
     color = ColorFactory()
+    warehouse = get_default_warehouse()
 
-    assert get_stock_quantity(product_id=model.id, color_id=color.id) == 0
+    assert get_stock_quantity(warehouse_id=warehouse.id, product_id=model.id, color_id=color.id) == 0
 
 
 @pytest.mark.django_db
@@ -29,8 +31,10 @@ def test_add_to_stock_creates_record_and_movement():
     model = ProductFactory(is_bundle=False)
     color = ColorFactory()
     user = UserFactory()
+    warehouse = get_default_warehouse()
 
     record = add_to_stock(
+        warehouse_id=warehouse.id,
         product_id=model.id,
         color_id=color.id,
         quantity=4,
@@ -44,7 +48,7 @@ def test_add_to_stock_creates_record_and_movement():
     assert record.variant is not None
     assert record.variant.product_id == model.id
     assert record.variant.color_id == color.id
-    assert ProductStock.objects.get(variant=record.variant).quantity == 4
+    assert ProductStock.objects.get(warehouse=warehouse, variant=record.variant).quantity == 4
 
     movement = ProductStockMovement.objects.get(stock_record=record)
     assert movement.quantity_change == 4
@@ -57,7 +61,9 @@ def test_remove_from_stock_updates_quantity_and_writes_movement():
     model = ProductFactory(is_bundle=False)
     color = ColorFactory()
     user = UserFactory()
+    warehouse = get_default_warehouse()
     add_to_stock(
+        warehouse_id=warehouse.id,
         product_id=model.id,
         color_id=color.id,
         quantity=5,
@@ -66,6 +72,7 @@ def test_remove_from_stock_updates_quantity_and_writes_movement():
     )
 
     record = remove_from_stock(
+        warehouse_id=warehouse.id,
         product_id=model.id,
         color_id=color.id,
         quantity=2,
@@ -85,7 +92,9 @@ def test_remove_from_stock_raises_when_not_enough():
     model = ProductFactory(is_bundle=False)
     color = ColorFactory()
     user = UserFactory()
+    warehouse = get_default_warehouse()
     add_to_stock(
+        warehouse_id=warehouse.id,
         product_id=model.id,
         color_id=color.id,
         quantity=1,
@@ -95,6 +104,7 @@ def test_remove_from_stock_raises_when_not_enough():
 
     with pytest.raises(ValueError, match="Недостатньо на складі"):
         remove_from_stock(
+            warehouse_id=warehouse.id,
             product_id=model.id,
             color_id=color.id,
             quantity=2,
@@ -115,8 +125,10 @@ def test_add_and_remove_stock_by_material_colors():
         secondary_material=leather,
     )
     user = UserFactory()
+    warehouse = get_default_warehouse()
 
     add_to_stock(
+        warehouse_id=warehouse.id,
         product_id=product.id,
         primary_material_color_id=blue.id,
         secondary_material_color_id=black.id,
@@ -126,6 +138,7 @@ def test_add_and_remove_stock_by_material_colors():
     )
     assert (
         get_stock_quantity(
+            warehouse_id=warehouse.id,
             product_id=product.id,
             primary_material_color_id=blue.id,
             secondary_material_color_id=black.id,
@@ -134,6 +147,7 @@ def test_add_and_remove_stock_by_material_colors():
     )
 
     record = remove_from_stock(
+        warehouse_id=warehouse.id,
         product_id=product.id,
         primary_material_color_id=blue.id,
         secondary_material_color_id=black.id,
@@ -144,6 +158,7 @@ def test_add_and_remove_stock_by_material_colors():
     assert record.quantity == 2
     assert (
         ProductStock.objects.get(
+            warehouse=warehouse,
             variant=record.variant,
         ).quantity
         == 2
@@ -189,15 +204,17 @@ def test_get_stock_quantity_accepts_variant_id():
     color = ColorFactory()
     variant = Variant.objects.create(product=model, color=color)
     user = UserFactory()
+    warehouse = get_default_warehouse()
 
     add_to_stock(
+        warehouse_id=warehouse.id,
         variant_id=variant.id,
         quantity=2,
         reason=ProductStockMovement.Reason.ADJUSTMENT_IN,
         user=user,
     )
 
-    assert get_stock_quantity(variant_id=variant.id) == 2
+    assert get_stock_quantity(warehouse_id=warehouse.id, variant_id=variant.id) == 2
 
 
 @pytest.mark.django_db
@@ -206,8 +223,10 @@ def test_add_to_stock_accepts_variant_id_without_legacy_fields():
     color = ColorFactory()
     variant = Variant.objects.create(product=model, color=color)
     user = UserFactory()
+    warehouse = get_default_warehouse()
 
     record = add_to_stock(
+        warehouse_id=warehouse.id,
         variant_id=variant.id,
         quantity=3,
         reason=ProductStockMovement.Reason.PRODUCTION_IN,
@@ -224,14 +243,17 @@ def test_remove_from_stock_accepts_variant_id():
     color = ColorFactory()
     variant = Variant.objects.create(product=model, color=color)
     user = UserFactory()
+    warehouse = get_default_warehouse()
 
     add_to_stock(
+        warehouse_id=warehouse.id,
         variant_id=variant.id,
         quantity=5,
         reason=ProductStockMovement.Reason.ADJUSTMENT_IN,
         user=user,
     )
     record = remove_from_stock(
+        warehouse_id=warehouse.id,
         variant_id=variant.id,
         quantity=2,
         reason=ProductStockMovement.Reason.ORDER_OUT,

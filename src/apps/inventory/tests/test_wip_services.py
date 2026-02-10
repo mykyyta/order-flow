@@ -6,6 +6,7 @@ from apps.inventory.models import WIPStockMovement, WIPStockRecord
 from apps.inventory.services import add_to_wip_stock, get_wip_stock_quantity, remove_from_wip_stock
 from apps.accounts.tests.conftest import UserFactory
 from apps.warehouses.models import Warehouse
+from apps.warehouses.services import get_default_warehouse
 
 
 @pytest.mark.django_db
@@ -14,8 +15,10 @@ def test_add_to_wip_stock_creates_record_and_movement():
     color = ColorFactory()
     variant = Variant.objects.create(product=model, color=color)
     user = UserFactory()
+    warehouse = get_default_warehouse()
 
     record = add_to_wip_stock(
+        warehouse_id=warehouse.id,
         variant_id=variant.id,
         quantity=3,
         reason=WIPStockMovement.Reason.CUTTING_IN,
@@ -36,7 +39,9 @@ def test_remove_from_wip_stock_updates_quantity_and_movement():
     color = ColorFactory()
     variant = Variant.objects.create(product=model, color=color)
     user = UserFactory()
+    warehouse = get_default_warehouse()
     add_to_wip_stock(
+        warehouse_id=warehouse.id,
         variant_id=variant.id,
         quantity=4,
         reason=WIPStockMovement.Reason.ADJUSTMENT_IN,
@@ -44,13 +49,14 @@ def test_remove_from_wip_stock_updates_quantity_and_movement():
     )
 
     record = remove_from_wip_stock(
+        warehouse_id=warehouse.id,
         variant_id=variant.id,
         quantity=1,
         reason=WIPStockMovement.Reason.FINISHING_OUT,
         user=user,
     )
     assert record.quantity == 3
-    assert get_wip_stock_quantity(variant_id=variant.id) == 3
+    assert get_wip_stock_quantity(warehouse_id=warehouse.id, variant_id=variant.id) == 3
 
 
 @pytest.mark.django_db
@@ -59,8 +65,10 @@ def test_remove_from_wip_stock_fails_when_not_enough():
     color = ColorFactory()
     variant = Variant.objects.create(product=model, color=color)
     user = UserFactory()
+    warehouse = get_default_warehouse()
 
     add_to_wip_stock(
+        warehouse_id=warehouse.id,
         variant_id=variant.id,
         quantity=1,
         reason=WIPStockMovement.Reason.ADJUSTMENT_IN,
@@ -69,6 +77,7 @@ def test_remove_from_wip_stock_fails_when_not_enough():
 
     with pytest.raises(ValueError, match="Недостатньо WIP"):
         remove_from_wip_stock(
+            warehouse_id=warehouse.id,
             variant_id=variant.id,
             quantity=2,
             reason=WIPStockMovement.Reason.SCRAP_OUT,

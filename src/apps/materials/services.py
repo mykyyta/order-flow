@@ -22,7 +22,6 @@ from apps.materials.models import (
     PurchaseOrderLine,
 )
 from apps.sales.models import SalesOrderLine
-from apps.warehouses.services import get_default_warehouse
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import AbstractBaseUser
@@ -75,12 +74,6 @@ def _iter_line_product_quantities(*, line: SalesOrderLine) -> list[tuple[int, De
     ]
 
 
-def _resolve_warehouse_id(*, warehouse_id: int | None) -> int:
-    if warehouse_id is not None:
-        return warehouse_id
-    return get_default_warehouse().id
-
-
 @transaction.atomic
 def add_material_stock(
     *,
@@ -88,7 +81,7 @@ def add_material_stock(
     quantity: Decimal,
     unit: str,
     reason: str,
-    warehouse_id: int | None = None,
+    warehouse_id: int,
     material_color: MaterialColor | None = None,
     related_purchase_order_line: PurchaseOrderLine | None = None,
     related_receipt_line: GoodsReceiptLine | None = None,
@@ -96,13 +89,12 @@ def add_material_stock(
     created_by: "AbstractBaseUser | None" = None,
     notes: str = "",
 ) -> MaterialStock:
-    resolved_warehouse_id = _resolve_warehouse_id(warehouse_id=warehouse_id)
     quantity_decimal = Decimal(str(quantity))
     if quantity_decimal <= Decimal("0"):
         raise ValueError("Quantity must be greater than 0")
 
     stock_record, _ = MaterialStock.objects.get_or_create(
-        warehouse_id=resolved_warehouse_id,
+        warehouse_id=warehouse_id,
         material=material,
         material_color=material_color,
         unit=unit,
@@ -130,27 +122,25 @@ def remove_material_stock(
     quantity: Decimal,
     unit: str,
     reason: str,
-    warehouse_id: int | None = None,
+    warehouse_id: int,
     material_color: MaterialColor | None = None,
     related_purchase_order_line: PurchaseOrderLine | None = None,
     related_transfer: MaterialStockTransfer | None = None,
     created_by: "AbstractBaseUser | None" = None,
     notes: str = "",
 ) -> MaterialStock:
-    resolved_warehouse_id = _resolve_warehouse_id(warehouse_id=warehouse_id)
     quantity_decimal = Decimal(str(quantity))
     if quantity_decimal <= Decimal("0"):
         raise ValueError("Quantity must be greater than 0")
 
-    try:
-        stock_record = MaterialStock.objects.get(
-            warehouse_id=resolved_warehouse_id,
-            material=material,
-            material_color=material_color,
-            unit=unit,
-        )
-    except MaterialStock.DoesNotExist as exc:
-        raise ValueError("Недостатньо на складі: є 0") from exc
+    stock_record = (
+        MaterialStock.objects.for_warehouse(warehouse_id)
+        .for_material(material.id)
+        .filter(material_color=material_color, unit=unit)
+        .first()
+    )
+    if stock_record is None:
+        raise ValueError("Недостатньо на складі: є 0")
 
     if stock_record.quantity < quantity_decimal:
         raise ValueError(f"Недостатньо на складі: є {stock_record.quantity}, потрібно {quantity_decimal}")
@@ -238,11 +228,10 @@ def receive_purchase_order_line(
     *,
     purchase_order_line: PurchaseOrderLine,
     quantity: Decimal,
-    warehouse_id: int | None = None,
+    warehouse_id: int,
     received_by: "AbstractBaseUser | None" = None,
     notes: str = "",
 ) -> GoodsReceiptLine:
-    resolved_warehouse_id = _resolve_warehouse_id(warehouse_id=warehouse_id)
     quantity_decimal = Decimal(str(quantity))
     if quantity_decimal <= Decimal("0"):
         raise ValueError("Quantity must be greater than 0")
@@ -257,7 +246,7 @@ def receive_purchase_order_line(
     receipt = GoodsReceipt.objects.create(
         supplier=po_line.purchase_order.supplier,
         purchase_order=po_line.purchase_order,
-        warehouse_id=resolved_warehouse_id,
+        warehouse_id=warehouse_id,
         received_by=received_by,
         notes=notes,
     )
@@ -273,7 +262,7 @@ def receive_purchase_order_line(
     )
 
     add_material_stock(
-        warehouse_id=resolved_warehouse_id,
+        warehouse_id=warehouse_id,
         material=po_line.material,
         material_color=po_line.material_color,
         quantity=quantity_decimal,

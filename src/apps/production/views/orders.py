@@ -31,6 +31,12 @@ TRANSITION_MAP = {
 }
 
 
+def _sync_sales_line_after_order_done(sales_order_line) -> None:
+    from apps.sales.services import sync_sales_order_line_production
+
+    sync_sales_order_line_production(sales_order_line)
+
+
 def _filtered_current_orders_queryset(*, filter_value: str):
     status_rank = Case(
         *[When(status=code, then=Value(i)) for i, code in enumerate(ACTIVE_LIST_ORDER)],
@@ -146,6 +152,7 @@ def orders_bulk_status(request):
             production_orders=list(selected_orders),
             new_status=new_status,
             changed_by=request.user,
+            on_sales_line_done=_sync_sales_line_after_order_done,
         )
     except InvalidStatusTransition as exc:
         current_label = STATUS_LABELS.get(exc.status, exc.status)

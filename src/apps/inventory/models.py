@@ -3,7 +3,23 @@ from django.db import models
 from config import settings
 
 
+class ProductStockQuerySet(models.QuerySet):
+    def for_warehouse(self, warehouse_id: int):
+        return self.filter(warehouse_id=warehouse_id)
+
+    def for_variant(self, variant_id: int):
+        return self.filter(variant_id=variant_id)
+
+    def with_positive_quantity(self):
+        return self.filter(quantity__gt=0)
+
+
+ProductStockManager = models.Manager.from_queryset(ProductStockQuerySet)
+
+
 class ProductStock(models.Model):
+    objects = ProductStockManager()
+
     warehouse = models.ForeignKey(
         "warehouses.Warehouse",
         on_delete=models.PROTECT,
@@ -84,6 +100,18 @@ class ProductStockMovement(models.Model):
 
 
 class WIPStockRecord(models.Model):
+    class QuerySet(models.QuerySet):
+        def for_warehouse(self, warehouse_id: int):
+            return self.filter(warehouse_id=warehouse_id)
+
+        def for_variant(self, variant_id: int):
+            return self.filter(variant_id=variant_id)
+
+        def with_positive_quantity(self):
+            return self.filter(quantity__gt=0)
+
+    objects = models.Manager.from_queryset(QuerySet)()
+
     warehouse = models.ForeignKey(
         "warehouses.Warehouse",
         on_delete=models.PROTECT,

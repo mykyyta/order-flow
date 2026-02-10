@@ -6,9 +6,11 @@ from django.db import transaction
 
 from apps.catalog.models import BundleColorMapping, BundleComponent, BundlePresetComponent
 from apps.catalog.variants import resolve_or_create_variant
+from apps.inventory.domain import VariantId, WarehouseId
 from apps.production.domain.status import STATUS_DONE
 from apps.sales.domain.policies import resolve_line_production_status, resolve_sales_order_status
 from apps.sales.models import SalesOrder, SalesOrderLine, SalesOrderLineComponentSelection
+from apps.warehouses.services import get_default_warehouse
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import AbstractBaseUser
@@ -81,12 +83,14 @@ def create_production_orders_for_sales_order(
 
     created_orders: list[ProductionOrder] = []
     available_stock_cache: dict[int, int] = {}
+    warehouse_id = WarehouseId(get_default_warehouse().id)
 
     for line in sales_order.lines.select_related("product", "variant"):
         for variant_id, quantity_required in _iter_line_variant_requirements(line=line):
             quantity_to_produce = _resolve_quantity_to_produce(
                 variant_id=variant_id,
                 required_qty=quantity_required,
+                warehouse_id=warehouse_id,
                 available_stock_cache=available_stock_cache,
                 get_stock_quantity_fn=get_stock_quantity,
             )
@@ -219,12 +223,16 @@ def _resolve_quantity_to_produce(
     *,
     variant_id: int,
     required_qty: int,
+    warehouse_id: WarehouseId,
     available_stock_cache: dict[int, int],
     get_stock_quantity_fn,
 ) -> int:
     available_qty = available_stock_cache.get(variant_id)
     if available_qty is None:
-        available_qty = get_stock_quantity_fn(variant_id=variant_id)
+        available_qty = get_stock_quantity_fn(
+            warehouse_id=warehouse_id,
+            variant_id=VariantId(variant_id),
+        )
 
     used_from_stock = min(required_qty, available_qty)
     available_stock_cache[variant_id] = available_qty - used_from_stock

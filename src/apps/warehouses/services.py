@@ -38,9 +38,3 @@ def get_default_warehouse() -> Warehouse:
     if updates:
         warehouse.save(update_fields=updates)
     return warehouse
-
-
-def resolve_warehouse_id(*, warehouse_id: int | None) -> int:
-    if warehouse_id is not None:
-        return warehouse_id
-    return get_default_warehouse().id

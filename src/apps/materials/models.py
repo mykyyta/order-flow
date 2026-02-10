@@ -6,6 +6,20 @@ from django.utils import timezone
 from config import settings
 
 
+class MaterialStockQuerySet(models.QuerySet):
+    def for_warehouse(self, warehouse_id: int):
+        return self.filter(warehouse_id=warehouse_id)
+
+    def for_material(self, material_id: int):
+        return self.filter(material_id=material_id)
+
+    def with_positive_quantity(self):
+        return self.filter(quantity__gt=Decimal("0.000"))
+
+
+MaterialStockManager = models.Manager.from_queryset(MaterialStockQuerySet)
+
+
 class Material(models.Model):
     name = models.CharField(max_length=255, unique=True)
     archived_at = models.DateTimeField(null=True, blank=True, db_index=True)
@@ -217,6 +231,8 @@ class PurchaseOrderLine(models.Model):
 
 
 class MaterialStock(models.Model):
+    objects = MaterialStockManager()
+
     warehouse = models.ForeignKey(
         "warehouses.Warehouse",
         on_delete=models.PROTECT,

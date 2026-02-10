@@ -1,11 +1,14 @@
 """Production order service layer: create and change status."""
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from django.db import transaction
 
 from apps.catalog.variants import resolve_or_create_variant
+from apps.inventory.domain import Quantity, VariantId, WarehouseId
+from apps.warehouses.services import get_default_warehouse
 from apps.production.notifications import send_order_created, send_order_finished
 from apps.production.domain.status import STATUS_DONE, STATUS_NEW, validate_status
 from apps.production.models import ProductionOrder, ProductionOrderStatusHistory
@@ -72,38 +75,37 @@ def change_production_order_status(
     production_orders: list[ProductionOrder],
     new_status: str,
     changed_by: "AbstractBaseUser",
+    on_order_done: Callable[[ProductionOrder, "AbstractBaseUser"], None] | None = None,
+    on_sales_line_done: Callable[["SalesOrderLine"], None] | None = None,
 ) -> None:
     normalized = validate_status(new_status)
+    order_done_handler = on_order_done or _add_finished_stock
     for order in production_orders:
         order.transition_to(normalized, changed_by)
         order.save()
         if normalized == STATUS_DONE:
-            _handle_finished_order(order=order, changed_by=changed_by)
+            order_done_handler(order, changed_by)
+            if order.sales_order_line_id and on_sales_line_done is not None:
+                on_sales_line_done(order.sales_order_line)
 
             send_order_finished(order=order)
 
 
-def _handle_finished_order(
-    *,
+def _add_finished_stock(
     order: ProductionOrder,
     changed_by: "AbstractBaseUser",
 ) -> None:
     from apps.inventory.models import ProductStockMovement
     from apps.inventory.services import add_to_stock
 
+    warehouse_id = WarehouseId(get_default_warehouse().id)
     add_to_stock(
-        variant_id=order.variant_id,
+        warehouse_id=warehouse_id,
+        variant_id=VariantId(order.variant_id),
         product_id=order.product_id,
-        quantity=1,
+        quantity=Quantity(1),
         reason=ProductStockMovement.Reason.PRODUCTION_IN,
         production_order=order,
         sales_order_line=order.sales_order_line,
         user=changed_by,
     )
-
-    if order.sales_order_line_id is None:
-        return
-
-    from apps.sales.services import sync_sales_order_line_production
-
-    sync_sales_order_line_production(order.sales_order_line)
