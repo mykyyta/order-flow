@@ -148,7 +148,7 @@ def test_order_detail_renders_status_indicator(client):
     response = client.get(reverse("order_detail", kwargs={"pk": order.id}))
     assert response.status_code == 200
     assert b"text-orange-500" in response.content
-    assert order.get_current_status_display().encode() in response.content
+    assert order.get_status_display().encode() in response.content
 
 
 @pytest.mark.django_db(transaction=True)
@@ -310,6 +310,6 @@ def test_orders_create_post_creates_order(client):
     from apps.production.models import ProductionOrder
 
     order = ProductionOrder.objects.get(comment="Test order")
-    assert order.model == model
-    assert order.color == color
+    assert order.product == model
+    assert order.variant.color == color
     assert order.status == STATUS_NEW
