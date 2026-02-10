@@ -83,6 +83,7 @@
 ## Поточний статус
 
 - `2026-02-09`: Етап 1 стартував.
+- `2026-02-10`: старт baseline/reset гілки для clean V2 migration history.
 - Реалізовано:
   - `catalog.ProductVariant` + міграція + тести constraints;
   - nullable `product_variant` у `orders/customer_orders/inventory`;
@@ -196,5 +197,12 @@
   - зафіксовано scope cut для пришвидшення cutover:
     фізичне видалення legacy-колонок/таблиць переноситься в окремий фінальний
     migration-пакет під нову БД (без ризикових руйнівних змін у поточному інкременті).
+  - виконано baseline/reset migration history:
+    видалено історичні migration chain-и і згенеровано нові initial migration-и для
+    поточного стану моделей (`accounts`, `catalog`, `customer_orders`, `inventory`,
+    `materials`, `orders`, `warehouses`);
+  - відновлено data-seed для default складу у `warehouses.0002_seed_main_warehouse`;
+  - для cutover на клон старої БД оновлено migrate-job command на
+    `migrate --noinput --fake-initial` (`infra/environments/prod/main.tf`).
 - Наступний інкремент: фінальний migration-пакет для нової БД
   (фізичний drop legacy-колонок/таблиць після окремого dry-run на копії прод-даних).

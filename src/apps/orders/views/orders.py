@@ -3,24 +3,25 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Case, IntegerField, Q, Value, When
 from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import reverse
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.utils.timezone import localtime
 from django.views.decorators.http import require_POST
 
 from apps.catalog.models import Color, ProductModel
+from apps.orders.exceptions import InvalidStatusTransition
+from apps.orders.forms import OrderForm, OrderStatusUpdateForm
 from apps.production.domain.order_statuses import (
     ACTIVE_LIST_ORDER,
     status_choices,
     status_choices_for_active_page,
     status_label_map,
+)
+from apps.production.domain.order_statuses import (
     transition_map as build_transition_map,
 )
 from apps.production.domain.status import STATUS_FINISHED
 from apps.production.models import ProductionOrder, ProductionOrderStatusHistory
 from apps.production.services import change_production_order_status, create_production_order
-from apps.orders.exceptions import InvalidStatusTransition
-from apps.orders.forms import OrderForm, OrderStatusUpdateForm
 
 STATUS_LABELS = status_label_map(include_legacy=True)
 CURRENT_STATUS_OPTIONS = status_choices(include_legacy=False, include_terminal=False)
