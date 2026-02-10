@@ -9,6 +9,22 @@ gh run list --repo mykyyta/pult --workflow terraform-infra.yml --branch main --l
 gh run view <RUN_ID> --repo mykyyta/pult --log-failed
 ```
 
+## Staging setup and promote
+1. Run staging infra workflow (`infra-staging.yml`) to create/update:
+   - Cloud Run service `pult-staging-app`
+   - Cloud Run job `pult-staging-migrate`
+   - staging secrets (`pult-staging-*`; Telegram secret optional)
+   - (`manage_shared_ci_resources=false`, so shared WIF/registry stay managed only by prod state)
+2. Set staging secrets (`DATABASE_URL`, etc.) and run `deploy-staging.yml`.
+3. Develop and fill data in staging.
+4. Before release, clone staging DB to a new prod DB.
+5. Update prod secret `pult-database-url` to cloned DB URL and deploy prod.
+
+Important:
+- Do not share one live DB between staging and prod.
+- Keep separate DB URLs and secret IDs (`pult-*` vs `pult-staging-*`).
+- If Telegram is not needed on staging, keep `enable_telegram_bot_token_secret=false`.
+
 ## Deploy behaviour
 On push to `main`, `deploy.yml` builds the image, **runs migrations** (updates migrate job image and executes it), then updates the Cloud Run service.
 

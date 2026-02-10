@@ -6,6 +6,11 @@
 - Database: Neon PostgreSQL (pooled connection string).
 - Secrets: Google Secret Manager.
 
+## Staging platform
+- Runtime: Google Cloud Run (service `pult-staging-app`, region `us-central1`).
+- Uses a separate Terraform root (`infra/environments/staging`) and separate state prefix (`pult/staging`).
+- Uses separate secret IDs via `secret_id_prefix` (default `pult-staging-*`).
+
 ## GCP project
 - Project ID `orderflow-451220` is immutable. To show a different name in the console (e.g. "Pult"), change the **project display name** in Cloud Console → IAM & Admin → Settings.
 
@@ -21,6 +26,9 @@
   - App changes: build image -> deploy Cloud Run service (`deploy.yml`) (fast path; migrations are manual).
   - Infra changes: Terraform apply (`terraform-infra.yml`).
 - Manual full deploy (with migrations) via `workflow_dispatch` inputs in `deploy.yml`.
+- Staging workflows:
+  - Infra: `.github/workflows/infra-staging.yml`
+  - Deploy: `.github/workflows/deploy-staging.yml`
 - Auth between GitHub and GCP: Workload Identity Federation (no static JSON keys).
 
 ## Operational model

@@ -1,9 +1,9 @@
 project_id      = "YOUR_GCP_PROJECT_ID"
 region          = "us-central1"
-environment     = "prod"
-secret_id_prefix = "pult"
-service_name    = "pult-app"
-migrate_job_name = "pult-migrate"
+environment     = "staging"
+secret_id_prefix = "pult-staging"
+service_name    = "pult-staging-app"
+migrate_job_name = "pult-staging-migrate"
 artifact_repository_id = "my-repo"
 container_image        = "us-central1-docker.pkg.dev/YOUR_GCP_PROJECT_ID/my-repo/my-app"
 service_account_email  = "YOUR_PROJECT_NUMBER-compute@developer.gserviceaccount.com"
@@ -13,14 +13,14 @@ container_concurrency  = 80
 max_instances          = 100
 public_invoker_member  = "allUsers"
 
-# Optional: custom domain for Cloud Run (must be verified in Search Console first). Leave unset to skip.
-custom_domain = "your-domain.com"
+# Optional: custom domain for staging Cloud Run (must be verified first). Leave empty to skip.
+custom_domain = ""
 
 migrate_job_timeout    = 1200
 enable_migrate_job     = false
 manage_secret_versions = false
-manage_shared_ci_resources = true
-enable_telegram_bot_token_secret = true
+manage_shared_ci_resources = false
+enable_telegram_bot_token_secret = false
 
 github_repository      = "your-username/pult"
 wif_pool_id            = "github-actions-pool"
