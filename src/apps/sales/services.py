@@ -6,7 +6,7 @@ from django.db import transaction
 
 from apps.catalog.models import BundleColorMapping, BundleComponent, BundlePresetComponent
 from apps.catalog.variants import resolve_or_create_variant
-from apps.production.domain.status import STATUS_FINISHED
+from apps.production.domain.status import STATUS_DONE
 from apps.sales.domain.policies import resolve_line_production_status, resolve_sales_order_status
 from apps.sales.models import SalesOrder, SalesOrderLine, SalesOrderLineComponentSelection
 
@@ -115,7 +115,7 @@ def create_production_orders_for_sales_order(
 
 def sync_sales_order_line_production(line: SalesOrderLine) -> None:
     total_orders = line.production_orders.count()
-    finished_orders = line.production_orders.filter(status=STATUS_FINISHED).count()
+    finished_orders = line.production_orders.filter(status=STATUS_DONE).count()
     new_status = resolve_line_production_status(
         production_mode=line.production_mode,
         total_orders=total_orders,

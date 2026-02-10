@@ -7,7 +7,7 @@ from django.db import transaction
 
 from apps.catalog.variants import resolve_or_create_variant
 from apps.production.notifications import send_order_created, send_order_finished
-from apps.production.domain.status import STATUS_FINISHED, STATUS_NEW, validate_status
+from apps.production.domain.status import STATUS_DONE, STATUS_NEW, validate_status
 from apps.production.models import ProductionOrder, ProductionOrderStatusHistory
 
 if TYPE_CHECKING:
@@ -77,7 +77,7 @@ def change_production_order_status(
     for order in production_orders:
         order.transition_to(normalized, changed_by)
         order.save()
-        if normalized == STATUS_FINISHED:
+        if normalized == STATUS_DONE:
             _handle_finished_order(order=order, changed_by=changed_by)
 
             send_order_finished(order=order)

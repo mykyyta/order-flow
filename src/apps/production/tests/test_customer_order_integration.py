@@ -5,7 +5,7 @@ import pytest
 
 from apps.catalog.models import Variant
 from apps.inventory.models import ProductStockMovement, ProductStock
-from apps.production.domain.status import STATUS_FINISHED
+from apps.production.domain.status import STATUS_DONE
 from apps.production.services import change_production_order_status, create_production_order
 from apps.materials.models import Material, MaterialColor
 from apps.sales.models import SalesOrder, SalesOrderLine
@@ -43,7 +43,7 @@ def test_change_order_status_finished_adds_item_to_stock_for_customer_line():
         )
         change_production_order_status(
             production_orders=[order],
-            new_status=STATUS_FINISHED,
+            new_status=STATUS_DONE,
             changed_by=user,
         )
 
@@ -98,7 +98,7 @@ def test_change_order_status_finished_uses_material_color_stock_key():
         )
         change_production_order_status(
             production_orders=[order],
-            new_status=STATUS_FINISHED,
+            new_status=STATUS_DONE,
             changed_by=user,
         )
 

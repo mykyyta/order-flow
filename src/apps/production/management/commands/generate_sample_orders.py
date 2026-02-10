@@ -1,21 +1,23 @@
-"""Generate sample product models, colors, and orders for local development."""
+"""Generate sample products, colors, and production orders for local development."""
 
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
-from apps.production.domain.status import (
-    STATUS_ALMOST_FINISHED,
-    STATUS_EMBROIDERY,
-    STATUS_FINISHED,
-    STATUS_NEW,
-    STATUS_ON_HOLD,
-)
 from apps.catalog.models import Color, Product
-from apps.production.models import ProductionOrder
+from apps.catalog.variants import resolve_or_create_variant
+from apps.production.domain.status import (
+    STATUS_BLOCKED,
+    STATUS_DECIDING,
+    STATUS_DONE,
+    STATUS_EMBROIDERY,
+    STATUS_IN_PROGRESS,
+    STATUS_NEW,
+)
+from apps.production.models import ProductionOrder, ProductionOrderStatusHistory
 
 
 class Command(BaseCommand):
-    help = "Generate sample product models, colors, and orders for development."
+    help = "Generate sample products, colors, and production orders for development."
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -33,16 +35,16 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"Created {created} sample orders."))
 
     def _ensure_products(self) -> None:
-        models_data = [
+        products_data = [
             "Сумка клатч",
             "Сумка на плече",
             "Рюкзак",
             "Гаманець",
             "Косметичка",
         ]
-        for name in models_data:
+        for name in products_data:
             Product.objects.get_or_create(name=name)
-        self.stdout.write(f"Ensured {len(models_data)} product models.")
+        self.stdout.write(f"Ensured {len(products_data)} products.")
 
     def _ensure_colors(self) -> None:
         colors_data = [
@@ -59,16 +61,16 @@ class Command(BaseCommand):
         self.stdout.write(f"Ensured {len(colors_data)} colors.")
 
     def _create_orders(self, count: int) -> int:
-        models = list(Product.objects.all())
+        products = list(Product.objects.filter(archived_at__isnull=True).order_by("id"))
         colors = list(Color.objects.all())
         statuses = [
             STATUS_NEW,
             STATUS_NEW,
+            STATUS_IN_PROGRESS,
             STATUS_EMBROIDERY,
-            STATUS_EMBROIDERY,
-            STATUS_ALMOST_FINISHED,
-            STATUS_FINISHED,
-            STATUS_ON_HOLD,
+            STATUS_DECIDING,
+            STATUS_BLOCKED,
+            STATUS_DONE,
         ]
         comments = [
             "",
@@ -78,29 +80,33 @@ class Command(BaseCommand):
             None,
         ]
 
-        if not models or not colors:
-            self.stdout.write(self.style.WARNING("No product models or colors found."))
+        if not products or not colors:
+            self.stdout.write(self.style.WARNING("No products or colors found."))
             return 0
 
         created = 0
         for i in range(count):
-            model = models[i % len(models)]
+            product = products[i % len(products)]
             color = colors[i % len(colors)]
             status = statuses[i % len(statuses)]
             comment = comments[i % len(comments)]
+            variant = resolve_or_create_variant(product_id=product.id, color_id=color.id)
 
             order = ProductionOrder.objects.create(
-                model=model,
-                color=color,
+                product=product,
+                variant=variant,
                 is_embroidery=(i % 3 == 0),
                 comment=comment or "",
                 is_urgent=(i % 5 == 0),
                 is_etsy=(i % 7 == 0),
                 status=status,
+                finished_at=timezone.now() if status == STATUS_DONE else None,
             )
-            if status == STATUS_FINISHED:
-                order.finished_at = timezone.now()
-                order.save(update_fields=["finished_at"])
+            ProductionOrderStatusHistory.objects.create(
+                order=order,
+                new_status=status,
+                changed_by=None,
+            )
             created += 1
 
         return created

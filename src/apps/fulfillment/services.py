@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from apps.inventory.models import WIPStockMovement
 from apps.inventory.services import remove_from_wip_stock, transfer_finished_stock
 from apps.materials.services import receive_purchase_order_line, transfer_material_stock
-from apps.production.domain.status import STATUS_FINISHED
+from apps.production.domain.status import STATUS_DONE
 from apps.production.services import change_production_order_status
 from apps.sales.services import (
     create_production_orders_for_sales_order as create_production_orders_for_sales_order_v2,
@@ -82,7 +82,7 @@ def complete_production_order(
 ) -> None:
     change_production_order_status(
         production_orders=[production_order],
-        new_status=STATUS_FINISHED,
+        new_status=STATUS_DONE,
         changed_by=changed_by,
     )
 

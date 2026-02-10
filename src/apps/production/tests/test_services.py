@@ -4,7 +4,7 @@ import pytest
 from django.test import override_settings
 
 from apps.catalog.tests.conftest import ColorFactory, ProductFactory
-from apps.production.domain.status import STATUS_FINISHED
+from apps.production.domain.status import STATUS_DONE
 from apps.accounts.tests.conftest import UserFactory
 from apps.production.services import change_production_order_status, create_production_order
 
@@ -28,12 +28,12 @@ def test_create_and_change_production_order_status_via_production_context():
         )
         change_production_order_status(
             production_orders=[order],
-            new_status=STATUS_FINISHED,
+            new_status=STATUS_DONE,
             changed_by=user,
         )
 
     order.refresh_from_db()
-    assert order.status == STATUS_FINISHED
+    assert order.status == STATUS_DONE
 
 
 @pytest.mark.django_db
@@ -56,9 +56,9 @@ def test_production_context_allows_writes_when_legacy_writes_are_frozen():
         )
         change_production_order_status(
             production_orders=[order],
-            new_status=STATUS_FINISHED,
+            new_status=STATUS_DONE,
             changed_by=user,
         )
 
     order.refresh_from_db()
-    assert order.status == STATUS_FINISHED
+    assert order.status == STATUS_DONE

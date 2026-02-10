@@ -4,12 +4,11 @@ from dataclasses import dataclass
 from typing import Dict, Set, Tuple
 
 STATUS_NEW = "new"
-STATUS_DOING = "doing"
-STATUS_EMBROIDERY = "is_embroidery"
+STATUS_IN_PROGRESS = "in_progress"
+STATUS_EMBROIDERY = "embroidery"
 STATUS_DECIDING = "deciding"
-STATUS_ON_HOLD = "on_hold"
-STATUS_FINISHED = "finished"
-STATUS_ALMOST_FINISHED = "almost_finished"
+STATUS_BLOCKED = "blocked"
+STATUS_DONE = "done"
 
 
 @dataclass(frozen=True)
@@ -34,8 +33,8 @@ STATUS_DEFINITIONS: Tuple[OrderStatusDefinition, ...] = (
         badge_class="bg-emerald-100 text-emerald-800",
     ),
     OrderStatusDefinition(
-        code=STATUS_DOING,
-        label="Робимо",
+        code=STATUS_IN_PROGRESS,
+        label="В роботі",
         icon="play",
         indicator_class="text-blue-500",
         text_class="text-slate-700",
@@ -51,37 +50,28 @@ STATUS_DEFINITIONS: Tuple[OrderStatusDefinition, ...] = (
     ),
     OrderStatusDefinition(
         code=STATUS_DECIDING,
-        label="Рішаємо",
+        label="Уточнюємо",
         icon="pause",
         indicator_class="text-amber-600",
         text_class="text-slate-700",
         badge_class="bg-amber-100 text-amber-800",
     ),
     OrderStatusDefinition(
-        code=STATUS_ON_HOLD,
-        label="Чогось нема",
+        code=STATUS_BLOCKED,
+        label="Заблоковано",
         icon="pause",
         indicator_class="text-orange-500",
         text_class="text-slate-700",
         badge_class="bg-orange-100 text-orange-800",
     ),
     OrderStatusDefinition(
-        code=STATUS_FINISHED,
-        label="Фініш",
+        code=STATUS_DONE,
+        label="Готово",
         icon="none",
         indicator_class="text-slate-400",
         text_class="text-slate-500",
         badge_class="bg-slate-100 text-slate-700",
         is_terminal=True,
-    ),
-    OrderStatusDefinition(
-        code=STATUS_ALMOST_FINISHED,
-        label="Майже готове",
-        icon="dot",
-        indicator_class="text-emerald-600",
-        text_class="text-slate-500",
-        badge_class="bg-slate-100 text-slate-700",
-        is_legacy=True,
     ),
 )
 
@@ -99,13 +89,13 @@ TERMINAL_STATUS_CODES: Tuple[str, ...] = tuple(
     status.code for status in STATUS_DEFINITIONS if status.is_terminal
 )
 
-# Порядок у списку поточних замовлень: нові → робимо/вишиваємо → рішаємо → чогось нема
+# Порядок у списку поточних замовлень
 ACTIVE_LIST_ORDER: Tuple[str, ...] = (
     STATUS_NEW,
-    STATUS_DOING,
+    STATUS_IN_PROGRESS,
     STATUS_EMBROIDERY,
     STATUS_DECIDING,
-    STATUS_ON_HOLD,
+    STATUS_BLOCKED,
 )
 
 
@@ -153,11 +143,11 @@ def get_allowed_transitions(status: str) -> Set[str]:
         return set()
 
     allowed = {
-        status.code
-        for status in STATUS_DEFINITIONS
-        if not status.is_legacy and not status.is_terminal
+        s.code
+        for s in STATUS_DEFINITIONS
+        if not s.is_legacy and not s.is_terminal
     }
-    allowed.add(STATUS_FINISHED)
+    allowed.add(STATUS_DONE)
     allowed.discard(status)
     if status != STATUS_NEW:
         allowed.discard(STATUS_NEW)

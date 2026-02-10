@@ -3,7 +3,7 @@ from __future__ import annotations
 from django.core.management.base import BaseCommand
 from django.db.models import OuterRef, Subquery
 
-from apps.production.domain.status import STATUS_FINISHED
+from apps.production.domain.status import STATUS_DONE
 from apps.production.models import ProductionOrder, ProductionOrderStatusHistory
 
 
@@ -48,7 +48,7 @@ class Command(BaseCommand):
             expected = order.latest_status
             if not expected:
                 if order.finished_at is not None:
-                    expected = STATUS_FINISHED
+                    expected = STATUS_DONE
                 else:
                     missing_history += 1
                     continue

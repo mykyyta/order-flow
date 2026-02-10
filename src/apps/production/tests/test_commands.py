@@ -4,8 +4,13 @@ from io import StringIO
 from unittest.mock import patch
 
 import pytest
+from django.contrib.auth import get_user_model
 from django.core.management import call_command
 from django.core.management.base import CommandError
+
+from apps.catalog.models import Color, Product
+from apps.production.domain.status import STATUS_DONE
+from apps.production.models import ProductionOrder, ProductionOrderStatusHistory
 
 
 @pytest.mark.django_db
@@ -94,3 +99,43 @@ def test_import_legacy_rejects_final_with_modes():
 def test_import_legacy_rejects_strict_with_final():
     with pytest.raises(CommandError, match="cannot be combined"):
         call_command("import_legacy", "--final", "--strict")
+
+
+@pytest.mark.django_db
+def test_generate_sample_orders_creates_orders_with_variants_and_history():
+    call_command("generate_sample_orders", "--count", "3")
+
+    orders = list(ProductionOrder.objects.select_related("product", "variant"))
+    assert len(orders) == 3
+    assert all(order.product_id is not None for order in orders)
+    assert all(order.variant_id is not None for order in orders)
+    assert ProductionOrderStatusHistory.objects.count() == 3
+
+
+@pytest.mark.django_db
+def test_generate_sample_orders_sets_finished_at_for_done_orders():
+    call_command("generate_sample_orders", "--count", "30")
+
+    done_orders = ProductionOrder.objects.filter(status=STATUS_DONE)
+    assert done_orders.exists()
+    assert done_orders.filter(finished_at__isnull=True).count() == 0
+
+
+@pytest.mark.django_db
+def test_bootstrap_local_creates_admin_user_and_catalog():
+    call_command(
+        "bootstrap_local",
+        "--username",
+        "local_tester",
+        "--password",
+        "local-pass-12345",
+        "--orders",
+        "0",
+    )
+
+    user = get_user_model().objects.get(username="local_tester")
+    assert user.is_staff is True
+    assert user.is_superuser is True
+    assert user.check_password("local-pass-12345")
+    assert Product.objects.exists()
+    assert Color.objects.exists()

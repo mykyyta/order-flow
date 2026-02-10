@@ -1,14 +1,19 @@
 from __future__ import annotations
 
 LEGACY_ORDER_STATUS_TO_V2 = {
+    # Canonical V2 statuses (idempotent mapping for verify/apply cycles).
     "new": "new",
-    "doing": "doing",
-    "is_embroidery": "is_embroidery",
+    "in_progress": "in_progress",
+    "embroidery": "embroidery",
+    "doing": "in_progress",
+    "is_embroidery": "embroidery",
     "deciding": "deciding",
-    "on_hold": "on_hold",
-    "finished": "finished",
-    # Legacy-only status is normalized to terminal finished state in V2.
-    "almost_finished": "finished",
+    "blocked": "blocked",
+    "on_hold": "blocked",
+    "done": "done",
+    "finished": "done",
+    # Legacy-only status is normalized to terminal done state in V2.
+    "almost_finished": "done",
 }
 
 LEGACY_FINISHED_MOVEMENT_REASON_TO_V2 = {

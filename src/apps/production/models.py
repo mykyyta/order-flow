@@ -9,7 +9,7 @@ from django.utils import timezone
 from config import settings
 
 from apps.production.domain.order_statuses import (
-    STATUS_FINISHED,
+    STATUS_DONE,
     STATUS_NEW,
     get_allowed_transitions,
     status_choices,
@@ -23,7 +23,6 @@ if TYPE_CHECKING:
 
 
 class ProductionOrder(models.Model):
-    id = models.AutoField(primary_key=True)
     product = models.ForeignKey("catalog.Product", on_delete=models.PROTECT)
     variant = models.ForeignKey(
         "catalog.Variant",
@@ -79,7 +78,7 @@ class ProductionOrder(models.Model):
         )
 
     def _compute_finished_at(self, new_status: str) -> datetime | None:
-        if new_status == STATUS_FINISHED:
+        if new_status == STATUS_DONE:
             return timezone.now()
         return None
 
@@ -92,7 +91,6 @@ class ProductionOrder(models.Model):
 class ProductionOrderStatusHistory(models.Model):
     STATUS_CHOICES = STATUS_CHOICES
 
-    id = models.AutoField(primary_key=True)
     order = models.ForeignKey(
         ProductionOrder,
         on_delete=models.CASCADE,

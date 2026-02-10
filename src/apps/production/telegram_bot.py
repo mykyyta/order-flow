@@ -19,7 +19,7 @@ if not TELEGRAM_BOT_TOKEN:
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.local")
 django.setup()
 
-from apps.production.domain.status import STATUS_FINISHED  # noqa: E402
+from apps.production.domain.status import STATUS_DONE  # noqa: E402
 from apps.production.models import ProductionOrder  # noqa: E402
 
 
@@ -32,7 +32,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 async def not_finished_orders(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle /not_finished_orders command to retrieve unfinished orders from the database."""
     try:
-        unfinished_orders = ProductionOrder.objects.exclude(status=STATUS_FINISHED).select_related(
+        unfinished_orders = ProductionOrder.objects.exclude(status=STATUS_DONE).select_related(
             "product", "variant", "variant__color"
         )
         if unfinished_orders.exists():

@@ -2,13 +2,12 @@ from __future__ import annotations
 
 from apps.production.domain.order_statuses import (  # noqa: F401
     ACTIVE_STATUS_CODES,
-    STATUS_ALMOST_FINISHED,
+    STATUS_BLOCKED,
     STATUS_DECIDING,
-    STATUS_DOING,
+    STATUS_DONE,
     STATUS_EMBROIDERY,
-    STATUS_FINISHED,
+    STATUS_IN_PROGRESS,
     STATUS_NEW,
-    STATUS_ON_HOLD,
 )
 
 ALLOWED_STATUSES = {

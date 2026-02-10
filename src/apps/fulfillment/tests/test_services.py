@@ -24,7 +24,7 @@ from apps.materials.models import (
     BOM,
 )
 from apps.materials.services import add_material_stock
-from apps.production.domain.status import STATUS_FINISHED
+from apps.production.domain.status import STATUS_DONE
 from apps.accounts.tests.conftest import UserFactory
 from apps.materials.models import GoodsReceiptLine, PurchaseOrder, PurchaseOrderLine, Supplier
 from apps.sales.models import SalesOrder
@@ -130,7 +130,7 @@ def test_complete_production_order_orchestrated():
         complete_production_order(production_order=order, changed_by=user)
 
     order.refresh_from_db()
-    assert order.status == STATUS_FINISHED
+    assert order.status == STATUS_DONE
 
 
 @pytest.mark.django_db

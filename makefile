@@ -9,7 +9,7 @@ MANAGE ?= $(PYTHON) src/manage.py
 
 TAILWIND ?= bin/tailwindcss
 
-.PHONY: dev dev-detached down logs migrate shell test check lint format ruff-check ruff-format build push deploy tw-install tw-watch tw-build dev-refresh
+.PHONY: dev dev-detached down down-clean logs migrate bootstrap-local init-local dev-bootstrap shell test check lint format ruff-check ruff-format build push deploy tw-install tw-watch tw-build dev-refresh
 
 dev:
 	docker compose up --build
@@ -20,11 +20,24 @@ dev-detached:
 down:
 	docker compose down
 
+down-clean:
+	docker compose down --remove-orphans
+
 logs:
 	docker compose logs -f web
 
 migrate:
-	docker compose run --rm web python src/manage.py migrate
+	docker compose run --rm web python src/manage.py migrate --run-syncdb
+
+bootstrap-local:
+	docker compose run --rm web python src/manage.py bootstrap_local \
+		--username "$${LOCAL_BOOTSTRAP_USERNAME:-local_admin}" \
+		--password "$${LOCAL_BOOTSTRAP_PASSWORD:-local-pass-12345}" \
+		--orders "$${LOCAL_BOOTSTRAP_ORDERS:-10}"
+
+init-local: migrate bootstrap-local
+
+dev-bootstrap: down-clean dev-detached init-local
 
 shell:
 	docker compose run --rm web python src/manage.py shell

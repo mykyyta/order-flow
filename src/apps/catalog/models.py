@@ -3,7 +3,6 @@ from django.utils import timezone
 
 
 class Product(models.Model):
-    id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255, unique=True)
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     currency = models.CharField(max_length=3, default="UAH")
@@ -38,7 +37,6 @@ class Color(models.Model):
         ("out_of_stock", "Немає"),
     ]
 
-    id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255, unique=True)
     code = models.IntegerField(unique=True)
     status = models.CharField(

@@ -19,7 +19,7 @@ from apps.production.domain.order_statuses import (
 from apps.production.domain.order_statuses import (
     transition_map as build_transition_map,
 )
-from apps.production.domain.status import STATUS_FINISHED
+from apps.production.domain.status import STATUS_DONE
 from apps.production.models import ProductionOrder, ProductionOrderStatusHistory
 from apps.production.services import change_production_order_status, create_production_order
 
@@ -39,7 +39,7 @@ def _filtered_current_orders_queryset(*, filter_value: str):
     )
     queryset = (
         ProductionOrder.objects.select_related("product", "variant", "variant__color")
-        .exclude(status=STATUS_FINISHED)
+        .exclude(status=STATUS_DONE)
         .annotate(_status_rank=status_rank)
         .order_by("_status_rank", "-created_at", "-id")
     )
@@ -172,7 +172,7 @@ def orders_completed(request):
     orders = (
         ProductionOrder.objects.only("id", "finished_at", "product_id", "variant_id")
         .select_related("product", "variant", "variant__color")
-        .filter(status=STATUS_FINISHED)
+        .filter(status=STATUS_DONE)
         .order_by("-finished_at")
     )
     if search_query:
@@ -206,34 +206,36 @@ def orders_completed(request):
 
 @login_required
 def orders_create(request):
+    template_name = "orders/create.html"
+    context = {"page_title": "Нове замовлення", "page_title_center": True}
+
     if request.method == "POST":
         form = OrderForm(request.POST)
         if form.is_valid():
             orders_url = request.build_absolute_uri(reverse_lazy("orders_active"))
-            create_production_order(
-                product=form.cleaned_data["product"],
-                color=form.cleaned_data["color"],
-                is_etsy=form.cleaned_data["is_etsy"],
-                is_embroidery=form.cleaned_data["is_embroidery"],
-                is_urgent=form.cleaned_data["is_urgent"],
-                comment=form.cleaned_data.get("comment"),
-                created_by=request.user,
-                orders_url=orders_url,
-            )
+            try:
+                create_production_order(
+                    product=form.cleaned_data["product"],
+                    color=form.cleaned_data["color"],
+                    is_etsy=form.cleaned_data["is_etsy"],
+                    is_embroidery=form.cleaned_data["is_embroidery"],
+                    is_urgent=form.cleaned_data["is_urgent"],
+                    comment=form.cleaned_data.get("comment"),
+                    created_by=request.user,
+                    orders_url=orders_url,
+                )
+            except ValueError:
+                form.add_error("color", "Обери колір для замовлення.")
+                context["form"] = form
+                return render(request, template_name, context)
             messages.success(request, "Готово! Замовлення створено.")
             return redirect("orders_active")
-        return render(
-            request,
-            "orders/create.html",
-            {"form": form, "page_title": "Нове замовлення", "page_title_center": True},
-        )
+        context["form"] = form
+        return render(request, template_name, context)
 
     form = OrderForm()
-    return render(
-        request,
-        "orders/create.html",
-        {"form": form, "page_title": "Нове замовлення", "page_title_center": True},
-    )
+    context["form"] = form
+    return render(request, template_name, context)
 
 
 @login_required

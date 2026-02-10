@@ -3,7 +3,7 @@ import pytest
 from django.urls import reverse
 from django.utils import timezone
 
-from apps.production.domain.status import STATUS_FINISHED, STATUS_NEW, STATUS_ON_HOLD
+from apps.production.domain.status import STATUS_BLOCKED, STATUS_DONE, STATUS_NEW
 
 from .conftest import ColorFactory, OrderFactory, ProductFactory, UserFactory
 
@@ -47,7 +47,7 @@ def test_current_orders_list_is_paginated_and_excludes_finished(client):
     color = ColorFactory()
     for _ in range(51):
         OrderFactory(product=model, color=color, status=STATUS_NEW)
-    OrderFactory(product=model, color=color, status=STATUS_FINISHED)
+    OrderFactory(product=model, color=color, status=STATUS_DONE)
     response = client.get(reverse("orders_active"))
     assert response.status_code == 200
     assert response.context["page_obj"].paginator.count == 51
@@ -69,7 +69,7 @@ def test_current_orders_supports_status_filter(client):
         product=model,
         color=color,
         comment="vip batch",
-        status=STATUS_ON_HOLD,
+        status=STATUS_BLOCKED,
     )
     OrderFactory(
         product=model,
@@ -77,7 +77,7 @@ def test_current_orders_supports_status_filter(client):
         comment="regular batch",
         status=STATUS_NEW,
     )
-    response = client.get(reverse("orders_active"), {"filter": STATUS_ON_HOLD})
+    response = client.get(reverse("orders_active"), {"filter": STATUS_BLOCKED})
     assert response.status_code == 200
     orders = list(response.context["orders"])
     assert len(orders) == 1
@@ -94,13 +94,13 @@ def test_finished_orders_search_filters_across_all_finished(client):
         product=model,
         color=color,
         comment="special archive order",
-        status=STATUS_FINISHED,
+        status=STATUS_DONE,
     )
     OrderFactory(
         product=model,
         color=color,
         comment="other archive order",
-        status=STATUS_FINISHED,
+        status=STATUS_DONE,
     )
     OrderFactory(
         product=model,
@@ -126,7 +126,7 @@ def test_finished_orders_search_preserves_query_params_for_pagination(client):
             product=model,
             color=color,
             comment="archive",
-            status=STATUS_FINISHED,
+            status=STATUS_DONE,
         )
     response = client.get(reverse("orders_completed"), {"q": "archive"})
     assert response.status_code == 200
@@ -144,7 +144,7 @@ def test_order_detail_renders_status_indicator(client):
     client.force_login(user, backend=AUTH_BACKEND)
     model = ProductFactory()
     color = ColorFactory()
-    order = OrderFactory(product=model, color=color, status=STATUS_ON_HOLD)
+    order = OrderFactory(product=model, color=color, status=STATUS_BLOCKED)
     response = client.get(reverse("order_detail", kwargs={"pk": order.id}))
     assert response.status_code == 200
     assert b"text-orange-500" in response.content
@@ -222,13 +222,13 @@ def test_orders_bulk_status_updates_multiple_orders(client):
 
     response = client.post(
         reverse("orders_bulk_status"),
-        data={"orders": [order1.id, order2.id], "new_status": "doing"},
+        data={"orders": [order1.id, order2.id], "new_status": "in_progress"},
     )
     assert response.status_code == 302
     order1.refresh_from_db()
     order2.refresh_from_db()
-    assert order1.status == "doing"
-    assert order2.status == "doing"
+    assert order1.status == "in_progress"
+    assert order2.status == "in_progress"
 
 
 @pytest.mark.django_db(transaction=True)
@@ -239,7 +239,7 @@ def test_orders_bulk_status_empty_selection_shows_error(client):
 
     response = client.post(
         reverse("orders_bulk_status"),
-        data={"orders": [], "new_status": "doing"},
+        data={"orders": [], "new_status": "in_progress"},
         follow=True,
     )
     assert response.status_code == 200
@@ -274,8 +274,8 @@ def test_orders_bulk_status_invalid_transition_shows_error(client):
     client.force_login(user, backend=AUTH_BACKEND)
     model = ProductFactory()
     color = ColorFactory()
-    # Order with status "doing" cannot transition back to "new"
-    order = OrderFactory(product=model, color=color, status="doing")
+    # Order with status "in_progress" cannot transition back to "new"
+    order = OrderFactory(product=model, color=color, status="in_progress")
 
     response = client.post(
         reverse("orders_bulk_status"),
@@ -313,3 +313,25 @@ def test_orders_create_post_creates_order(client):
     assert order.product == model
     assert order.variant.color == color
     assert order.status == STATUS_NEW
+
+
+@pytest.mark.django_db(transaction=True)
+def test_orders_create_post_without_color_shows_form_error(client):
+    user = UserFactory()
+    client.force_login(user, backend=AUTH_BACKEND)
+    model = ProductFactory()
+
+    response = client.post(
+        reverse("orders_create"),
+        data={
+            "product": model.id,
+            "color": "",
+            "is_etsy": False,
+            "is_embroidery": False,
+            "is_urgent": False,
+            "comment": "No color order",
+        },
+    )
+
+    assert response.status_code == 200
+    assert "Обери колір".encode() in response.content

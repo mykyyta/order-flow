@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Optional
 
-from apps.production.domain.status import STATUS_FINISHED
+from apps.production.domain.status import STATUS_DONE
 
 
 def compute_finished_at(
@@ -12,6 +12,6 @@ def compute_finished_at(
     new_status: str,
     now: datetime,
 ) -> Optional[datetime]:
-    if new_status == STATUS_FINISHED:
+    if new_status == STATUS_DONE:
         return current_finished_at or now
     return None

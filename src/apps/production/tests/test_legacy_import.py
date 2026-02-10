@@ -17,7 +17,7 @@ from apps.warehouses.models import Warehouse
 
 
 def test_legacy_order_status_mapping_handles_almost_finished():
-    assert LEGACY_ORDER_STATUS_TO_V2["almost_finished"] == "finished"
+    assert LEGACY_ORDER_STATUS_TO_V2["almost_finished"] == "done"
 
 
 def test_legacy_movement_reason_mappings_contain_core_values():
@@ -149,8 +149,8 @@ def test_apply_mode_normalizes_legacy_order_statuses():
 
     order.refresh_from_db()
     history_status = order.history.latest("id").new_status
-    assert order.status == "finished"
-    assert history_status == "finished"
+    assert order.status == "done"
+    assert history_status == "done"
     assert result["updated"]["order_statuses"] >= 1
     assert result["updated"]["order_status_history"] >= 1
 
@@ -208,7 +208,7 @@ def test_run_final_import_and_verify_normalizes_statuses_and_succeeds():
     result = run_final_import_and_verify()
 
     order.refresh_from_db()
-    assert order.status == "finished"
+    assert order.status == "done"
     assert result["mode"] == "final"
     assert result["apply"]["mode"] == "apply"
     assert result["verify"]["mode"] == "verify"
