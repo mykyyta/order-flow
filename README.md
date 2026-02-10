@@ -59,6 +59,14 @@ If containers are already running:
 make init-local
 ```
 
+Useful local shortcuts:
+```bash
+make help            # all commands with descriptions
+make dev-refresh     # full backend refresh (same as dev-bootstrap)
+make dev-refresh-ui  # full refresh + Tailwind CSS rebuild
+make down-reset      # full reset with DB volume removal
+```
+
 Manual equivalents:
 ```bash
 docker compose up -d --build
