@@ -11,14 +11,14 @@ from apps.inventory.services import (
     transfer_finished_stock,
 )
 from apps.accounts.tests.conftest import UserFactory
-from apps.catalog.tests.conftest import ColorFactory, ProductModelFactory
+from apps.catalog.tests.conftest import ColorFactory, ProductFactory
 from apps.materials.models import Material, MaterialColor
 from apps.warehouses.models import Warehouse
 
 
 @pytest.mark.django_db
 def test_get_stock_quantity_returns_zero_when_missing():
-    model = ProductModelFactory(is_bundle=False)
+    model = ProductFactory(is_bundle=False)
     color = ColorFactory()
 
     assert get_stock_quantity(product_id=model.id, color_id=color.id) == 0
@@ -26,7 +26,7 @@ def test_get_stock_quantity_returns_zero_when_missing():
 
 @pytest.mark.django_db
 def test_add_to_stock_creates_record_and_movement():
-    model = ProductModelFactory(is_bundle=False)
+    model = ProductFactory(is_bundle=False)
     color = ColorFactory()
     user = UserFactory()
 
@@ -54,7 +54,7 @@ def test_add_to_stock_creates_record_and_movement():
 
 @pytest.mark.django_db
 def test_remove_from_stock_updates_quantity_and_writes_movement():
-    model = ProductModelFactory(is_bundle=False)
+    model = ProductFactory(is_bundle=False)
     color = ColorFactory()
     user = UserFactory()
     add_to_stock(
@@ -82,7 +82,7 @@ def test_remove_from_stock_updates_quantity_and_writes_movement():
 
 @pytest.mark.django_db
 def test_remove_from_stock_raises_when_not_enough():
-    model = ProductModelFactory(is_bundle=False)
+    model = ProductFactory(is_bundle=False)
     color = ColorFactory()
     user = UserFactory()
     add_to_stock(
@@ -109,7 +109,7 @@ def test_add_and_remove_stock_by_material_colors():
     leather = Material.objects.create(name="Leather smooth")
     blue = MaterialColor.objects.create(material=felt, name="Blue", code=11)
     black = MaterialColor.objects.create(material=leather, name="Black", code=2)
-    product = ProductModelFactory(
+    product = ProductFactory(
         is_bundle=False,
         primary_material=felt,
         secondary_material=leather,
@@ -152,7 +152,7 @@ def test_add_and_remove_stock_by_material_colors():
 
 @pytest.mark.django_db
 def test_stock_record_requires_warehouse():
-    model = ProductModelFactory(is_bundle=False)
+    model = ProductFactory(is_bundle=False)
     color = ColorFactory()
     variant = Variant.objects.create(
         product=model,
@@ -167,7 +167,7 @@ def test_stock_record_requires_warehouse():
 
 
 @pytest.mark.django_db
-def test_stock_record_requires_product_variant():
+def test_stock_record_requires_variant():
     warehouse = Warehouse.objects.create(
         name="Variant Required Warehouse",
         code="INV-VARIANT-REQ",
@@ -185,7 +185,7 @@ def test_stock_record_requires_product_variant():
 
 @pytest.mark.django_db
 def test_get_stock_quantity_accepts_variant_id():
-    model = ProductModelFactory(is_bundle=False)
+    model = ProductFactory(is_bundle=False)
     color = ColorFactory()
     variant = Variant.objects.create(product=model, color=color)
     user = UserFactory()
@@ -202,7 +202,7 @@ def test_get_stock_quantity_accepts_variant_id():
 
 @pytest.mark.django_db
 def test_add_to_stock_accepts_variant_id_without_legacy_fields():
-    model = ProductModelFactory(is_bundle=False)
+    model = ProductFactory(is_bundle=False)
     color = ColorFactory()
     variant = Variant.objects.create(product=model, color=color)
     user = UserFactory()
@@ -220,7 +220,7 @@ def test_add_to_stock_accepts_variant_id_without_legacy_fields():
 
 @pytest.mark.django_db
 def test_remove_from_stock_accepts_variant_id():
-    model = ProductModelFactory(is_bundle=False)
+    model = ProductFactory(is_bundle=False)
     color = ColorFactory()
     variant = Variant.objects.create(product=model, color=color)
     user = UserFactory()
@@ -243,7 +243,7 @@ def test_remove_from_stock_accepts_variant_id():
 
 @pytest.mark.django_db
 def test_add_to_stock_supports_multiple_warehouses():
-    model = ProductModelFactory(is_bundle=False)
+    model = ProductFactory(is_bundle=False)
     color = ColorFactory()
     user = UserFactory()
     main = Warehouse.objects.create(
@@ -294,7 +294,7 @@ def test_add_to_stock_supports_multiple_warehouses():
 
 @pytest.mark.django_db
 def test_transfer_finished_stock_moves_between_warehouses():
-    model = ProductModelFactory(is_bundle=False)
+    model = ProductFactory(is_bundle=False)
     color = ColorFactory()
     variant = Variant.objects.create(product=model, color=color)
     user = UserFactory()
@@ -351,7 +351,7 @@ def test_transfer_finished_stock_moves_between_warehouses():
 
 @pytest.mark.django_db
 def test_transfer_finished_stock_requires_different_warehouses():
-    model = ProductModelFactory(is_bundle=False)
+    model = ProductFactory(is_bundle=False)
     color = ColorFactory()
     variant = Variant.objects.create(product=model, color=color)
     warehouse = Warehouse.objects.create(
@@ -373,7 +373,7 @@ def test_transfer_finished_stock_requires_different_warehouses():
 
 @pytest.mark.django_db
 def test_transfer_finished_stock_rolls_back_when_not_enough_stock():
-    model = ProductModelFactory(is_bundle=False)
+    model = ProductFactory(is_bundle=False)
     color = ColorFactory()
     variant = Variant.objects.create(product=model, color=color)
     from_warehouse = Warehouse.objects.create(

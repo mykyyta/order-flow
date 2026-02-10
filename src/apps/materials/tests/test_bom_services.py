@@ -4,9 +4,9 @@ from decimal import Decimal
 import pytest
 
 from apps.catalog.models import BundleComponent, Variant
-from apps.catalog.tests.conftest import ColorFactory, ProductModelFactory
+from apps.catalog.tests.conftest import ColorFactory, ProductFactory
 from apps.materials.models import Material, BOM
-from apps.materials.services import calculate_material_requirements_for_customer_order_line
+from apps.materials.services import calculate_material_requirements_for_sales_order_line
 from apps.sales.models import SalesOrder, SalesOrderLine
 
 
@@ -14,7 +14,7 @@ from apps.sales.models import SalesOrder, SalesOrderLine
 def test_calculate_material_requirements_for_single_product_line():
     felt = Material.objects.create(name="Felt")
     leather = Material.objects.create(name="Leather smooth")
-    product = ProductModelFactory(name="Shopper", is_bundle=False)
+    product = ProductFactory(name="Shopper", is_bundle=False)
     color = ColorFactory()
     BOM.objects.create(
         product=product,
@@ -39,7 +39,7 @@ def test_calculate_material_requirements_for_single_product_line():
         quantity=3,
     )
 
-    requirements = calculate_material_requirements_for_customer_order_line(line=line)
+    requirements = calculate_material_requirements_for_sales_order_line(line=line)
     by_name = {item.material_name: item for item in requirements}
 
     assert by_name["Felt"].quantity == Decimal("1.80")
@@ -51,9 +51,9 @@ def test_calculate_material_requirements_for_single_product_line():
 def test_calculate_material_requirements_for_bundle_line():
     felt = Material.objects.create(name="Felt")
     leather = Material.objects.create(name="Leather smooth")
-    bundle = ProductModelFactory(name="Set", is_bundle=True)
-    clutch = ProductModelFactory(name="Clutch", is_bundle=False)
-    strap = ProductModelFactory(name="Strap", is_bundle=False)
+    bundle = ProductFactory(name="Set", is_bundle=True)
+    clutch = ProductFactory(name="Clutch", is_bundle=False)
+    strap = ProductFactory(name="Strap", is_bundle=False)
     color = ColorFactory()
     BundleComponent.objects.create(bundle=bundle, component=clutch, quantity=1, is_primary=True)
     BundleComponent.objects.create(bundle=bundle, component=strap, quantity=2, is_primary=False)
@@ -80,7 +80,7 @@ def test_calculate_material_requirements_for_bundle_line():
         quantity=2,
     )
 
-    requirements = calculate_material_requirements_for_customer_order_line(line=line)
+    requirements = calculate_material_requirements_for_sales_order_line(line=line)
     by_name = {item.material_name: item for item in requirements}
 
     assert by_name["Felt"].quantity == Decimal("0.50")

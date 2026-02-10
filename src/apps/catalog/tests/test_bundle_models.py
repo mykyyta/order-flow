@@ -10,19 +10,19 @@ from apps.catalog.models import (
 )
 from apps.materials.models import Material, MaterialColor
 
-from .conftest import ColorFactory, ProductModelFactory
+from .conftest import ColorFactory, ProductFactory
 
 
 @pytest.mark.django_db
-def test_product_model_is_bundle_defaults_to_false():
-    product = ProductModelFactory()
+def test_product_is_bundle_defaults_to_false():
+    product = ProductFactory()
     assert product.is_bundle is False
 
 
 @pytest.mark.django_db
 def test_bundle_component_unique_per_bundle_component_pair():
-    bundle = ProductModelFactory(is_bundle=True)
-    component = ProductModelFactory(is_bundle=False)
+    bundle = ProductFactory(is_bundle=True)
+    component = ProductFactory(is_bundle=False)
 
     BundleComponent.objects.create(
         bundle=bundle,
@@ -42,8 +42,8 @@ def test_bundle_component_unique_per_bundle_component_pair():
 
 @pytest.mark.django_db
 def test_bundle_component_has_required_flag_and_optional_group():
-    bundle = ProductModelFactory(is_bundle=True)
-    component = ProductModelFactory(is_bundle=False)
+    bundle = ProductFactory(is_bundle=True)
+    component = ProductFactory(is_bundle=False)
 
     relation = BundleComponent.objects.create(
         bundle=bundle,
@@ -58,8 +58,8 @@ def test_bundle_component_has_required_flag_and_optional_group():
 
 @pytest.mark.django_db
 def test_bundle_color_mapping_unique_per_bundle_color_component():
-    bundle = ProductModelFactory(is_bundle=True)
-    component = ProductModelFactory(is_bundle=False)
+    bundle = ProductFactory(is_bundle=True)
+    component = ProductFactory(is_bundle=False)
     bundle_color = ColorFactory()
     component_color = ColorFactory()
 
@@ -80,11 +80,11 @@ def test_bundle_color_mapping_unique_per_bundle_color_component():
 
 
 @pytest.mark.django_db
-def test_product_model_supports_primary_and_secondary_materials():
+def test_product_supports_primary_and_secondary_materials():
     felt = Material.objects.create(name="Felt")
     leather = Material.objects.create(name="Leather smooth")
 
-    product = ProductModelFactory(
+    product = ProductFactory(
         is_bundle=False,
         primary_material=felt,
         secondary_material=leather,
@@ -100,8 +100,8 @@ def test_bundle_preset_component_unique_per_component():
     leather = Material.objects.create(name="Leather")
     black_felt = MaterialColor.objects.create(material=felt, name="Black", code=1)
     black_leather = MaterialColor.objects.create(material=leather, name="Black", code=1)
-    bundle = ProductModelFactory(is_bundle=True)
-    component = ProductModelFactory(is_bundle=False)
+    bundle = ProductFactory(is_bundle=True)
+    component = ProductFactory(is_bundle=False)
     preset = BundlePreset.objects.create(bundle=bundle, name="Total black")
 
     BundlePresetComponent.objects.create(

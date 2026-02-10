@@ -36,7 +36,7 @@ class MaterialRequirement:
     quantity: Decimal
 
 
-def calculate_material_requirements_for_customer_order_line(
+def calculate_material_requirements_for_sales_order_line(
     *,
     line: SalesOrderLine,
 ) -> list[MaterialRequirement]:

@@ -24,9 +24,9 @@ NAV_ITEMS = [
     {"url_name": "orders_active", "label": "У роботі", "active_on": ("orders_active", "index")},
     {"url_name": "orders_completed", "label": "Завершені", "active_on": ("orders_completed",)},
     {
-        "url_name": "product_models",
+        "url_name": "products",
         "label": "Моделі",
-        "active_on": ("product_models", "product_model_edit", "product_models_archive"),
+        "active_on": ("products", "product_edit", "products_archive"),
     },
     {"url_name": "colors", "label": "Кольори", "active_on": ("colors", "color_edit", "colors_archive")},
     {
@@ -64,4 +64,3 @@ def message_alert_class(message_tags: str) -> str:
         if tag in tag_to_class:
             return tag_to_class[tag]
     return "alert alert-info"
-

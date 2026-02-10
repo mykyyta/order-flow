@@ -3,7 +3,7 @@ from .models import Color, Product
 
 
 @admin.register(Product)
-class ProductModelAdmin(admin.ModelAdmin):
+class ProductAdmin(admin.ModelAdmin):
     list_display = ("id", "name", "archived_at")
 
 

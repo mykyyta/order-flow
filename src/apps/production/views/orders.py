@@ -211,7 +211,7 @@ def orders_create(request):
         if form.is_valid():
             orders_url = request.build_absolute_uri(reverse_lazy("orders_active"))
             create_production_order(
-                model=form.cleaned_data["model"],
+                product=form.cleaned_data["product"],
                 color=form.cleaned_data["color"],
                 is_etsy=form.cleaned_data["is_etsy"],
                 is_embroidery=form.cleaned_data["is_embroidery"],
@@ -243,7 +243,7 @@ def order_detail(request, pk):
 
     order_data = {
         "id": order.id,
-        "model": order.product.name,
+        "product": order.product.name,
         "color": order.variant.color.name if order.variant and order.variant.color else "-",
         "is_embroidery": order.is_embroidery,
         "comment": order.comment,
@@ -251,8 +251,8 @@ def order_detail(request, pk):
         "is_etsy": order.is_etsy,
         "created_at": localtime(order.created_at) if order.created_at else None,
         "finished_at": localtime(order.finished_at) if order.finished_at else None,
-        "current_status_code": order.status,
-        "current_status_display": order.get_status_display(),
+        "status_code": order.status,
+        "status_display": order.get_status_display(),
         "status_history": [
             {
                 "id": status.id,
@@ -290,7 +290,7 @@ def order_edit(request, pk):
     else:
         form = OrderForm(instance=order)
     # Ensure current order color stays in dropdown even if out_of_stock
-    form.fields["model"].queryset = Product.objects.filter(
+    form.fields["product"].queryset = Product.objects.filter(
         Q(archived_at__isnull=True) | Q(pk=order.product_id)
     ).order_by("name")
     order_color_id = order.variant.color_id if order.variant_id else None

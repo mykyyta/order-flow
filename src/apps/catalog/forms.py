@@ -35,7 +35,7 @@ class ColorForm(forms.ModelForm):
         return name.capitalize()
 
 
-class ProductModelForm(forms.ModelForm):
+class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
         fields = ["name"]

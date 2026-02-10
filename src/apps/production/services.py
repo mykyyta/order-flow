@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from django.db import transaction
 
-from apps.catalog.variants import resolve_or_create_product_variant
+from apps.catalog.variants import resolve_or_create_variant
 from apps.production.notifications import send_order_created, send_order_finished
 from apps.production.domain.status import STATUS_FINISHED, STATUS_NEW, validate_status
 from apps.production.models import ProductionOrder, ProductionOrderStatusHistory
@@ -21,8 +21,7 @@ if TYPE_CHECKING:
 @transaction.atomic
 def create_production_order(
     *,
-    product: "Product | None" = None,
-    model: "Product | None" = None,
+    product: "Product",
     variant: "Variant | None" = None,
     color: "Color | None" = None,
     primary_material_color: "MaterialColor | None" = None,
@@ -35,14 +34,10 @@ def create_production_order(
     orders_url: str | None,
     sales_order_line: "SalesOrderLine | None" = None,
 ) -> ProductionOrder:
-    product = product or model
-    if product is None:
-        raise ValueError("Product is required")
-
     if variant is None:
         if color is None and primary_material_color is None:
             raise ValueError("Order requires color or primary material color")
-        variant = resolve_or_create_product_variant(
+        variant = resolve_or_create_variant(
             product_id=product.id,
             color_id=color.id if color else None,
             primary_material_color_id=primary_material_color.id if primary_material_color else None,

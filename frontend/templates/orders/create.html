@@ -8,15 +8,15 @@
     {% csrf_token %}
 
     <div class="space-y-4">
-        {% include "partials/form_field.html" with field=form.model label="Модель" %}
+        {% include "partials/form_field.html" with field=form.product label="Модель" %}
         {% include "partials/form_field.html" with field=form.color label="Колір" %}
 
         <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
-            {% include "partials/form_checkbox_option.html" with field=form.etsy label="Etsy" %}
-            {% include "partials/form_checkbox_option.html" with field=form.embroidery label="Вишивка" %}
-            {% include "partials/form_checkbox_option.html" with field=form.urgent label="Терміново" %}
-            {% if form.etsy.errors or form.embroidery.errors or form.urgent.errors %}
-            <p class="form-error w-full">{{ form.etsy.errors.0|default:form.embroidery.errors.0|default:form.urgent.errors.0 }}</p>
+            {% include "partials/form_checkbox_option.html" with field=form.is_etsy label="Etsy" %}
+            {% include "partials/form_checkbox_option.html" with field=form.is_embroidery label="Вишивка" %}
+            {% include "partials/form_checkbox_option.html" with field=form.is_urgent label="Терміново" %}
+            {% if form.is_etsy.errors or form.is_embroidery.errors or form.is_urgent.errors %}
+            <p class="form-error w-full">{{ form.is_etsy.errors.0|default:form.is_embroidery.errors.0|default:form.is_urgent.errors.0 }}</p>
             {% endif %}
         </div>
 

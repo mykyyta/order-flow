@@ -5,7 +5,7 @@ from django.utils import timezone
 
 from apps.production.domain.status import STATUS_FINISHED, STATUS_NEW, STATUS_ON_HOLD
 
-from .conftest import ColorFactory, OrderFactory, ProductModelFactory, UserFactory
+from .conftest import ColorFactory, OrderFactory, ProductFactory, UserFactory
 
 AUTH_BACKEND = "django.contrib.auth.backends.ModelBackend"
 
@@ -25,10 +25,10 @@ def test_transition_map_present_in_page(client):
 def test_active_orders_render_comment_marker(client):
     user = UserFactory()
     client.force_login(user, backend=AUTH_BACKEND)
-    model = ProductModelFactory()
+    model = ProductFactory()
     color = ColorFactory()
     OrderFactory(
-        model=model,
+        product=model,
         color=color,
         comment="ready for review",
         status=STATUS_NEW,
@@ -43,11 +43,11 @@ def test_active_orders_render_comment_marker(client):
 def test_current_orders_list_is_paginated_and_excludes_finished(client):
     user = UserFactory()
     client.force_login(user, backend=AUTH_BACKEND)
-    model = ProductModelFactory()
+    model = ProductFactory()
     color = ColorFactory()
     for _ in range(51):
-        OrderFactory(model=model, color=color, status=STATUS_NEW)
-    OrderFactory(model=model, color=color, status=STATUS_FINISHED)
+        OrderFactory(product=model, color=color, status=STATUS_NEW)
+    OrderFactory(product=model, color=color, status=STATUS_FINISHED)
     response = client.get(reverse("orders_active"))
     assert response.status_code == 200
     assert response.context["page_obj"].paginator.count == 51
@@ -63,16 +63,16 @@ def test_current_orders_list_is_paginated_and_excludes_finished(client):
 def test_current_orders_supports_status_filter(client):
     user = UserFactory()
     client.force_login(user, backend=AUTH_BACKEND)
-    model = ProductModelFactory()
+    model = ProductFactory()
     color = ColorFactory()
     target = OrderFactory(
-        model=model,
+        product=model,
         color=color,
         comment="vip batch",
         status=STATUS_ON_HOLD,
     )
     OrderFactory(
-        model=model,
+        product=model,
         color=color,
         comment="regular batch",
         status=STATUS_NEW,
@@ -88,22 +88,22 @@ def test_current_orders_supports_status_filter(client):
 def test_finished_orders_search_filters_across_all_finished(client):
     user = UserFactory()
     client.force_login(user, backend=AUTH_BACKEND)
-    model = ProductModelFactory(name="Model History")
+    model = ProductFactory(name="Model History")
     color = ColorFactory(name="Navy", code=7)
     target = OrderFactory(
-        model=model,
+        product=model,
         color=color,
         comment="special archive order",
         status=STATUS_FINISHED,
     )
     OrderFactory(
-        model=model,
+        product=model,
         color=color,
         comment="other archive order",
         status=STATUS_FINISHED,
     )
     OrderFactory(
-        model=model,
+        product=model,
         color=color,
         comment="special archive order",
         status=STATUS_NEW,
@@ -119,11 +119,11 @@ def test_finished_orders_search_filters_across_all_finished(client):
 def test_finished_orders_search_preserves_query_params_for_pagination(client):
     user = UserFactory()
     client.force_login(user, backend=AUTH_BACKEND)
-    model = ProductModelFactory()
+    model = ProductFactory()
     color = ColorFactory()
     for _ in range(21):
         OrderFactory(
-            model=model,
+            product=model,
             color=color,
             comment="archive",
             status=STATUS_FINISHED,
@@ -142,9 +142,9 @@ def test_finished_orders_search_preserves_query_params_for_pagination(client):
 def test_order_detail_renders_status_indicator(client):
     user = UserFactory()
     client.force_login(user, backend=AUTH_BACKEND)
-    model = ProductModelFactory()
+    model = ProductFactory()
     color = ColorFactory()
-    order = OrderFactory(model=model, color=color, status=STATUS_ON_HOLD)
+    order = OrderFactory(product=model, color=color, status=STATUS_ON_HOLD)
     response = client.get(reverse("order_detail", kwargs={"pk": order.id}))
     assert response.status_code == 200
     assert b"text-orange-500" in response.content
@@ -156,8 +156,8 @@ def test_orders_create_hides_archived_catalog_items(client):
     user = UserFactory()
     client.force_login(user, backend=AUTH_BACKEND)
 
-    active_model = ProductModelFactory(name="Active model")
-    archived_model = ProductModelFactory(name="Archived model", archived_at=timezone.now())
+    active_model = ProductFactory(name="Active model")
+    archived_model = ProductFactory(name="Archived model", archived_at=timezone.now())
     active_color = ColorFactory(name="Active color", code=1001, status="in_stock")
     archived_color = ColorFactory(
         name="Archived color",
@@ -179,9 +179,9 @@ def test_order_edit_includes_archived_model_and_color_in_dropdown(client):
     user = UserFactory()
     client.force_login(user, backend=AUTH_BACKEND)
 
-    model = ProductModelFactory(name="Model to archive")
+    model = ProductFactory(name="Model to archive")
     color = ColorFactory(name="Color to archive", code=888, status="in_stock")
-    order = OrderFactory(model=model, color=color, status=STATUS_NEW)
+    order = OrderFactory(product=model, color=color, status=STATUS_NEW)
 
     model.archived_at = timezone.now()
     model.save(update_fields=["archived_at"])
@@ -215,10 +215,10 @@ def test_palette_lab_renders_page(client):
 def test_orders_bulk_status_updates_multiple_orders(client):
     user = UserFactory()
     client.force_login(user, backend=AUTH_BACKEND)
-    model = ProductModelFactory()
+    model = ProductFactory()
     color = ColorFactory()
-    order1 = OrderFactory(model=model, color=color, status=STATUS_NEW)
-    order2 = OrderFactory(model=model, color=color, status=STATUS_NEW)
+    order1 = OrderFactory(product=model, color=color, status=STATUS_NEW)
+    order2 = OrderFactory(product=model, color=color, status=STATUS_NEW)
 
     response = client.post(
         reverse("orders_bulk_status"),
@@ -253,9 +253,9 @@ def test_orders_bulk_status_no_status_shows_error(client):
     """Empty status causes form validation error."""
     user = UserFactory()
     client.force_login(user, backend=AUTH_BACKEND)
-    model = ProductModelFactory()
+    model = ProductFactory()
     color = ColorFactory()
-    order = OrderFactory(model=model, color=color, status=STATUS_NEW)
+    order = OrderFactory(product=model, color=color, status=STATUS_NEW)
 
     response = client.post(
         reverse("orders_bulk_status"),
@@ -272,10 +272,10 @@ def test_orders_bulk_status_no_status_shows_error(client):
 def test_orders_bulk_status_invalid_transition_shows_error(client):
     user = UserFactory()
     client.force_login(user, backend=AUTH_BACKEND)
-    model = ProductModelFactory()
+    model = ProductFactory()
     color = ColorFactory()
     # Order with status "doing" cannot transition back to "new"
-    order = OrderFactory(model=model, color=color, status="doing")
+    order = OrderFactory(product=model, color=color, status="doing")
 
     response = client.post(
         reverse("orders_bulk_status"),
@@ -291,13 +291,13 @@ def test_orders_bulk_status_invalid_transition_shows_error(client):
 def test_orders_create_post_creates_order(client):
     user = UserFactory()
     client.force_login(user, backend=AUTH_BACKEND)
-    model = ProductModelFactory()
+    model = ProductFactory()
     color = ColorFactory()
 
     response = client.post(
         reverse("orders_create"),
         data={
-            "model": model.id,
+            "product": model.id,
             "color": color.id,
             "is_etsy": False,
             "is_embroidery": False,

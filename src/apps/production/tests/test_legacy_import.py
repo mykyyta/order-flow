@@ -2,7 +2,7 @@ import pytest
 from decimal import Decimal
 
 from apps.catalog.models import Variant
-from apps.catalog.tests.conftest import ColorFactory, ProductModelFactory
+from apps.catalog.tests.conftest import ColorFactory, ProductFactory
 from apps.inventory.models import ProductStockMovement, ProductStock
 from apps.materials.models import Material, MaterialStockMovement, MaterialStock, BOM
 from apps.production.legacy_import import run_final_import_and_verify, run_import_legacy
@@ -60,7 +60,7 @@ def test_verify_mode_returns_aggregate_snapshot():
     assert result["aggregates"]["orders"] >= 0
     assert result["aggregates"]["sales_orders"] >= 0
     assert result["aggregates"]["sales_order_lines"] >= 0
-    assert result["aggregates"]["product_variants"] >= 0
+    assert result["aggregates"]["variants"] >= 0
     assert result["aggregates"]["finished_stock_records"] >= 0
     assert result["aggregates"]["material_stock_records"] >= 0
     assert result["aggregates"]["finished_stock_quantity_total"] >= 0
@@ -80,7 +80,7 @@ def test_verify_mode_returns_finished_balance_by_warehouse():
         is_default_for_production=False,
         is_active=True,
     )
-    product = ProductModelFactory(is_bundle=False)
+    product = ProductFactory(is_bundle=False)
     color = ColorFactory()
     variant = Variant.objects.create(product=product, color=color)
     stock_record = ProductStock.objects.create(
@@ -164,7 +164,7 @@ def test_verify_mode_strict_fails_when_deltas_are_non_zero():
         is_default_for_production=False,
         is_active=True,
     )
-    product = ProductModelFactory(is_bundle=False)
+    product = ProductFactory(is_bundle=False)
     color = ColorFactory()
     variant = Variant.objects.create(product=product, color=color)
     ProductStock.objects.create(
@@ -224,7 +224,7 @@ def test_run_final_import_and_verify_fails_when_verify_checks_fail():
         is_default_for_production=False,
         is_active=True,
     )
-    product = ProductModelFactory(is_bundle=False)
+    product = ProductFactory(is_bundle=False)
     color = ColorFactory()
     variant = Variant.objects.create(product=product, color=color)
     ProductStock.objects.create(

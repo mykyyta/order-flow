@@ -20,7 +20,7 @@
             type="checkbox"
             name="orders"
             value="{{ order.id }}"
-            data-current-status="{{ order.current_status }}"
+            data-current-status="{{ order.status }}"
             aria-label="Позначити"
         >
         <button
@@ -32,12 +32,12 @@
         >
             <div class="flex items-center gap-1.5 min-w-0">
                 <span class="truncate text-sm font-medium text-slate-800">
-                    {{ order.model.name }} · {{ order.color.name }}
+                    {{ order.product.name }} · {% if order.variant and order.variant.color %}{{ order.variant.color.name }}{% else %}—{% endif %}
                 </span>
                 {% include "partials/order_tags_icons.html" with order=order %}
             </div>
             <div class="flex-shrink-0">
-                {% status_indicator order.current_status order.get_current_status_display muted=1 %}
+                {% status_indicator order.status order.get_status_display muted=1 %}
             </div>
         </button>
     </div>

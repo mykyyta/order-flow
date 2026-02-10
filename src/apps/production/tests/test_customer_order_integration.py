@@ -10,13 +10,13 @@ from apps.production.services import change_production_order_status, create_prod
 from apps.materials.models import Material, MaterialColor
 from apps.sales.models import SalesOrder, SalesOrderLine
 
-from .conftest import ColorFactory, ProductModelFactory, UserFactory
+from .conftest import ColorFactory, ProductFactory, UserFactory
 
 
 @pytest.mark.django_db
 def test_change_order_status_finished_adds_item_to_stock_for_customer_line():
     user = UserFactory()
-    model = ProductModelFactory(is_bundle=False)
+    model = ProductFactory(is_bundle=False)
     color = ColorFactory()
     sales_order = SalesOrder.objects.create(
         source=SalesOrder.Source.WHOLESALE,
@@ -31,7 +31,7 @@ def test_change_order_status_finished_adds_item_to_stock_for_customer_line():
 
     with patch("apps.production.services.send_order_created"), patch("apps.production.services.send_order_finished"):
         order = create_production_order(
-            model=model,
+            product=model,
             color=color,
             is_embroidery=False,
             is_urgent=False,
@@ -62,7 +62,7 @@ def test_change_order_status_finished_uses_material_color_stock_key():
     leather = Material.objects.create(name="Leather smooth")
     blue = MaterialColor.objects.create(material=felt, name="Blue", code=77)
     black = MaterialColor.objects.create(material=leather, name="Black", code=7)
-    product = ProductModelFactory(
+    product = ProductFactory(
         is_bundle=False,
         primary_material=felt,
         secondary_material=leather,
@@ -84,7 +84,7 @@ def test_change_order_status_finished_uses_material_color_stock_key():
 
     with patch("apps.production.services.send_order_created"), patch("apps.production.services.send_order_finished"):
         order = create_production_order(
-            model=product,
+            product=product,
             color=None,
             primary_material_color=blue,
             secondary_material_color=black,

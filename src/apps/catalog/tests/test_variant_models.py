@@ -5,12 +5,12 @@ from django.db import IntegrityError
 from apps.catalog.models import Variant
 from apps.materials.models import Material, MaterialColor
 
-from .conftest import ColorFactory, ProductModelFactory
+from .conftest import ColorFactory, ProductFactory
 
 
 @pytest.mark.django_db
-def test_product_variant_unique_per_variant_dimensions():
-    product = ProductModelFactory()
+def test_variant_unique_per_dimensions():
+    product = ProductFactory()
     color = ColorFactory()
 
     Variant.objects.create(product=product, color=color)
@@ -20,16 +20,16 @@ def test_product_variant_unique_per_variant_dimensions():
 
 
 @pytest.mark.django_db
-def test_product_variant_requires_color_or_primary_material_color():
-    product = ProductModelFactory()
+def test_variant_requires_color_or_primary_material_color():
+    product = ProductFactory()
 
     with pytest.raises(IntegrityError):
         Variant.objects.create(product=product)
 
 
 @pytest.mark.django_db
-def test_product_variant_requires_primary_when_secondary_color_set():
-    product = ProductModelFactory()
+def test_variant_requires_primary_when_secondary_color_set():
+    product = ProductFactory()
     material = Material.objects.create(name="Felt")
     secondary = MaterialColor.objects.create(material=material, name="Black", code=101)
 
@@ -41,8 +41,8 @@ def test_product_variant_requires_primary_when_secondary_color_set():
 
 
 @pytest.mark.django_db
-def test_product_variant_disallows_mix_of_color_and_primary_material_color():
-    product = ProductModelFactory()
+def test_variant_disallows_mix_of_color_and_primary_material_color():
+    product = ProductFactory()
     color = ColorFactory()
     material = Material.objects.create(name="Leather")
     primary = MaterialColor.objects.create(material=material, name="Blue", code=202)

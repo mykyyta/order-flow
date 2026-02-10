@@ -6,7 +6,7 @@ import pytest
 from apps.production.models import DelayedNotificationLog
 from apps.user_settings.models import NotificationSetting
 
-from .conftest import ColorFactory, OrderFactory, ProductModelFactory, UserFactory
+from .conftest import ColorFactory, OrderFactory, ProductFactory, UserFactory
 
 
 @pytest.mark.django_db
@@ -21,9 +21,9 @@ def test_orders_created_delayed_is_idempotent_per_user_and_order():
             "notify_order_finished": True,
         },
     )
-    model = ProductModelFactory()
+    model = ProductFactory()
     color = ColorFactory()
-    order = OrderFactory(model=model, color=color)
+    order = OrderFactory(product=model, color=color)
     with patch("apps.production.notifications.send_tg_message", return_value=True):
         _orders_created_delayed(orders=[order])
         _orders_created_delayed(orders=[order])

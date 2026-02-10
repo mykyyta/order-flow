@@ -2,7 +2,7 @@
 import pytest
 from django.db import IntegrityError
 
-from apps.catalog.tests.conftest import ProductModelFactory
+from apps.catalog.tests.conftest import ProductFactory
 from apps.materials.models import Material, MaterialColor, BOM
 
 
@@ -28,7 +28,7 @@ def test_material_color_str():
 @pytest.mark.django_db
 def test_product_material_unique_per_product_material():
     felt = Material.objects.create(name="Felt")
-    product = ProductModelFactory(name="Mini bag")
+    product = ProductFactory(name="Mini bag")
 
     BOM.objects.create(
         product=product,
@@ -49,7 +49,7 @@ def test_product_material_unique_per_product_material():
 @pytest.mark.django_db
 def test_product_material_str():
     felt = Material.objects.create(name="Felt")
-    product = ProductModelFactory(name="Maxi bag")
+    product = ProductFactory(name="Maxi bag")
     item = BOM.objects.create(
         product=product,
         material=felt,

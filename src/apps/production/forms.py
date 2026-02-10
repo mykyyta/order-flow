@@ -1,7 +1,7 @@
 from django import forms
 
 from apps.catalog.models import Color, Product
-from apps.catalog.variants import resolve_or_create_product_variant
+from apps.catalog.variants import resolve_or_create_variant
 from apps.production.domain.order_statuses import status_choices
 from apps.production.models import ProductionOrder
 
@@ -21,7 +21,7 @@ class HiddenEmptyOptionSelect(forms.Select):
 
 
 class OrderForm(forms.ModelForm):
-    model = forms.ModelChoiceField(
+    product = forms.ModelChoiceField(
         queryset=Product.objects.none(),
         required=True,
         widget=HiddenEmptyOptionSelect(attrs={"class": FORM_SELECT}),
@@ -50,9 +50,9 @@ class OrderForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["model"].empty_label = "—"
+        self.fields["product"].empty_label = "—"
         self.fields["color"].empty_label = "—"
-        self.fields["model"].queryset = (
+        self.fields["product"].queryset = (
             Product.objects.filter(archived_at__isnull=True).order_by("name")
         )
         self.fields["color"].queryset = (
@@ -63,14 +63,14 @@ class OrderForm(forms.ModelForm):
             .order_by("name")
         )
         if self.instance and self.instance.pk and self.instance.variant_id:
-            self.initial["model"] = self.instance.product_id
+            self.initial["product"] = self.instance.product_id
             self.initial["color"] = self.instance.variant.color_id
 
     def save(self, commit: bool = True):
         instance: ProductionOrder = super().save(commit=False)
-        instance.product = self.cleaned_data["model"]
+        instance.product = self.cleaned_data["product"]
         color = self.cleaned_data.get("color")
-        instance.variant = resolve_or_create_product_variant(
+        instance.variant = resolve_or_create_variant(
             product_id=instance.product_id,
             color_id=color.id if color else None,
         )

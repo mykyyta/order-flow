@@ -119,7 +119,7 @@ def _collect_aggregate_snapshot() -> dict[str, object]:
         "orders": ProductionOrder.objects.count(),
         "sales_orders": SalesOrder.objects.count(),
         "sales_order_lines": SalesOrderLine.objects.count(),
-        "product_variants": Variant.objects.count(),
+        "variants": Variant.objects.count(),
         "finished_stock_records": ProductStock.objects.count(),
         "material_stock_records": MaterialStock.objects.count(),
         "finished_stock_quantity_total": int(finished_stock_total),

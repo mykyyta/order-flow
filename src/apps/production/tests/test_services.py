@@ -3,7 +3,7 @@ from unittest.mock import patch
 import pytest
 from django.test import override_settings
 
-from apps.catalog.tests.conftest import ColorFactory, ProductModelFactory
+from apps.catalog.tests.conftest import ColorFactory, ProductFactory
 from apps.production.domain.status import STATUS_FINISHED
 from apps.accounts.tests.conftest import UserFactory
 from apps.production.services import change_production_order_status, create_production_order
@@ -12,12 +12,12 @@ from apps.production.services import change_production_order_status, create_prod
 @pytest.mark.django_db
 def test_create_and_change_production_order_status_via_production_context():
     user = UserFactory()
-    model = ProductModelFactory(is_bundle=False)
+    model = ProductFactory(is_bundle=False)
     color = ColorFactory()
 
     with patch("apps.production.services.send_order_created"), patch("apps.production.services.send_order_finished"):
         order = create_production_order(
-            model=model,
+            product=model,
             color=color,
             is_embroidery=False,
             is_urgent=False,
@@ -40,12 +40,12 @@ def test_create_and_change_production_order_status_via_production_context():
 @override_settings(FREEZE_LEGACY_WRITES=True)
 def test_production_context_allows_writes_when_legacy_writes_are_frozen():
     user = UserFactory()
-    model = ProductModelFactory(is_bundle=False)
+    model = ProductFactory(is_bundle=False)
     color = ColorFactory()
 
     with patch("apps.production.services.send_order_created"), patch("apps.production.services.send_order_finished"):
         order = create_production_order(
-            model=model,
+            product=model,
             color=color,
             is_embroidery=False,
             is_urgent=False,

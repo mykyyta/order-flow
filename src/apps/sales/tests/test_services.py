@@ -3,7 +3,7 @@ from unittest.mock import patch
 import pytest
 from django.test import override_settings
 
-from apps.catalog.tests.conftest import ColorFactory, ProductModelFactory
+from apps.catalog.tests.conftest import ColorFactory, ProductFactory
 from apps.accounts.tests.conftest import UserFactory
 from apps.sales.models import SalesOrder
 from apps.sales.services import create_production_orders_for_sales_order, create_sales_order
@@ -12,7 +12,7 @@ from apps.sales.services import create_production_orders_for_sales_order, create
 @pytest.mark.django_db
 def test_create_sales_order_delegates_to_customer_order_service():
     user = UserFactory()
-    model = ProductModelFactory(is_bundle=False)
+    model = ProductFactory(is_bundle=False)
     color = ColorFactory()
 
     with patch("apps.production.services.send_order_created"):
@@ -37,7 +37,7 @@ def test_create_sales_order_delegates_to_customer_order_service():
 @override_settings(FREEZE_LEGACY_WRITES=True)
 def test_create_production_orders_for_sales_order_works_when_legacy_writes_are_frozen():
     user = UserFactory()
-    model = ProductModelFactory(is_bundle=False)
+    model = ProductFactory(is_bundle=False)
     color = ColorFactory()
     order = create_sales_order(
         source=SalesOrder.Source.WHOLESALE,
@@ -66,7 +66,7 @@ def test_create_production_orders_for_sales_order_works_when_legacy_writes_are_f
 @override_settings(FREEZE_LEGACY_WRITES=True)
 def test_create_sales_order_with_production_orders_works_when_legacy_writes_are_frozen():
     user = UserFactory()
-    model = ProductModelFactory(is_bundle=False)
+    model = ProductFactory(is_bundle=False)
     color = ColorFactory()
 
     with patch("apps.production.services.send_order_created"):

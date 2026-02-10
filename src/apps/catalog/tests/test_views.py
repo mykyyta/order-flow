@@ -8,9 +8,9 @@ from apps.catalog.models import Color, Product
 from .conftest import ColorFactory
 
 
-def test_product_model_str():
-    pm = Product(name="Test")
-    assert "Test" in str(pm)
+def test_product_str():
+    product = Product(name="Test")
+    assert "Test" in str(product)
 
 
 def test_color_str():
@@ -21,7 +21,7 @@ def test_color_str():
 @pytest.mark.django_db
 def test_models_and_colors_views_require_authentication(client):
     color = ColorFactory()
-    assert client.get(reverse("product_models")).status_code == 302
+    assert client.get(reverse("products")).status_code == 302
     assert client.get(reverse("colors")).status_code == 302
     assert client.get(reverse("color_edit", kwargs={"pk": color.pk})).status_code == 302
 
@@ -59,12 +59,12 @@ def test_catalog_lists_hide_archived_by_default(client):
     Color.objects.create(name="Active color", code=111)
     Color.objects.create(name="Archived color", code=222, archived_at=timezone.now())
 
-    models_response = client.get(reverse("product_models"))
+    models_response = client.get(reverse("products"))
     assert models_response.status_code == 200
     assert b"Active model" in models_response.content
     assert b"Archived model" not in models_response.content
     assert b'class="catalog-chip-link catalog-chip-availability-in"' in models_response.content
-    assert reverse("product_models_archive").encode() in models_response.content
+    assert reverse("products_archive").encode() in models_response.content
 
     colors_response = client.get(reverse("colors"))
     assert colors_response.status_code == 200
@@ -74,19 +74,19 @@ def test_catalog_lists_hide_archived_by_default(client):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_product_model_edit_page_exists(client):
+def test_product_edit_page_exists(client):
     from apps.accounts.models import User
 
     user = User.objects.create_user(username="model_editor", password="pass12345")
     client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
 
     model = Product.objects.create(name="Wallet")
-    response = client.get(reverse("product_model_edit", kwargs={"pk": model.pk}))
+    response = client.get(reverse("product_edit", kwargs={"pk": model.pk}))
     assert response.status_code == 200
 
 
 @pytest.mark.django_db(transaction=True)
-def test_product_model_archive_and_unarchive(client):
+def test_product_archive_and_unarchive(client):
     from apps.accounts.models import User
 
     user = User.objects.create_user(username="model_archiver", password="pass12345")
@@ -94,15 +94,15 @@ def test_product_model_archive_and_unarchive(client):
 
     model = Product.objects.create(name="Clutch")
 
-    archive_response = client.post(reverse("product_model_archive", kwargs={"pk": model.pk}))
+    archive_response = client.post(reverse("product_archive", kwargs={"pk": model.pk}))
     assert archive_response.status_code == 302
-    assert archive_response.url == reverse("product_model_edit", kwargs={"pk": model.pk})
+    assert archive_response.url == reverse("product_edit", kwargs={"pk": model.pk})
     model.refresh_from_db()
     assert model.archived_at is not None
 
-    unarchive_response = client.post(reverse("product_model_unarchive", kwargs={"pk": model.pk}))
+    unarchive_response = client.post(reverse("product_unarchive", kwargs={"pk": model.pk}))
     assert unarchive_response.status_code == 302
-    assert unarchive_response.url == reverse("product_model_edit", kwargs={"pk": model.pk})
+    assert unarchive_response.url == reverse("product_edit", kwargs={"pk": model.pk})
     model.refresh_from_db()
     assert model.archived_at is None
 
@@ -139,7 +139,7 @@ def test_models_archive_page_shows_only_archived(client):
     Product.objects.create(name="Active model")
     Product.objects.create(name="Archived model", archived_at=timezone.now())
 
-    response = client.get(reverse("product_models_archive"))
+    response = client.get(reverse("products_archive"))
     assert response.status_code == 200
     assert b"Archived model" in response.content
     assert b"Active model" not in response.content

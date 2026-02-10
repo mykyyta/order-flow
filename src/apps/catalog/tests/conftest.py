@@ -5,7 +5,7 @@ from factory.django import DjangoModelFactory
 from apps.catalog.models import Color, Product
 
 
-class ProductModelFactory(DjangoModelFactory):
+class ProductFactory(DjangoModelFactory):
     class Meta:
         model = Product
 

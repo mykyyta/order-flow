@@ -21,7 +21,7 @@ class UserFactory(DjangoModelFactory):
             obj.save(update_fields=["password"])
 
 
-class ProductModelFactory(DjangoModelFactory):
+class ProductFactory(DjangoModelFactory):
     class Meta:
         model = Product
 
@@ -41,7 +41,7 @@ class OrderFactory(DjangoModelFactory):
     class Meta:
         model = ProductionOrder
 
-    product = factory.SubFactory(ProductModelFactory)
+    product = factory.SubFactory(ProductFactory)
     color = factory.SubFactory(ColorFactory)
     variant = None
     status = "new"
@@ -51,11 +51,11 @@ class OrderFactory(DjangoModelFactory):
 
     @classmethod
     def _create(cls, model_class, *args, **kwargs):
-        from apps.catalog.variants import resolve_or_create_product_variant
+        from apps.catalog.variants import resolve_or_create_variant
 
-        product = kwargs.pop("model", kwargs.get("product"))
+        product = kwargs.get("product")
         if product is None:
-            product = ProductModelFactory()
+            product = ProductFactory()
         kwargs["product"] = product
 
         color = kwargs.pop("color", None)
@@ -63,7 +63,7 @@ class OrderFactory(DjangoModelFactory):
         if variant is None:
             if color is None:
                 color = ColorFactory()
-            variant = resolve_or_create_product_variant(
+            variant = resolve_or_create_variant(
                 product_id=product.id,
                 color_id=color.id,
             )

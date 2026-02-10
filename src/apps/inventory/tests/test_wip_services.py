@@ -1,7 +1,7 @@
 import pytest
 
 from apps.catalog.models import Variant
-from apps.catalog.tests.conftest import ColorFactory, ProductModelFactory
+from apps.catalog.tests.conftest import ColorFactory, ProductFactory
 from apps.inventory.models import WIPStockMovement, WIPStockRecord
 from apps.inventory.services import add_to_wip_stock, get_wip_stock_quantity, remove_from_wip_stock
 from apps.accounts.tests.conftest import UserFactory
@@ -10,7 +10,7 @@ from apps.warehouses.models import Warehouse
 
 @pytest.mark.django_db
 def test_add_to_wip_stock_creates_record_and_movement():
-    model = ProductModelFactory(is_bundle=False)
+    model = ProductFactory(is_bundle=False)
     color = ColorFactory()
     variant = Variant.objects.create(product=model, color=color)
     user = UserFactory()
@@ -32,7 +32,7 @@ def test_add_to_wip_stock_creates_record_and_movement():
 
 @pytest.mark.django_db
 def test_remove_from_wip_stock_updates_quantity_and_movement():
-    model = ProductModelFactory(is_bundle=False)
+    model = ProductFactory(is_bundle=False)
     color = ColorFactory()
     variant = Variant.objects.create(product=model, color=color)
     user = UserFactory()
@@ -55,7 +55,7 @@ def test_remove_from_wip_stock_updates_quantity_and_movement():
 
 @pytest.mark.django_db
 def test_remove_from_wip_stock_fails_when_not_enough():
-    model = ProductModelFactory(is_bundle=False)
+    model = ProductFactory(is_bundle=False)
     color = ColorFactory()
     variant = Variant.objects.create(product=model, color=color)
     user = UserFactory()
@@ -78,7 +78,7 @@ def test_remove_from_wip_stock_fails_when_not_enough():
 
 @pytest.mark.django_db
 def test_wip_stock_split_by_warehouse():
-    model = ProductModelFactory(is_bundle=False)
+    model = ProductFactory(is_bundle=False)
     color = ColorFactory()
     variant = Variant.objects.create(product=model, color=color)
     user = UserFactory()

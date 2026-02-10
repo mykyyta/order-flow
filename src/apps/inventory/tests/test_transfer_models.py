@@ -2,7 +2,7 @@ import pytest
 from django.db import IntegrityError
 
 from apps.catalog.models import Variant
-from apps.catalog.tests.conftest import ColorFactory, ProductModelFactory
+from apps.catalog.tests.conftest import ColorFactory, ProductFactory
 from apps.inventory.models import ProductStockTransfer, ProductStockTransferLine
 from apps.accounts.tests.conftest import UserFactory
 from apps.warehouses.models import Warehouse
@@ -50,7 +50,7 @@ def test_finished_stock_transfer_line_unique_variant_per_transfer():
         created_by=user,
     )
     variant = Variant.objects.create(
-        product=ProductModelFactory(is_bundle=False),
+        product=ProductFactory(is_bundle=False),
         color=ColorFactory(),
     )
 

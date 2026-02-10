@@ -6,7 +6,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from apps.catalog.models import Variant
-from apps.catalog.variants import resolve_or_create_product_variant
+from apps.catalog.variants import resolve_or_create_variant
 from apps.inventory.models import (
     ProductStockTransfer,
     ProductStockTransferLine,
@@ -189,7 +189,7 @@ def _resolve_stock_key(
     if color_id is None and primary_material_color_id is None:
         raise ValueError("Stock key requires color_id or primary_material_color_id")
 
-    variant = resolve_or_create_product_variant(
+    variant = resolve_or_create_variant(
         product_id=product_id,
         color_id=color_id,
         primary_material_color_id=primary_material_color_id,

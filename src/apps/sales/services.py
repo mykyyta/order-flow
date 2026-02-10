@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from django.db import transaction
 
 from apps.catalog.models import BundleColorMapping, BundleComponent, BundlePresetComponent
-from apps.catalog.variants import resolve_or_create_product_variant
+from apps.catalog.variants import resolve_or_create_variant
 from apps.production.domain.status import STATUS_FINISHED
 from apps.sales.domain.policies import resolve_line_production_status, resolve_sales_order_status
 from apps.sales.models import SalesOrder, SalesOrderLine, SalesOrderLineComponentSelection
@@ -36,7 +36,7 @@ def create_sales_order(
         product_id = int(line_data["product_id"])
         variant_id = line_data.get("variant_id")
         if variant_id is None:
-            variant = resolve_or_create_product_variant(
+            variant = resolve_or_create_variant(
                 product_id=product_id,
                 color_id=line_data.get("color_id"),
                 primary_material_color_id=line_data.get("primary_material_color_id"),
@@ -135,7 +135,7 @@ def _save_bundle_component_variants(*, line: SalesOrderLine, line_data: dict[str
             preset_id=line.bundle_preset_id
         ).select_related("component", "primary_material_color", "secondary_material_color")
         for preset_component in preset_components:
-            variant = resolve_or_create_product_variant(
+            variant = resolve_or_create_variant(
                 product_id=preset_component.component_id,
                 primary_material_color_id=preset_component.primary_material_color_id,
                 secondary_material_color_id=preset_component.secondary_material_color_id,
@@ -154,7 +154,7 @@ def _save_bundle_component_variants(*, line: SalesOrderLine, line_data: dict[str
             bundle_color_id=bundle_color_id,
         ).select_related("component", "component_color")
         for mapping in mappings:
-            variant = resolve_or_create_product_variant(
+            variant = resolve_or_create_variant(
                 product_id=mapping.component_id,
                 color_id=mapping.component_color_id,
             )
@@ -175,7 +175,7 @@ def _save_bundle_component_variants(*, line: SalesOrderLine, line_data: dict[str
         component_id = int(item["component_id"])
         variant_id = item.get("variant_id")
         if variant_id is None:
-            variant = resolve_or_create_product_variant(
+            variant = resolve_or_create_variant(
                 product_id=component_id,
                 color_id=item.get("color_id"),
                 primary_material_color_id=item.get("primary_material_color_id"),
