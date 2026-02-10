@@ -204,5 +204,35 @@
   - відновлено data-seed для default складу у `warehouses.0002_seed_main_warehouse`;
   - для cutover на клон старої БД оновлено migrate-job command на
     `migrate --noinput --fake-initial` (`infra/environments/prod/main.tf`).
+  - стартовано фінальний schema-hardening пакет для нової БД:
+    - `catalog.BundleComponent` розширено полями `is_required` та `group`;
+    - `inventory.StockMovement` і `materials.MaterialMovement` отримали
+      `related_transfer` FK для повного audit trail transfer-операцій;
+    - `materials.MaterialStockRecord.warehouse`,
+      `materials.GoodsReceipt.warehouse`, `inventory.StockRecord.warehouse`
+      переведено в non-null з backfill через default `MAIN` склад у міграціях;
+    - уточнено unique constraints для `inventory.StockRecord` у warehouse-scoped режимі.
+  - `inventory.StockRecord` переведено на variant-only ключ:
+    - видалено legacy stock key поля (`product_model`, `color`,
+      `primary_material_color`, `secondary_material_color`);
+    - canonical unique constraint: `(warehouse, product_variant)`;
+    - `inventory.services` лишає compatibility API (можна передавати legacy-поля),
+      але всередині працює тільки через `ProductVariant`.
+  - завершено model-level cutover для sales/production:
+    - `apps.sales.models` і `apps.production.models` стали concrete source-of-truth моделями;
+    - `apps.orders.models` переведено на compatibility proxy для production order сутностей;
+    - FK-звʼязки в `inventory` переведено на `production.ProductionOrder` /
+      `sales.SalesOrderLine` замість legacy labels;
+    - перезгенеровано clean initial migration-пакети для `sales`/`production`
+      та суміжних app-ів після reset migration history.
+  - завершено service-level cutover з видаленням legacy app `customer_orders`:
+    - бізнес-логіку створення/планування sales orders перенесено напряму в `apps.sales.services`;
+    - бізнес-логіку створення/завершення production orders перенесено напряму в
+      `apps.production.services`;
+    - `apps.customer_orders` прибрано з runtime (`INSTALLED_APPS`) і видалено з репозиторію;
+    - `orders.services` залишено як compatibility wrapper над `production.services`.
+- migration strategy оновлено під greenfield-сценарій:
+  - без data backfill/RunPython кроків для нової порожньої БД;
+  - лише schema-операції (constraints/fields/indexes).
 - Наступний інкремент: фінальний migration-пакет для нової БД
   (фізичний drop legacy-колонок/таблиць після окремого dry-run на копії прод-даних).

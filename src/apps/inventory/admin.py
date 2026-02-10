@@ -12,16 +12,16 @@ from apps.inventory.models import (
 
 @admin.register(StockRecord)
 class StockRecordAdmin(admin.ModelAdmin):
-    list_display = ("id", "warehouse", "product_model", "product_variant", "quantity")
-    list_filter = ("warehouse", "product_model")
-    search_fields = ("product_model__name", "product_variant__sku")
+    list_display = ("id", "warehouse", "product_variant", "quantity")
+    list_filter = ("warehouse",)
+    search_fields = ("product_variant__product__name", "product_variant__sku")
 
 
 @admin.register(StockMovement)
 class StockMovementAdmin(admin.ModelAdmin):
     list_display = ("id", "stock_record", "quantity_change", "reason", "created_at")
     list_filter = ("reason",)
-    search_fields = ("stock_record__product_model__name",)
+    search_fields = ("stock_record__product_variant__product__name",)
 
 
 @admin.register(WIPStockRecord)

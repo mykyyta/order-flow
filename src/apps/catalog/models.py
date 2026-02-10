@@ -159,6 +159,8 @@ class BundleComponent(models.Model):
         limit_choices_to={"is_bundle": False},
     )
     is_primary = models.BooleanField(default=False)
+    is_required = models.BooleanField(default=True)
+    group = models.CharField(max_length=64, blank=True)
     quantity = models.PositiveIntegerField(default=1)
 
     class Meta:

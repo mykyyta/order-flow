@@ -4,8 +4,8 @@ from dataclasses import dataclass
 from decimal import Decimal
 
 from apps.catalog.models import BundleComponent
-from apps.customer_orders.models import CustomerOrderLine
 from apps.materials.models import ProductMaterial
+from apps.sales.models import SalesOrderLine
 
 
 @dataclass(frozen=True)
@@ -18,7 +18,7 @@ class MaterialRequirement:
 
 def calculate_material_requirements_for_customer_order_line(
     *,
-    line: CustomerOrderLine,
+    line: SalesOrderLine,
 ) -> list[MaterialRequirement]:
     totals: dict[tuple[int, str], Decimal] = {}
     labels: dict[int, str] = {}
@@ -44,7 +44,7 @@ def calculate_material_requirements_for_customer_order_line(
     return sorted(requirements, key=lambda item: item.material_name)
 
 
-def _iter_line_product_quantities(*, line: CustomerOrderLine) -> list[tuple[int, Decimal]]:
+def _iter_line_product_quantities(*, line: SalesOrderLine) -> list[tuple[int, Decimal]]:
     if not line.is_bundle:
         return [(line.product_model_id, Decimal(line.quantity))]
 

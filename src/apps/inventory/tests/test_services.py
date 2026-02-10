@@ -1,6 +1,6 @@
 """Tests for inventory services."""
 import pytest
-from django.core.exceptions import ValidationError
+from django.db import IntegrityError
 
 from apps.catalog.models import ProductVariant
 from apps.inventory.models import FinishedStockTransfer, StockMovement, StockRecord
@@ -10,7 +10,7 @@ from apps.inventory.services import (
     remove_from_stock,
     transfer_finished_stock,
 )
-from apps.orders.tests.conftest import UserFactory
+from apps.accounts.tests.conftest import UserFactory
 from apps.catalog.tests.conftest import ColorFactory, ProductModelFactory
 from apps.materials.models import Material, MaterialColor
 from apps.warehouses.models import Warehouse
@@ -44,7 +44,7 @@ def test_add_to_stock_creates_record_and_movement():
     assert record.product_variant is not None
     assert record.product_variant.product_id == model.id
     assert record.product_variant.color_id == color.id
-    assert StockRecord.objects.get(product_model=model, color=color).quantity == 4
+    assert StockRecord.objects.get(product_variant=record.product_variant).quantity == 4
 
     movement = StockMovement.objects.get(stock_record=record)
     assert movement.quantity_change == 4
@@ -144,28 +144,41 @@ def test_add_and_remove_stock_by_material_colors():
     assert record.quantity == 2
     assert (
         StockRecord.objects.get(
-            product_model=product,
-            primary_material_color=blue,
-            secondary_material_color=black,
+            product_variant=record.product_variant,
         ).quantity
         == 2
     )
 
 
 @pytest.mark.django_db
-def test_stock_record_rejects_mismatched_product_variant_on_save():
+def test_stock_record_requires_warehouse():
     model = ProductModelFactory(is_bundle=False)
     color = ColorFactory()
-    wrong_variant = ProductVariant.objects.create(
+    variant = ProductVariant.objects.create(
         product=model,
-        color=ColorFactory(),
+        color=color,
     )
 
-    with pytest.raises(ValidationError, match="must match"):
+    with pytest.raises(IntegrityError):
         StockRecord.objects.create(
-            product_model=model,
-            color=color,
-            product_variant=wrong_variant,
+            product_variant=variant,
+            quantity=1,
+        )
+
+
+@pytest.mark.django_db
+def test_stock_record_requires_product_variant():
+    warehouse = Warehouse.objects.create(
+        name="Variant Required Warehouse",
+        code="INV-VARIANT-REQ",
+        kind=Warehouse.Kind.STORAGE,
+        is_default_for_production=False,
+        is_active=True,
+    )
+
+    with pytest.raises(IntegrityError):
+        StockRecord.objects.create(
+            warehouse=warehouse,
             quantity=1,
         )
 
@@ -202,8 +215,6 @@ def test_add_to_stock_accepts_product_variant_id_without_legacy_fields():
     )
 
     assert record.product_variant_id == variant.id
-    assert record.product_model_id == model.id
-    assert record.color_id == color.id
     assert record.quantity == 3
 
 
@@ -268,11 +279,15 @@ def test_add_to_stock_supports_multiple_warehouses():
     )
 
     assert (
-        StockRecord.objects.get(warehouse=main, product_model=model, color=color).quantity
+        StockRecord.objects.get(warehouse=main, product_variant__product=model, product_variant__color=color).quantity
         == 3
     )
     assert (
-        StockRecord.objects.get(warehouse=retail, product_model=model, color=color).quantity
+        StockRecord.objects.get(
+            warehouse=retail,
+            product_variant__product=model,
+            product_variant__color=color,
+        ).quantity
         == 4
     )
 
@@ -330,6 +345,8 @@ def test_transfer_finished_stock_moves_between_warehouses():
     ).latest("created_at")
     assert out_movement.reason == StockMovement.Reason.TRANSFER_OUT
     assert in_movement.reason == StockMovement.Reason.TRANSFER_IN
+    assert out_movement.related_transfer == transfer
+    assert in_movement.related_transfer == transfer
 
 
 @pytest.mark.django_db

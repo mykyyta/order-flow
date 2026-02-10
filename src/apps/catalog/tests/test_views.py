@@ -28,7 +28,7 @@ def test_models_and_colors_views_require_authentication(client):
 
 @pytest.mark.django_db(transaction=True)
 def test_color_edit_redirects_to_colors_list(client):
-    from apps.orders.models import CustomUser
+    from apps.accounts.models import CustomUser
     user = CustomUser.objects.create_user(username="color_editor", password="pass12345")
     color = ColorFactory(name="Ivory", code=101)
     client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
@@ -48,7 +48,7 @@ def test_color_edit_redirects_to_colors_list(client):
 
 @pytest.mark.django_db(transaction=True)
 def test_catalog_lists_hide_archived_by_default(client):
-    from apps.orders.models import CustomUser
+    from apps.accounts.models import CustomUser
 
     user = CustomUser.objects.create_user(username="catalog_viewer", password="pass12345")
     client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
@@ -75,7 +75,7 @@ def test_catalog_lists_hide_archived_by_default(client):
 
 @pytest.mark.django_db(transaction=True)
 def test_product_model_edit_page_exists(client):
-    from apps.orders.models import CustomUser
+    from apps.accounts.models import CustomUser
 
     user = CustomUser.objects.create_user(username="model_editor", password="pass12345")
     client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
@@ -87,7 +87,7 @@ def test_product_model_edit_page_exists(client):
 
 @pytest.mark.django_db(transaction=True)
 def test_product_model_archive_and_unarchive(client):
-    from apps.orders.models import CustomUser
+    from apps.accounts.models import CustomUser
 
     user = CustomUser.objects.create_user(username="model_archiver", password="pass12345")
     client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
@@ -109,7 +109,7 @@ def test_product_model_archive_and_unarchive(client):
 
 @pytest.mark.django_db(transaction=True)
 def test_color_archive_and_unarchive(client):
-    from apps.orders.models import CustomUser
+    from apps.accounts.models import CustomUser
 
     user = CustomUser.objects.create_user(username="color_archiver", password="pass12345")
     client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
@@ -131,7 +131,7 @@ def test_color_archive_and_unarchive(client):
 
 @pytest.mark.django_db(transaction=True)
 def test_models_archive_page_shows_only_archived(client):
-    from apps.orders.models import CustomUser
+    from apps.accounts.models import CustomUser
 
     user = CustomUser.objects.create_user(username="models_archive_viewer", password="pass12345")
     client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
@@ -147,7 +147,7 @@ def test_models_archive_page_shows_only_archived(client):
 
 @pytest.mark.django_db(transaction=True)
 def test_colors_archive_page_shows_only_archived(client):
-    from apps.orders.models import CustomUser
+    from apps.accounts.models import CustomUser
 
     user = CustomUser.objects.create_user(username="colors_archive_viewer", password="pass12345")
     client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")

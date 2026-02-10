@@ -20,7 +20,7 @@ from apps.material_inventory.services import add_material_stock
 from apps.material_inventory.models import MaterialStockTransfer
 from apps.materials.models import Material, MaterialMovement, MaterialStockRecord, ProductMaterial
 from apps.production.domain.status import STATUS_FINISHED
-from apps.orders.tests.conftest import UserFactory
+from apps.accounts.tests.conftest import UserFactory
 from apps.procurement.models import GoodsReceiptLine, PurchaseOrder, PurchaseOrderLine, Supplier
 from apps.sales.models import SalesOrder
 from apps.warehouses.models import Warehouse
@@ -66,7 +66,7 @@ def test_create_production_orders_for_sales_order_orchestrated():
         created_by=user,
     )
 
-    with patch("apps.orders.services.send_order_created"):
+    with patch("apps.production.services.send_order_created"):
         created_orders = create_production_orders_for_sales_order(
             sales_order=order,
             created_by=user,
@@ -106,7 +106,7 @@ def test_complete_production_order_orchestrated():
     user = UserFactory()
     model = ProductModelFactory(is_bundle=False)
     color = ColorFactory()
-    with patch("apps.orders.services.send_order_created"), patch("apps.orders.services.send_order_finished"):
+    with patch("apps.production.services.send_order_created"), patch("apps.production.services.send_order_finished"):
         order = create_production_orders_for_sales_order(
             sales_order=create_sales_order_orchestrated(
                 source=SalesOrder.Source.SITE,

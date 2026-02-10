@@ -5,7 +5,7 @@ from django.test import override_settings
 
 from apps.catalog.tests.conftest import ColorFactory, ProductModelFactory
 from apps.production.domain.status import STATUS_FINISHED
-from apps.orders.tests.conftest import UserFactory
+from apps.accounts.tests.conftest import UserFactory
 from apps.production.services import change_production_order_status, create_production_order
 
 
@@ -15,7 +15,7 @@ def test_create_and_change_production_order_status_via_production_context():
     model = ProductModelFactory(is_bundle=False)
     color = ColorFactory()
 
-    with patch("apps.orders.services.send_order_created"), patch("apps.orders.services.send_order_finished"):
+    with patch("apps.production.services.send_order_created"), patch("apps.production.services.send_order_finished"):
         order = create_production_order(
             model=model,
             color=color,
@@ -43,7 +43,7 @@ def test_production_context_allows_writes_when_legacy_writes_are_frozen():
     model = ProductModelFactory(is_bundle=False)
     color = ColorFactory()
 
-    with patch("apps.orders.services.send_order_created"), patch("apps.orders.services.send_order_finished"):
+    with patch("apps.production.services.send_order_created"), patch("apps.production.services.send_order_finished"):
         order = create_production_order(
             model=model,
             color=color,

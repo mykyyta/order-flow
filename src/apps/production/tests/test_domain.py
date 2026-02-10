@@ -1,4 +1,4 @@
-from apps.orders.domain.status import STATUS_FINISHED as LEGACY_STATUS_FINISHED
+from apps.production.domain.status import STATUS_FINISHED as LEGACY_STATUS_FINISHED
 from apps.production.domain.status import STATUS_FINISHED, validate_status
 from apps.production.domain.transitions import get_allowed_transitions
 

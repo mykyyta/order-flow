@@ -220,7 +220,7 @@ resource "google_cloud_run_v2_job" "migrate" {
 
       containers {
         image   = var.container_image
-        command = ["python", "src/manage.py", "migrate", "--noinput", "--fake-initial"]
+        command = ["python", "src/manage.py", "migrate", "--noinput"]
 
         resources {
           limits = {

@@ -6,7 +6,7 @@ from django.db import IntegrityError
 
 from apps.material_inventory.models import MaterialStockTransfer, MaterialStockTransferLine
 from apps.materials.models import Material, MaterialColor, ProductMaterial
-from apps.orders.tests.conftest import UserFactory
+from apps.accounts.tests.conftest import UserFactory
 from apps.warehouses.models import Warehouse
 
 

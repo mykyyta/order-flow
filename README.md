@@ -11,16 +11,16 @@ Pult is an order management system for small production workflows with Telegram 
 - Supports delayed notifications for after-hours orders.
 
 ## Architecture
-Core app: `orders`
+Core app: `production`
 
-- `orders/domain`: domain rules (statuses, transitions, policies)
-- `orders/application`: use-cases and ports
-- `orders/adapters`: ORM, notifications, and clock adapters
-- `orders/views.py`: HTTP layer
+- `production/domain`: domain rules (statuses, transitions, policies)
+- `production/services.py`: orchestration for production lifecycle
+- `production/views/`: HTTP layer
+- `production/notifications.py`: Telegram notifications
 
 Status model:
-- `Order.current_status` is the source of truth for the current state.
-- `OrderStatusHistory` is the audit trail.
+- `ProductionOrder.current_status` is the source of truth for the current state.
+- `ProductionOrderStatusHistory` is the audit trail.
 
 ## Tech Stack
 - Python 3.12+

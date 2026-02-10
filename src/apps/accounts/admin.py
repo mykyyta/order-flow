@@ -1,7 +1,10 @@
 from django.contrib import admin
-from .models import NotificationSetting
+from django.contrib.auth.admin import UserAdmin
+
+from apps.accounts.models import CustomUser
 
 
-@admin.register(NotificationSetting)
-class NotificationSettingAdmin(admin.ModelAdmin):
-    list_display = ("user", "notify_order_created", "notify_order_finished", "notify_order_created_pause")
+@admin.register(CustomUser)
+class CustomUserAdmin(UserAdmin):
+    fieldsets = UserAdmin.fieldsets + ((None, {"fields": ("telegram_id", "theme")}),)
+    add_fieldsets = UserAdmin.add_fieldsets + ((None, {"fields": ("telegram_id", "theme")}),)

@@ -41,6 +41,22 @@ def test_bundle_component_unique_per_bundle_component_pair():
 
 
 @pytest.mark.django_db
+def test_bundle_component_has_required_flag_and_optional_group():
+    bundle = ProductModelFactory(is_bundle=True)
+    component = ProductModelFactory(is_bundle=False)
+
+    relation = BundleComponent.objects.create(
+        bundle=bundle,
+        component=component,
+        quantity=1,
+        is_primary=False,
+    )
+
+    assert relation.is_required is True
+    assert relation.group == ""
+
+
+@pytest.mark.django_db
 def test_bundle_color_mapping_unique_per_bundle_color_component():
     bundle = ProductModelFactory(is_bundle=True)
     component = ProductModelFactory(is_bundle=False)

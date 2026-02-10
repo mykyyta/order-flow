@@ -2,7 +2,7 @@
 import factory
 from factory.django import DjangoModelFactory
 
-from apps.orders.models import CustomUser
+from apps.accounts.models import CustomUser
 
 
 class UserFactory(DjangoModelFactory):

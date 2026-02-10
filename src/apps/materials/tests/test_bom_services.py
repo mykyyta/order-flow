@@ -5,9 +5,9 @@ import pytest
 
 from apps.catalog.models import BundleComponent
 from apps.catalog.tests.conftest import ColorFactory, ProductModelFactory
-from apps.customer_orders.models import CustomerOrder, CustomerOrderLine
 from apps.materials.models import Material, ProductMaterial
 from apps.materials.services import calculate_material_requirements_for_customer_order_line
+from apps.sales.models import SalesOrder, SalesOrderLine
 
 
 @pytest.mark.django_db
@@ -28,11 +28,11 @@ def test_calculate_material_requirements_for_single_product_line():
         quantity_per_unit="0.20",
         unit=ProductMaterial.Unit.SQUARE_METER,
     )
-    customer_order = CustomerOrder.objects.create(
-        source=CustomerOrder.Source.WHOLESALE,
+    customer_order = SalesOrder.objects.create(
+        source=SalesOrder.Source.WHOLESALE,
         customer_info="ТОВ Тест",
     )
-    line = CustomerOrderLine.objects.create(
+    line = SalesOrderLine.objects.create(
         customer_order=customer_order,
         product_model=product,
         color=color,
@@ -69,11 +69,11 @@ def test_calculate_material_requirements_for_bundle_line():
         quantity_per_unit="1.00",
         unit=ProductMaterial.Unit.PIECE,
     )
-    customer_order = CustomerOrder.objects.create(
-        source=CustomerOrder.Source.WHOLESALE,
+    customer_order = SalesOrder.objects.create(
+        source=SalesOrder.Source.WHOLESALE,
         customer_info="ТОВ Опт",
     )
-    line = CustomerOrderLine.objects.create(
+    line = SalesOrderLine.objects.create(
         customer_order=customer_order,
         product_model=bundle,
         color=color,

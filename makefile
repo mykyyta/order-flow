@@ -30,7 +30,7 @@ shell:
 	docker compose run --rm web python src/manage.py shell
 
 test:
-	PYTHONPATH=src $(PYTHON) -m pytest 2>/dev/null || PYTHONPATH=src $(MANAGE) test apps.orders apps.catalog apps.accounts apps.materials
+	PYTHONPATH=src $(PYTHON) -m pytest 2>/dev/null || PYTHONPATH=src $(MANAGE) test apps.production apps.catalog apps.accounts apps.materials
 
 check:
 	PYTHONPATH=src $(MANAGE) check

@@ -4,7 +4,7 @@ from apps.catalog.models import ProductVariant
 from apps.catalog.tests.conftest import ColorFactory, ProductModelFactory
 from apps.inventory.models import WIPStockMovement, WIPStockRecord
 from apps.inventory.services import add_to_wip_stock, get_wip_stock_quantity, remove_from_wip_stock
-from apps.orders.tests.conftest import UserFactory
+from apps.accounts.tests.conftest import UserFactory
 from apps.warehouses.models import Warehouse
 
 

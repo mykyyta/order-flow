@@ -30,6 +30,7 @@ services:
       DJANGO_SETTINGS_MODULE: config.settings.local
       DJANGO_DEBUG: ${DJANGO_DEBUG:-1}
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-local-dev-insecure-secret-key}
+      DATABASE_URL: ${DATABASE_URL:-}
       WHITENOISE_ENABLED: ${WHITENOISE_ENABLED:-1}
       POSTGRES_HOST: db
       POSTGRES_PORT: 5432

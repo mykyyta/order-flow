@@ -4,7 +4,7 @@ import pytest
 from django.test import override_settings
 
 from apps.catalog.tests.conftest import ColorFactory, ProductModelFactory
-from apps.orders.tests.conftest import UserFactory
+from apps.accounts.tests.conftest import UserFactory
 from apps.sales.models import SalesOrder
 from apps.sales.services import create_production_orders_for_sales_order, create_sales_order
 
@@ -15,7 +15,7 @@ def test_create_sales_order_delegates_to_customer_order_service():
     model = ProductModelFactory(is_bundle=False)
     color = ColorFactory()
 
-    with patch("apps.orders.services.send_order_created"):
+    with patch("apps.production.services.send_order_created"):
         order = create_sales_order(
             source=SalesOrder.Source.WHOLESALE,
             customer_info="ТОВ Продаж",
@@ -53,7 +53,7 @@ def test_create_production_orders_for_sales_order_works_when_legacy_writes_are_f
         created_by=user,
     )
 
-    with patch("apps.orders.services.send_order_created"):
+    with patch("apps.production.services.send_order_created"):
         created_orders = create_production_orders_for_sales_order(
             sales_order=order,
             created_by=user,
@@ -69,7 +69,7 @@ def test_create_sales_order_with_production_orders_works_when_legacy_writes_are_
     model = ProductModelFactory(is_bundle=False)
     color = ColorFactory()
 
-    with patch("apps.orders.services.send_order_created"):
+    with patch("apps.production.services.send_order_created"):
         order = create_sales_order(
             source=SalesOrder.Source.WHOLESALE,
             customer_info="ТОВ Продаж",

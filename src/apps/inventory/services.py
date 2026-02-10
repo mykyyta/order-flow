@@ -26,11 +26,7 @@ if TYPE_CHECKING:
 
 class StockKey(TypedDict):
     warehouse_id: int
-    product_variant_id: int | None
-    product_model_id: int
-    color_id: int | None
-    primary_material_color_id: int | None
-    secondary_material_color_id: int | None
+    product_variant_id: int
 
 
 def get_stock_quantity(
@@ -72,6 +68,7 @@ def add_to_stock(
     secondary_material_color_id: int | None = None,
     production_order: "ProductionOrder | None" = None,
     customer_order_line: "SalesOrderLine | None" = None,
+    related_transfer: FinishedStockTransfer | None = None,
     user: "AbstractBaseUser | None" = None,
     notes: str = "",
 ) -> StockRecord:
@@ -83,24 +80,10 @@ def add_to_stock(
         primary_material_color_id=primary_material_color_id,
         secondary_material_color_id=secondary_material_color_id,
     )
-    if stock_key["product_variant_id"] is not None:
-        product_variant = ProductVariant.objects.get(id=stock_key["product_variant_id"])
-    else:
-        product_variant = resolve_or_create_product_variant(
-            product_model_id=stock_key["product_model_id"],
-            color_id=stock_key["color_id"],
-            primary_material_color_id=stock_key["primary_material_color_id"],
-            secondary_material_color_id=stock_key["secondary_material_color_id"],
-        )
     lookup = _build_stock_lookup(stock_key=stock_key)
     record, _ = StockRecord.objects.get_or_create(**lookup)
-    if product_variant is not None and record.product_variant_id is None:
-        record.product_variant = product_variant
     record.quantity += quantity
-    update_fields = ["quantity"]
-    if product_variant is not None and record.product_variant_id == product_variant.id:
-        update_fields.append("product_variant")
-    record.save(update_fields=update_fields)
+    record.save(update_fields=["quantity"])
 
     StockMovement.objects.create(
         stock_record=record,
@@ -108,6 +91,7 @@ def add_to_stock(
         reason=reason,
         related_production_order=production_order,
         related_customer_order_line=customer_order_line,
+        related_transfer=related_transfer,
         created_by=user,
         notes=notes,
     )
@@ -126,6 +110,7 @@ def remove_from_stock(
     primary_material_color_id: int | None = None,
     secondary_material_color_id: int | None = None,
     customer_order_line: "SalesOrderLine | None" = None,
+    related_transfer: FinishedStockTransfer | None = None,
     user: "AbstractBaseUser | None" = None,
     notes: str = "",
 ) -> StockRecord:
@@ -155,6 +140,7 @@ def remove_from_stock(
         quantity_change=-quantity,
         reason=reason,
         related_customer_order_line=customer_order_line,
+        related_transfer=related_transfer,
         created_by=user,
         notes=notes,
     )
@@ -181,13 +167,21 @@ def _resolve_stock_key(
         ).get(id=product_variant_id)
         if product_model_id is not None and product_model_id != variant.product_id:
             raise ValueError("Provided product_model_id does not match product_variant.")
+        if color_id is not None and color_id != variant.color_id:
+            raise ValueError("Provided color_id does not match product_variant.")
+        if (
+            primary_material_color_id is not None
+            and primary_material_color_id != variant.primary_material_color_id
+        ):
+            raise ValueError("Provided primary_material_color_id does not match product_variant.")
+        if (
+            secondary_material_color_id is not None
+            and secondary_material_color_id != variant.secondary_material_color_id
+        ):
+            raise ValueError("Provided secondary_material_color_id does not match product_variant.")
         return {
             "warehouse_id": resolved_warehouse_id,
             "product_variant_id": variant.id,
-            "product_model_id": variant.product_id,
-            "color_id": variant.color_id,
-            "primary_material_color_id": variant.primary_material_color_id,
-            "secondary_material_color_id": variant.secondary_material_color_id,
         }
 
     if product_model_id is None:
@@ -195,23 +189,22 @@ def _resolve_stock_key(
     if color_id is None and primary_material_color_id is None:
         raise ValueError("Stock key requires color_id or primary_material_color_id")
 
+    variant = resolve_or_create_product_variant(
+        product_model_id=product_model_id,
+        color_id=color_id,
+        primary_material_color_id=primary_material_color_id,
+        secondary_material_color_id=secondary_material_color_id,
+    )
     return {
         "warehouse_id": resolved_warehouse_id,
-        "product_variant_id": None,
-        "product_model_id": product_model_id,
-        "color_id": color_id,
-        "primary_material_color_id": primary_material_color_id,
-        "secondary_material_color_id": secondary_material_color_id,
+        "product_variant_id": variant.id,
     }
 
 
 def _build_stock_lookup(*, stock_key: StockKey) -> dict[str, int | None]:
     return {
         "warehouse_id": stock_key["warehouse_id"],
-        "product_model_id": stock_key["product_model_id"],
-        "color_id": stock_key["color_id"],
-        "primary_material_color_id": stock_key["primary_material_color_id"],
-        "secondary_material_color_id": stock_key["secondary_material_color_id"],
+        "product_variant_id": stock_key["product_variant_id"],
     }
 
 
@@ -337,6 +330,7 @@ def transfer_finished_stock(
         product_variant_id=product_variant_id,
         quantity=quantity,
         reason=StockMovement.Reason.TRANSFER_OUT,
+        related_transfer=transfer,
         user=user,
         notes=notes,
     )
@@ -345,6 +339,7 @@ def transfer_finished_stock(
         product_variant_id=product_variant_id,
         quantity=quantity,
         reason=StockMovement.Reason.TRANSFER_IN,
+        related_transfer=transfer,
         user=user,
         notes=notes,
     )

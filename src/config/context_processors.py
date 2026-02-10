@@ -5,7 +5,7 @@ from __future__ import annotations
 from django.conf import settings
 from django.http import HttpRequest
 
-from apps.orders.themes import DEFAULT_THEME, normalize_theme
+from apps.ui.themes import DEFAULT_THEME, normalize_theme
 
 
 def site_brand(request: HttpRequest) -> dict[str, str]:

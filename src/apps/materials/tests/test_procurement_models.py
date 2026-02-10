@@ -9,7 +9,7 @@ from apps.materials.models import (
     Material,
     ProductMaterial,
 )
-from apps.orders.tests.conftest import UserFactory
+from apps.accounts.tests.conftest import UserFactory
 from apps.procurement.models import (
     GoodsReceipt,
     GoodsReceiptLine,
@@ -46,12 +46,33 @@ def test_supplier_material_offer_allows_multiple_offers_per_material():
 @pytest.mark.django_db
 def test_material_stock_record_unique_per_material_color_and_unit():
     material = Material.objects.create(name="Felt")
+    warehouse = Warehouse.objects.create(
+        name="Material Main",
+        code="MAT-MAIN-UNIQ",
+        kind=Warehouse.Kind.STORAGE,
+        is_default_for_production=False,
+        is_active=True,
+    )
 
     MaterialStockRecord.objects.create(
+        warehouse=warehouse,
         material=material,
         unit=ProductMaterial.Unit.SQUARE_METER,
         quantity=Decimal("5.000"),
     )
+
+    with pytest.raises(IntegrityError):
+        MaterialStockRecord.objects.create(
+            warehouse=warehouse,
+            material=material,
+            unit=ProductMaterial.Unit.SQUARE_METER,
+            quantity=Decimal("1.000"),
+        )
+
+
+@pytest.mark.django_db
+def test_material_stock_record_requires_warehouse():
+    material = Material.objects.create(name="Warehouse required material")
 
     with pytest.raises(IntegrityError):
         MaterialStockRecord.objects.create(
@@ -126,7 +147,15 @@ def test_goods_receipt_line_links_purchase_line_and_stock_movement():
         unit=ProductMaterial.Unit.MILLILITER,
         unit_price=Decimal("0.20"),
     )
+    warehouse = Warehouse.objects.create(
+        name="Receipt Warehouse",
+        code="MAT-RECEIPT-WH",
+        kind=Warehouse.Kind.STORAGE,
+        is_default_for_production=False,
+        is_active=True,
+    )
     stock_record = MaterialStockRecord.objects.create(
+        warehouse=warehouse,
         material=material,
         unit=ProductMaterial.Unit.MILLILITER,
         quantity=Decimal("0.000"),
@@ -134,6 +163,7 @@ def test_goods_receipt_line_links_purchase_line_and_stock_movement():
     receipt = GoodsReceipt.objects.create(
         supplier=supplier,
         purchase_order=purchase_order,
+        warehouse=warehouse,
         received_by=user,
     )
     receipt_line = GoodsReceiptLine.objects.create(
@@ -154,3 +184,11 @@ def test_goods_receipt_line_links_purchase_line_and_stock_movement():
 
     assert movement.related_purchase_order_line == po_line
     assert movement.related_receipt_line == receipt_line
+
+
+@pytest.mark.django_db
+def test_goods_receipt_requires_warehouse():
+    supplier = Supplier.objects.create(name="Supplier receipt warehouse")
+
+    with pytest.raises(IntegrityError):
+        GoodsReceipt.objects.create(supplier=supplier)

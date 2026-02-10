@@ -9,7 +9,7 @@ from apps.materials.models import (
     Material,
     ProductMaterial,
 )
-from apps.orders.tests.conftest import UserFactory
+from apps.accounts.tests.conftest import UserFactory
 from apps.procurement.models import PurchaseOrder, PurchaseOrderLine, Supplier
 from apps.procurement.services import receive_purchase_order_line
 from apps.warehouses.models import Warehouse

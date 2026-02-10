@@ -31,6 +31,7 @@ def add_material_stock(
     material_color: MaterialColor | None = None,
     related_purchase_order_line: PurchaseOrderLine | None = None,
     related_receipt_line: GoodsReceiptLine | None = None,
+    related_transfer: MaterialStockTransfer | None = None,
     created_by: "AbstractBaseUser | None" = None,
     notes: str = "",
 ) -> MaterialStockRecord:
@@ -54,6 +55,7 @@ def add_material_stock(
         reason=reason,
         related_purchase_order_line=related_purchase_order_line,
         related_receipt_line=related_receipt_line,
+        related_transfer=related_transfer,
         created_by=created_by,
         notes=notes,
     )
@@ -70,6 +72,7 @@ def remove_material_stock(
     reason: str,
     material_color: MaterialColor | None = None,
     related_purchase_order_line: PurchaseOrderLine | None = None,
+    related_transfer: MaterialStockTransfer | None = None,
     created_by: "AbstractBaseUser | None" = None,
     notes: str = "",
 ) -> MaterialStockRecord:
@@ -99,6 +102,7 @@ def remove_material_stock(
         quantity_change=-quantity_decimal,
         reason=reason,
         related_purchase_order_line=related_purchase_order_line,
+        related_transfer=related_transfer,
         created_by=created_by,
         notes=notes,
     )
@@ -146,6 +150,7 @@ def transfer_material_stock(
         quantity=quantity_decimal,
         unit=unit,
         reason=MaterialStockMovement.Reason.TRANSFER_OUT,
+        related_transfer=transfer,
         created_by=created_by,
         notes=notes,
     )
@@ -156,6 +161,7 @@ def transfer_material_stock(
         quantity=quantity_decimal,
         unit=unit,
         reason=MaterialStockMovement.Reason.TRANSFER_IN,
+        related_transfer=transfer,
         created_by=created_by,
         notes=notes,
     )

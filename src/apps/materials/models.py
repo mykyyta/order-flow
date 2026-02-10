@@ -3,6 +3,7 @@ from decimal import Decimal
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
+from config import settings
 
 
 class Material(models.Model):
@@ -157,7 +158,7 @@ class PurchaseOrder(models.Model):
     expected_at = models.DateField(null=True, blank=True)
     notes = models.TextField(blank=True)
     created_by = models.ForeignKey(
-        "orders.CustomUser",
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -219,8 +220,6 @@ class MaterialStockRecord(models.Model):
     warehouse = models.ForeignKey(
         "warehouses.Warehouse",
         on_delete=models.PROTECT,
-        null=True,
-        blank=True,
         related_name="material_stock_records_legacy",
     )
     material = models.ForeignKey(
@@ -290,13 +289,11 @@ class GoodsReceipt(models.Model):
     warehouse = models.ForeignKey(
         "warehouses.Warehouse",
         on_delete=models.PROTECT,
-        null=True,
-        blank=True,
         related_name="goods_receipts_legacy",
     )
     notes = models.TextField(blank=True)
     received_by = models.ForeignKey(
-        "orders.CustomUser",
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -383,9 +380,16 @@ class MaterialMovement(models.Model):
         blank=True,
         related_name="material_movements",
     )
+    related_transfer = models.ForeignKey(
+        "materials.MaterialStockTransfer",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="material_movements",
+    )
     notes = models.TextField(blank=True)
     created_by = models.ForeignKey(
-        "orders.CustomUser",
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -420,7 +424,7 @@ class MaterialStockTransfer(models.Model):
     )
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.DRAFT)
     created_by = models.ForeignKey(
-        "orders.CustomUser",
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,

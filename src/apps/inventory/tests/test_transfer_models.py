@@ -4,7 +4,7 @@ from django.db import IntegrityError
 from apps.catalog.models import ProductVariant
 from apps.catalog.tests.conftest import ColorFactory, ProductModelFactory
 from apps.inventory.models import FinishedStockTransfer, FinishedStockTransferLine
-from apps.orders.tests.conftest import UserFactory
+from apps.accounts.tests.conftest import UserFactory
 from apps.warehouses.models import Warehouse
 
 

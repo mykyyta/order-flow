@@ -9,7 +9,7 @@ from apps.material_inventory.services import (
     transfer_material_stock,
 )
 from apps.materials.models import Material, MaterialMovement, ProductMaterial
-from apps.orders.tests.conftest import UserFactory
+from apps.accounts.tests.conftest import UserFactory
 from apps.warehouses.models import Warehouse
 
 
@@ -87,6 +87,8 @@ def test_transfer_material_stock_moves_between_warehouses():
     in_movement = MaterialStockMovement.objects.filter(stock_record=to_record).latest("created_at")
     assert out_movement.reason == MaterialStockMovement.Reason.TRANSFER_OUT
     assert in_movement.reason == MaterialStockMovement.Reason.TRANSFER_IN
+    assert out_movement.related_transfer == transfer
+    assert in_movement.related_transfer == transfer
 
 
 @pytest.mark.django_db
