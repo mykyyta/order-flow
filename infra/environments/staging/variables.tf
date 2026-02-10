@@ -19,31 +19,31 @@ variable "region" {
 variable "environment" {
   description = "Deployment environment name"
   type        = string
-  default     = "prod"
+  default     = "staging"
 }
 
 variable "secret_id_prefix" {
   description = "Prefix used for Secret Manager secret IDs (e.g. pult, pult-staging)"
   type        = string
-  default     = "pult"
+  default     = "pult-staging"
 }
 
 variable "manage_shared_ci_resources" {
   description = "Whether this state should manage shared CI/WIF/Artifact Registry resources."
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "enable_telegram_bot_token_secret" {
   description = "Whether TELEGRAM_BOT_TOKEN should be wired from Secret Manager."
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "service_name" {
   description = "Cloud Run service name"
   type        = string
-  default     = "pult-app"
+  default     = "pult-staging-app"
 }
 
 variable "artifact_repository_id" {
@@ -55,7 +55,7 @@ variable "artifact_repository_id" {
 variable "migrate_job_name" {
   description = "Cloud Run job for migrations"
   type        = string
-  default     = "pult-migrate"
+  default     = "pult-staging-migrate"
 }
 
 variable "migrate_job_timeout" {

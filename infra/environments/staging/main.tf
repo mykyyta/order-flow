@@ -144,7 +144,7 @@ resource "google_cloud_run_service" "app" {
   # Image is updated by deploy.yml (gcloud run services update). Terraform apply must not overwrite it.
   lifecycle {
     prevent_destroy = true
-    ignore_changes   = [template]
+    ignore_changes  = [template]
   }
 }
 
@@ -220,7 +220,7 @@ resource "google_cloud_run_v2_job" "migrate" {
 
       containers {
         image   = var.container_image
-        command = ["python", "src/manage.py", "migrate", "--noinput"]
+        command = ["python", "src/manage.py", "migrate", "--noinput", "--fake-initial"]
 
         resources {
           limits = {
@@ -280,7 +280,7 @@ resource "google_cloud_run_v2_job" "migrate" {
   # Image is updated by deploy.yml (gcloud run jobs update). Terraform apply must not overwrite it.
   lifecycle {
     prevent_destroy = true
-    ignore_changes   = [template]
+    ignore_changes  = [template]
   }
 
   depends_on = [google_secret_manager_secret_iam_member.runtime_access]
