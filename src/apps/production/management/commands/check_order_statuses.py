@@ -8,13 +8,13 @@ from apps.production.models import ProductionOrder, ProductionOrderStatusHistory
 
 
 class Command(BaseCommand):
-    help = "Check and optionally fix ProductionOrder.current_status against latest history."
+    help = "Check and optionally fix ProductionOrder.status against latest history."
 
     def add_arguments(self, parser):
         parser.add_argument(
             "--fix",
             action="store_true",
-            help="Apply fixes to current_status where possible.",
+            help="Apply fixes to status where possible.",
         )
         parser.add_argument(
             "--limit",
@@ -34,7 +34,7 @@ class Command(BaseCommand):
         )
 
         orders = ProductionOrder.objects.annotate(latest_status=Subquery(latest_status_subq)).only(
-            "id", "current_status", "finished_at"
+            "id", "status", "finished_at"
         )
 
         if limit:
@@ -53,10 +53,10 @@ class Command(BaseCommand):
                     missing_history += 1
                     continue
 
-            if order.current_status != expected:
+            if order.status != expected:
                 mismatches += 1
                 if fix:
-                    ProductionOrder.objects.filter(id=order.id).update(current_status=expected)
+                    ProductionOrder.objects.filter(id=order.id).update(status=expected)
                     fixed += 1
 
         self.stdout.write(f"Checked orders: {orders.count()}")

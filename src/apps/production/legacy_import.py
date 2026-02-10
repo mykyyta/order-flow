@@ -98,17 +98,18 @@ def _run_verify(*, strict: bool) -> dict[str, object]:
 
 
 def _collect_aggregate_snapshot() -> dict[str, object]:
-    from apps.catalog.models import ProductVariant
-    from apps.inventory.models import StockMovement, StockRecord
-    from apps.material_inventory.models import MaterialStockMovement, MaterialStockRecord
+    from apps.catalog.models import Variant
+    from apps.inventory.models import ProductStockMovement, ProductStock
+    from apps.materials.models import MaterialStockMovement as MaterialStockMovement
+    from apps.materials.models import MaterialStock
     from apps.production.models import ProductionOrder
     from apps.sales.models import SalesOrder, SalesOrderLine
     from django.db.models import Sum
 
-    finished_stock_total = StockRecord.objects.aggregate(total=Sum("quantity"))["total"] or 0
-    finished_movement_net = StockMovement.objects.aggregate(total=Sum("quantity_change"))["total"] or 0
+    finished_stock_total = ProductStock.objects.aggregate(total=Sum("quantity"))["total"] or 0
+    finished_movement_net = ProductStockMovement.objects.aggregate(total=Sum("quantity_change"))["total"] or 0
     material_stock_total = (
-        MaterialStockRecord.objects.aggregate(total=Sum("quantity"))["total"] or Decimal("0")
+        MaterialStock.objects.aggregate(total=Sum("quantity"))["total"] or Decimal("0")
     )
     material_movement_net = (
         MaterialStockMovement.objects.aggregate(total=Sum("quantity_change"))["total"] or Decimal("0")
@@ -118,9 +119,9 @@ def _collect_aggregate_snapshot() -> dict[str, object]:
         "orders": ProductionOrder.objects.count(),
         "sales_orders": SalesOrder.objects.count(),
         "sales_order_lines": SalesOrderLine.objects.count(),
-        "product_variants": ProductVariant.objects.count(),
-        "finished_stock_records": StockRecord.objects.count(),
-        "material_stock_records": MaterialStockRecord.objects.count(),
+        "product_variants": Variant.objects.count(),
+        "finished_stock_records": ProductStock.objects.count(),
+        "material_stock_records": MaterialStock.objects.count(),
         "finished_stock_quantity_total": int(finished_stock_total),
         "finished_movement_net_total": int(finished_movement_net),
         "finished_balance_delta": int(finished_stock_total - finished_movement_net),
@@ -133,12 +134,12 @@ def _collect_aggregate_snapshot() -> dict[str, object]:
 
 
 def _collect_finished_balances_by_warehouse() -> list[dict[str, object]]:
-    from apps.inventory.models import StockMovement, StockRecord
+    from apps.inventory.models import ProductStockMovement, ProductStock
     from django.db.models import Sum
 
     stock_by_warehouse: dict[str, int] = {}
     for row in (
-        StockRecord.objects.values("warehouse__code")
+        ProductStock.objects.values("warehouse__code")
         .annotate(stock_total=Sum("quantity"))
         .order_by("warehouse__code")
     ):
@@ -147,7 +148,7 @@ def _collect_finished_balances_by_warehouse() -> list[dict[str, object]]:
 
     movement_by_warehouse: dict[str, int] = {}
     for row in (
-        StockMovement.objects.values("stock_record__warehouse__code")
+        ProductStockMovement.objects.values("stock_record__warehouse__code")
         .annotate(movement_total=Sum("quantity_change"))
         .order_by("stock_record__warehouse__code")
     ):
@@ -167,12 +168,13 @@ def _collect_finished_balances_by_warehouse() -> list[dict[str, object]]:
 
 
 def _collect_material_balances_by_warehouse_unit() -> list[dict[str, str]]:
-    from apps.material_inventory.models import MaterialStockMovement, MaterialStockRecord
+    from apps.materials.models import MaterialStockMovement as MaterialStockMovement
+    from apps.materials.models import MaterialStock
     from django.db.models import Sum
 
     stock_by_key: dict[tuple[str, str], Decimal] = {}
     for row in (
-        MaterialStockRecord.objects.values("warehouse__code", "unit")
+        MaterialStock.objects.values("warehouse__code", "unit")
         .annotate(stock_total=Sum("quantity"))
         .order_by("warehouse__code", "unit")
     ):
@@ -281,14 +283,14 @@ def _build_verify_checks(
 
 
 def _apply_status_and_reason_mappings() -> dict[str, int]:
-    from apps.inventory.models import StockMovement
-    from apps.material_inventory.models import MaterialStockMovement
+    from apps.inventory.models import ProductStockMovement
+    from apps.materials.models import MaterialStockMovement as MaterialStockMovement
     from apps.production.models import ProductionOrder, ProductionOrderStatusHistory
 
     return {
         "order_statuses": _apply_mapping_updates(
             model=ProductionOrder,
-            field="current_status",
+            field="status",
             mapping=LEGACY_ORDER_STATUS_TO_V2,
         ),
         "order_status_history": _apply_mapping_updates(
@@ -297,7 +299,7 @@ def _apply_status_and_reason_mappings() -> dict[str, int]:
             mapping=LEGACY_ORDER_STATUS_TO_V2,
         ),
         "finished_movement_reasons": _apply_mapping_updates(
-            model=StockMovement,
+            model=ProductStockMovement,
             field="reason",
             mapping=LEGACY_FINISHED_MOVEMENT_REASON_TO_V2,
         ),
@@ -324,14 +326,14 @@ def _apply_mapping_updates(
 
 
 def _collect_pending_mapping_updates() -> dict[str, int]:
-    from apps.inventory.models import StockMovement
-    from apps.material_inventory.models import MaterialStockMovement
+    from apps.inventory.models import ProductStockMovement
+    from apps.materials.models import MaterialStockMovement as MaterialStockMovement
     from apps.production.models import ProductionOrder, ProductionOrderStatusHistory
 
     return {
         "order_statuses": _count_pending_mapping_updates(
             model=ProductionOrder,
-            field="current_status",
+            field="status",
             mapping=LEGACY_ORDER_STATUS_TO_V2,
         ),
         "order_status_history": _count_pending_mapping_updates(
@@ -340,7 +342,7 @@ def _collect_pending_mapping_updates() -> dict[str, int]:
             mapping=LEGACY_ORDER_STATUS_TO_V2,
         ),
         "finished_movement_reasons": _count_pending_mapping_updates(
-            model=StockMovement,
+            model=ProductStockMovement,
             field="reason",
             mapping=LEGACY_FINISHED_MOVEMENT_REASON_TO_V2,
         ),
@@ -367,14 +369,14 @@ def _count_pending_mapping_updates(
 
 
 def _collect_unknown_mapped_values() -> dict[str, list[str]]:
-    from apps.inventory.models import StockMovement
-    from apps.material_inventory.models import MaterialStockMovement
+    from apps.inventory.models import ProductStockMovement
+    from apps.materials.models import MaterialStockMovement as MaterialStockMovement
     from apps.production.models import ProductionOrder, ProductionOrderStatusHistory
 
     return {
         "order_statuses": _collect_unknown_field_values(
             model=ProductionOrder,
-            field="current_status",
+            field="status",
             known_values=set(LEGACY_ORDER_STATUS_TO_V2),
         ),
         "order_status_history": _collect_unknown_field_values(
@@ -383,7 +385,7 @@ def _collect_unknown_mapped_values() -> dict[str, list[str]]:
             known_values=set(LEGACY_ORDER_STATUS_TO_V2),
         ),
         "finished_movement_reasons": _collect_unknown_field_values(
-            model=StockMovement,
+            model=ProductStockMovement,
             field="reason",
             known_values=set(LEGACY_FINISHED_MOVEMENT_REASON_TO_V2),
         ),

@@ -7,7 +7,7 @@ from django.urls import reverse, reverse_lazy
 from django.utils.timezone import localtime
 from django.views.decorators.http import require_POST
 
-from apps.catalog.models import Color, ProductModel
+from apps.catalog.models import Color, Product
 from apps.production.exceptions import InvalidStatusTransition
 from apps.production.forms import OrderForm, OrderStatusUpdateForm
 from apps.production.domain.order_statuses import (
@@ -33,13 +33,13 @@ TRANSITION_MAP = {
 
 def _filtered_current_orders_queryset(*, filter_value: str):
     status_rank = Case(
-        *[When(current_status=code, then=Value(i)) for i, code in enumerate(ACTIVE_LIST_ORDER)],
+        *[When(status=code, then=Value(i)) for i, code in enumerate(ACTIVE_LIST_ORDER)],
         default=Value(999),
         output_field=IntegerField(),
     )
     queryset = (
-        ProductionOrder.objects.select_related("model", "color")
-        .exclude(current_status=STATUS_FINISHED)
+        ProductionOrder.objects.select_related("product", "variant", "variant__color")
+        .exclude(status=STATUS_FINISHED)
         .annotate(_status_rank=status_rank)
         .order_by("_status_rank", "-created_at", "-id")
     )
@@ -47,14 +47,14 @@ def _filtered_current_orders_queryset(*, filter_value: str):
     status_values = {value for value, _ in CURRENT_STATUS_OPTIONS}
     if filter_value.startswith("tag:"):
         tag = filter_value[4:]
-        if tag == "etsy":
-            queryset = queryset.filter(etsy=True)
-        elif tag == "embroidery":
-            queryset = queryset.filter(embroidery=True)
-        elif tag == "urgent":
-            queryset = queryset.filter(urgent=True)
+        if tag == "is_etsy":
+            queryset = queryset.filter(is_etsy=True)
+        elif tag == "is_embroidery":
+            queryset = queryset.filter(is_embroidery=True)
+        elif tag == "is_urgent":
+            queryset = queryset.filter(is_urgent=True)
     elif filter_value in status_values:
-        queryset = queryset.filter(current_status=filter_value)
+        queryset = queryset.filter(status=filter_value)
 
     return queryset, filter_value
 
@@ -65,9 +65,9 @@ COMBINED_FILTER_OPTIONS = (
     ]
     + list(CURRENT_STATUS_OPTIONS)
     + [
-        ("tag:etsy", "Etsy"),
-        ("tag:embroidery", "Вишивка"),
-        ("tag:urgent", "Терміново"),
+        ("tag:is_etsy", "Etsy"),
+        ("tag:is_embroidery", "Вишивка"),
+        ("tag:is_urgent", "Терміново"),
     ]
 )
 
@@ -148,7 +148,7 @@ def orders_bulk_status(request):
             changed_by=request.user,
         )
     except InvalidStatusTransition as exc:
-        current_label = STATUS_LABELS.get(exc.current_status, exc.current_status)
+        current_label = STATUS_LABELS.get(exc.status, exc.status)
         next_label = STATUS_LABELS.get(exc.next_status, exc.next_status)
         messages.error(
             request,
@@ -170,15 +170,15 @@ def orders_bulk_status(request):
 def orders_completed(request):
     search_query = (request.GET.get("q") or "").strip()
     orders = (
-        ProductionOrder.objects.only("id", "finished_at", "model_id", "color_id")
-        .select_related("model", "color")
-        .filter(current_status=STATUS_FINISHED)
+        ProductionOrder.objects.only("id", "finished_at", "product_id", "variant_id")
+        .select_related("product", "variant", "variant__color")
+        .filter(status=STATUS_FINISHED)
         .order_by("-finished_at")
     )
     if search_query:
         search_filters = (
-            Q(model__name__icontains=search_query)
-            | Q(color__name__icontains=search_query)
+            Q(product__name__icontains=search_query)
+            | Q(variant__color__name__icontains=search_query)
             | Q(comment__icontains=search_query)
         )
         if search_query.isdigit():
@@ -213,9 +213,9 @@ def orders_create(request):
             create_production_order(
                 model=form.cleaned_data["model"],
                 color=form.cleaned_data["color"],
-                etsy=form.cleaned_data["etsy"],
-                embroidery=form.cleaned_data["embroidery"],
-                urgent=form.cleaned_data["urgent"],
+                is_etsy=form.cleaned_data["is_etsy"],
+                is_embroidery=form.cleaned_data["is_embroidery"],
+                is_urgent=form.cleaned_data["is_urgent"],
                 comment=form.cleaned_data.get("comment"),
                 created_by=request.user,
                 orders_url=orders_url,
@@ -243,16 +243,16 @@ def order_detail(request, pk):
 
     order_data = {
         "id": order.id,
-        "model": order.model.name,
-        "color": order.color.name,
-        "embroidery": order.embroidery,
+        "model": order.product.name,
+        "color": order.variant.color.name if order.variant and order.variant.color else "-",
+        "is_embroidery": order.is_embroidery,
         "comment": order.comment,
-        "urgent": order.urgent,
-        "etsy": order.etsy,
+        "is_urgent": order.is_urgent,
+        "is_etsy": order.is_etsy,
         "created_at": localtime(order.created_at) if order.created_at else None,
         "finished_at": localtime(order.finished_at) if order.finished_at else None,
-        "current_status_code": order.current_status,
-        "current_status_display": order.get_current_status_display(),
+        "current_status_code": order.status,
+        "current_status_display": order.get_status_display(),
         "status_history": [
             {
                 "id": status.id,
@@ -290,12 +290,12 @@ def order_edit(request, pk):
     else:
         form = OrderForm(instance=order)
     # Ensure current order color stays in dropdown even if out_of_stock
-    form.fields["model"].queryset = ProductModel.objects.filter(
-        Q(archived_at__isnull=True) | Q(pk=order.model_id)
+    form.fields["model"].queryset = Product.objects.filter(
+        Q(archived_at__isnull=True) | Q(pk=order.product_id)
     ).order_by("name")
+    order_color_id = order.variant.color_id if order.variant_id else None
     form.fields["color"].queryset = Color.objects.filter(
-        Q(pk=order.color_id)
-        | (Q(archived_at__isnull=True) & Q(availability_status__in=["in_stock", "low_stock"]))
+        Q(pk=order_color_id) | (Q(archived_at__isnull=True) & Q(status__in=["in_stock", "low_stock"]))
     ).order_by("name")
     return render(
         request,

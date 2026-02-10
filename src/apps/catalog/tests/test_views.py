@@ -3,13 +3,13 @@ import pytest
 from django.urls import reverse
 from django.utils import timezone
 
-from apps.catalog.models import Color, ProductModel
+from apps.catalog.models import Color, Product
 
 from .conftest import ColorFactory
 
 
 def test_product_model_str():
-    pm = ProductModel(name="Test")
+    pm = Product(name="Test")
     assert "Test" in str(pm)
 
 
@@ -28,8 +28,8 @@ def test_models_and_colors_views_require_authentication(client):
 
 @pytest.mark.django_db(transaction=True)
 def test_color_edit_redirects_to_colors_list(client):
-    from apps.accounts.models import CustomUser
-    user = CustomUser.objects.create_user(username="color_editor", password="pass12345")
+    from apps.accounts.models import User
+    user = User.objects.create_user(username="color_editor", password="pass12345")
     color = ColorFactory(name="Ivory", code=101)
     client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
     response = client.post(
@@ -37,24 +37,24 @@ def test_color_edit_redirects_to_colors_list(client):
         data={
             "name": "ivory",
             "code": 101,
-            "availability_status": "low_stock",
+            "status": "low_stock",
         },
     )
     assert response.status_code == 302
     assert response.url == reverse("colors")
     color.refresh_from_db()
-    assert color.availability_status == "low_stock"
+    assert color.status == "low_stock"
 
 
 @pytest.mark.django_db(transaction=True)
 def test_catalog_lists_hide_archived_by_default(client):
-    from apps.accounts.models import CustomUser
+    from apps.accounts.models import User
 
-    user = CustomUser.objects.create_user(username="catalog_viewer", password="pass12345")
+    user = User.objects.create_user(username="catalog_viewer", password="pass12345")
     client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
 
-    ProductModel.objects.create(name="Active model")
-    ProductModel.objects.create(name="Archived model", archived_at=timezone.now())
+    Product.objects.create(name="Active model")
+    Product.objects.create(name="Archived model", archived_at=timezone.now())
 
     Color.objects.create(name="Active color", code=111)
     Color.objects.create(name="Archived color", code=222, archived_at=timezone.now())
@@ -75,24 +75,24 @@ def test_catalog_lists_hide_archived_by_default(client):
 
 @pytest.mark.django_db(transaction=True)
 def test_product_model_edit_page_exists(client):
-    from apps.accounts.models import CustomUser
+    from apps.accounts.models import User
 
-    user = CustomUser.objects.create_user(username="model_editor", password="pass12345")
+    user = User.objects.create_user(username="model_editor", password="pass12345")
     client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
 
-    model = ProductModel.objects.create(name="Wallet")
+    model = Product.objects.create(name="Wallet")
     response = client.get(reverse("product_model_edit", kwargs={"pk": model.pk}))
     assert response.status_code == 200
 
 
 @pytest.mark.django_db(transaction=True)
 def test_product_model_archive_and_unarchive(client):
-    from apps.accounts.models import CustomUser
+    from apps.accounts.models import User
 
-    user = CustomUser.objects.create_user(username="model_archiver", password="pass12345")
+    user = User.objects.create_user(username="model_archiver", password="pass12345")
     client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
 
-    model = ProductModel.objects.create(name="Clutch")
+    model = Product.objects.create(name="Clutch")
 
     archive_response = client.post(reverse("product_model_archive", kwargs={"pk": model.pk}))
     assert archive_response.status_code == 302
@@ -109,12 +109,12 @@ def test_product_model_archive_and_unarchive(client):
 
 @pytest.mark.django_db(transaction=True)
 def test_color_archive_and_unarchive(client):
-    from apps.accounts.models import CustomUser
+    from apps.accounts.models import User
 
-    user = CustomUser.objects.create_user(username="color_archiver", password="pass12345")
+    user = User.objects.create_user(username="color_archiver", password="pass12345")
     client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
 
-    color = Color.objects.create(name="Blue", code=777, availability_status="in_stock")
+    color = Color.objects.create(name="Blue", code=777, status="in_stock")
 
     archive_response = client.post(reverse("color_archive", kwargs={"pk": color.pk}))
     assert archive_response.status_code == 302
@@ -131,13 +131,13 @@ def test_color_archive_and_unarchive(client):
 
 @pytest.mark.django_db(transaction=True)
 def test_models_archive_page_shows_only_archived(client):
-    from apps.accounts.models import CustomUser
+    from apps.accounts.models import User
 
-    user = CustomUser.objects.create_user(username="models_archive_viewer", password="pass12345")
+    user = User.objects.create_user(username="models_archive_viewer", password="pass12345")
     client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
 
-    ProductModel.objects.create(name="Active model")
-    ProductModel.objects.create(name="Archived model", archived_at=timezone.now())
+    Product.objects.create(name="Active model")
+    Product.objects.create(name="Archived model", archived_at=timezone.now())
 
     response = client.get(reverse("product_models_archive"))
     assert response.status_code == 200
@@ -147,9 +147,9 @@ def test_models_archive_page_shows_only_archived(client):
 
 @pytest.mark.django_db(transaction=True)
 def test_colors_archive_page_shows_only_archived(client):
-    from apps.accounts.models import CustomUser
+    from apps.accounts.models import User
 
-    user = CustomUser.objects.create_user(username="colors_archive_viewer", password="pass12345")
+    user = User.objects.create_user(username="colors_archive_viewer", password="pass12345")
     client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
 
     Color.objects.create(name="Active color", code=500)

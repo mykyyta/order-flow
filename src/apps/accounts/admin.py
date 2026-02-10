@@ -1,10 +1,10 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from apps.accounts.models import CustomUser
+from apps.accounts.models import User
 
 
-@admin.register(CustomUser)
+@admin.register(User)
 class CustomUserAdmin(UserAdmin):
     fieldsets = UserAdmin.fieldsets + ((None, {"fields": ("telegram_id", "theme")}),)
     add_fieldsets = UserAdmin.add_fieldsets + ((None, {"fields": ("telegram_id", "theme")}),)

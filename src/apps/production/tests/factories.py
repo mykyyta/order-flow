@@ -1,14 +1,14 @@
 import factory
 from factory.django import DjangoModelFactory
 
-from apps.accounts.models import CustomUser
-from apps.catalog.models import Color, ProductModel
+from apps.accounts.models import User
+from apps.catalog.models import Color, Product
 from apps.production.models import ProductionOrder
 
 
 class UserFactory(DjangoModelFactory):
     class Meta:
-        model = CustomUser
+        model = User
         skip_postgeneration_save = True
 
     username = factory.Sequence(lambda n: f"user_{n}")
@@ -23,7 +23,7 @@ class UserFactory(DjangoModelFactory):
 
 class ProductModelFactory(DjangoModelFactory):
     class Meta:
-        model = ProductModel
+        model = Product
 
     name = factory.Sequence(lambda n: f"Model {n}")
 
@@ -34,13 +34,38 @@ class ColorFactory(DjangoModelFactory):
 
     name = factory.Sequence(lambda n: f"Color {n}")
     code = factory.Sequence(lambda n: n + 100)
-    availability_status = "in_stock"
+    status = "in_stock"
 
 
 class OrderFactory(DjangoModelFactory):
     class Meta:
         model = ProductionOrder
 
-    model = factory.SubFactory(ProductModelFactory)
+    product = factory.SubFactory(ProductModelFactory)
     color = factory.SubFactory(ColorFactory)
-    current_status = "new"
+    variant = None
+    status = "new"
+    is_embroidery = False
+    is_urgent = False
+    is_etsy = False
+
+    @classmethod
+    def _create(cls, model_class, *args, **kwargs):
+        from apps.catalog.variants import resolve_or_create_product_variant
+
+        product = kwargs.pop("model", kwargs.get("product"))
+        if product is None:
+            product = ProductModelFactory()
+        kwargs["product"] = product
+
+        color = kwargs.pop("color", None)
+        variant = kwargs.get("variant")
+        if variant is None:
+            if color is None:
+                color = ColorFactory()
+            variant = resolve_or_create_product_variant(
+                product_id=product.id,
+                color_id=color.id,
+            )
+            kwargs["variant"] = variant
+        return super()._create(model_class, *args, **kwargs)

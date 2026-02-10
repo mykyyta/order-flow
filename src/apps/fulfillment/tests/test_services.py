@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 import pytest
 
-from apps.catalog.models import ProductVariant
+from apps.catalog.models import Variant
 from apps.catalog.tests.conftest import ColorFactory, ProductModelFactory
 from apps.fulfillment.services import (
     complete_production_order,
@@ -14,14 +14,19 @@ from apps.fulfillment.services import (
     transfer_finished_stock_orchestrated,
     transfer_material_stock_orchestrated,
 )
-from apps.inventory.models import StockMovement, WIPStockMovement
+from apps.inventory.models import ProductStockMovement, WIPStockMovement
 from apps.inventory.services import add_to_stock, add_to_wip_stock, get_stock_quantity
-from apps.material_inventory.services import add_material_stock
-from apps.material_inventory.models import MaterialStockTransfer
-from apps.materials.models import Material, MaterialMovement, MaterialStockRecord, ProductMaterial
+from apps.materials.models import (
+    Material,
+    MaterialStockMovement,
+    MaterialStock,
+    MaterialStockTransfer,
+    BOM,
+)
+from apps.materials.services import add_material_stock
 from apps.production.domain.status import STATUS_FINISHED
 from apps.accounts.tests.conftest import UserFactory
-from apps.procurement.models import GoodsReceiptLine, PurchaseOrder, PurchaseOrderLine, Supplier
+from apps.materials.models import GoodsReceiptLine, PurchaseOrder, PurchaseOrderLine, Supplier
 from apps.sales.models import SalesOrder
 from apps.warehouses.models import Warehouse
 
@@ -37,7 +42,7 @@ def test_create_sales_order_orchestrated_creates_sales_order():
         customer_info="ТОВ Оркестрація",
         lines_data=[
             {
-                "product_model_id": model.id,
+                "product_id": model.id,
                 "color_id": color.id,
                 "quantity": 1,
             }
@@ -58,7 +63,7 @@ def test_create_production_orders_for_sales_order_orchestrated():
         customer_info="ТОВ Plan",
         lines_data=[
             {
-                "product_model_id": model.id,
+                "product_id": model.id,
                 "color_id": color.id,
                 "quantity": 2,
             }
@@ -89,7 +94,7 @@ def test_receive_purchase_order_line_orchestrated_updates_received_quantity():
         purchase_order=purchase_order,
         material=material,
         quantity=Decimal("10.000"),
-        unit=ProductMaterial.Unit.PIECE,
+        unit=BOM.Unit.PIECE,
     )
 
     receive_purchase_order_line_orchestrated(
@@ -113,7 +118,7 @@ def test_complete_production_order_orchestrated():
                 customer_info="Complete production",
                 lines_data=[
                     {
-                        "product_model_id": model.id,
+                        "product_id": model.id,
                         "color_id": color.id,
                         "quantity": 1,
                     }
@@ -125,23 +130,23 @@ def test_complete_production_order_orchestrated():
         complete_production_order(production_order=order, changed_by=user)
 
     order.refresh_from_db()
-    assert order.current_status == STATUS_FINISHED
+    assert order.status == STATUS_FINISHED
 
 
 @pytest.mark.django_db
 def test_scrap_wip_orchestrated():
     user = UserFactory()
     model = ProductModelFactory(is_bundle=False)
-    variant = ProductVariant.objects.create(product=model, color=ColorFactory())
+    variant = Variant.objects.create(product=model, color=ColorFactory())
     add_to_wip_stock(
-        product_variant_id=variant.id,
+        variant_id=variant.id,
         quantity=3,
         reason=WIPStockMovement.Reason.CUTTING_IN,
         user=user,
     )
 
     record = scrap_wip(
-        product_variant_id=variant.id,
+        variant_id=variant.id,
         quantity=1,
         user=user,
     )
@@ -153,7 +158,7 @@ def test_scrap_wip_orchestrated():
 def test_transfer_finished_stock_orchestrated():
     user = UserFactory()
     model = ProductModelFactory(is_bundle=False)
-    variant = ProductVariant.objects.create(product=model, color=ColorFactory())
+    variant = Variant.objects.create(product=model, color=ColorFactory())
     from_warehouse = Warehouse.objects.create(
         name="From Fulfillment Finished",
         code="FUL-FIN-FROM",
@@ -170,23 +175,23 @@ def test_transfer_finished_stock_orchestrated():
     )
     add_to_stock(
         warehouse_id=from_warehouse.id,
-        product_variant_id=variant.id,
+        variant_id=variant.id,
         quantity=3,
-        reason=StockMovement.Reason.ADJUSTMENT_IN,
+        reason=ProductStockMovement.Reason.ADJUSTMENT_IN,
         user=user,
     )
 
     transfer = transfer_finished_stock_orchestrated(
         from_warehouse_id=from_warehouse.id,
         to_warehouse_id=to_warehouse.id,
-        product_variant_id=variant.id,
+        variant_id=variant.id,
         quantity=2,
         user=user,
     )
 
     assert transfer.status == transfer.Status.COMPLETED
-    assert get_stock_quantity(warehouse_id=from_warehouse.id, product_variant_id=variant.id) == 1
-    assert get_stock_quantity(warehouse_id=to_warehouse.id, product_variant_id=variant.id) == 2
+    assert get_stock_quantity(warehouse_id=from_warehouse.id, variant_id=variant.id) == 1
+    assert get_stock_quantity(warehouse_id=to_warehouse.id, variant_id=variant.id) == 2
 
 
 @pytest.mark.django_db
@@ -211,8 +216,8 @@ def test_transfer_material_stock_orchestrated():
         warehouse_id=from_warehouse.id,
         material=material,
         quantity=Decimal("3.000"),
-        unit=ProductMaterial.Unit.PIECE,
-        reason=MaterialMovement.Reason.ADJUSTMENT_IN,
+        unit=BOM.Unit.PIECE,
+        reason=MaterialStockMovement.Reason.ADJUSTMENT_IN,
         created_by=user,
     )
 
@@ -221,15 +226,15 @@ def test_transfer_material_stock_orchestrated():
         to_warehouse_id=to_warehouse.id,
         material=material,
         quantity=Decimal("1.250"),
-        unit=ProductMaterial.Unit.PIECE,
+        unit=BOM.Unit.PIECE,
         user=user,
     )
 
     assert transfer.status == transfer.Status.COMPLETED
-    assert MaterialStockRecord.objects.get(warehouse_id=from_warehouse.id, material=material).quantity == Decimal(
+    assert MaterialStock.objects.get(warehouse_id=from_warehouse.id, material=material).quantity == Decimal(
         "1.750"
     )
-    assert MaterialStockRecord.objects.get(warehouse_id=to_warehouse.id, material=material).quantity == Decimal(
+    assert MaterialStock.objects.get(warehouse_id=to_warehouse.id, material=material).quantity == Decimal(
         "1.250"
     )
 
@@ -248,7 +253,7 @@ def test_receive_purchase_order_line_orchestrated_rolls_back_when_quantity_excee
         purchase_order=purchase_order,
         material=material,
         quantity=Decimal("2.000"),
-        unit=ProductMaterial.Unit.PIECE,
+        unit=BOM.Unit.PIECE,
     )
 
     with pytest.raises(ValueError, match="remaining quantity"):
@@ -288,7 +293,7 @@ def test_transfer_material_stock_orchestrated_rolls_back_when_not_enough_stock()
             to_warehouse_id=to_warehouse.id,
             material=material,
             quantity=Decimal("0.500"),
-            unit=ProductMaterial.Unit.PIECE,
+            unit=BOM.Unit.PIECE,
             user=user,
         )
 

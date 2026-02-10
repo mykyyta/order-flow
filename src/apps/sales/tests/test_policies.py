@@ -59,14 +59,14 @@ def test_resolve_line_production_status_for_existing_orders():
 def test_resolve_sales_order_status_with_lines():
     assert (
         resolve_sales_order_status(
-            current_status=STATUS_NEW,
+            status=STATUS_NEW,
             line_production_statuses=[PRODUCTION_STATUS_PENDING, PRODUCTION_STATUS_DONE],
         )
         == STATUS_PRODUCTION
     )
     assert (
         resolve_sales_order_status(
-            current_status=STATUS_PRODUCTION,
+            status=STATUS_PRODUCTION,
             line_production_statuses=[PRODUCTION_STATUS_DONE, PRODUCTION_STATUS_DONE],
         )
         == STATUS_READY
@@ -76,21 +76,21 @@ def test_resolve_sales_order_status_with_lines():
 def test_resolve_sales_order_status_is_none_for_terminal_or_unchanged():
     assert (
         resolve_sales_order_status(
-            current_status=STATUS_CANCELLED,
+            status=STATUS_CANCELLED,
             line_production_statuses=[PRODUCTION_STATUS_DONE],
         )
         is None
     )
     assert (
         resolve_sales_order_status(
-            current_status=STATUS_PRODUCTION,
+            status=STATUS_PRODUCTION,
             line_production_statuses=[PRODUCTION_STATUS_PENDING],
         )
         is None
     )
     assert (
         resolve_sales_order_status(
-            current_status=STATUS_NEW,
+            status=STATUS_NEW,
             line_production_statuses=[],
         )
         is None

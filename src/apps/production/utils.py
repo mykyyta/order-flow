@@ -42,14 +42,17 @@ def get_telegram_ids_for_group(group_name):
 
 
 def generate_order_details(order):
-    details = f"{order.model.name}, {order.color.name}"
+    color_name = "-"
+    if order.variant and order.variant.color:
+        color_name = order.variant.color.name
+    details = f"{order.product.name}, {color_name}"
     additional = []
 
-    if order.embroidery:
+    if order.is_embroidery:
         additional.append("Вишивка")
-    if order.urgent:
+    if order.is_urgent:
         additional.append("Терміново")
-    if order.etsy:
+    if order.is_etsy:
         additional.append("Etsy")
     if order.comment:
         additional.append(f"\n{order.comment}")

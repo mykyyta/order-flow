@@ -31,7 +31,7 @@ def test_active_orders_render_comment_marker(client):
         model=model,
         color=color,
         comment="ready for review",
-        current_status=STATUS_NEW,
+        status=STATUS_NEW,
     )
     response = client.get(reverse("orders_active"))
     assert response.status_code == 200
@@ -46,8 +46,8 @@ def test_current_orders_list_is_paginated_and_excludes_finished(client):
     model = ProductModelFactory()
     color = ColorFactory()
     for _ in range(51):
-        OrderFactory(model=model, color=color, current_status=STATUS_NEW)
-    OrderFactory(model=model, color=color, current_status=STATUS_FINISHED)
+        OrderFactory(model=model, color=color, status=STATUS_NEW)
+    OrderFactory(model=model, color=color, status=STATUS_FINISHED)
     response = client.get(reverse("orders_active"))
     assert response.status_code == 200
     assert response.context["page_obj"].paginator.count == 51
@@ -69,13 +69,13 @@ def test_current_orders_supports_status_filter(client):
         model=model,
         color=color,
         comment="vip batch",
-        current_status=STATUS_ON_HOLD,
+        status=STATUS_ON_HOLD,
     )
     OrderFactory(
         model=model,
         color=color,
         comment="regular batch",
-        current_status=STATUS_NEW,
+        status=STATUS_NEW,
     )
     response = client.get(reverse("orders_active"), {"filter": STATUS_ON_HOLD})
     assert response.status_code == 200
@@ -94,19 +94,19 @@ def test_finished_orders_search_filters_across_all_finished(client):
         model=model,
         color=color,
         comment="special archive order",
-        current_status=STATUS_FINISHED,
+        status=STATUS_FINISHED,
     )
     OrderFactory(
         model=model,
         color=color,
         comment="other archive order",
-        current_status=STATUS_FINISHED,
+        status=STATUS_FINISHED,
     )
     OrderFactory(
         model=model,
         color=color,
         comment="special archive order",
-        current_status=STATUS_NEW,
+        status=STATUS_NEW,
     )
     response = client.get(reverse("orders_completed"), {"q": "special"})
     assert response.status_code == 200
@@ -126,7 +126,7 @@ def test_finished_orders_search_preserves_query_params_for_pagination(client):
             model=model,
             color=color,
             comment="archive",
-            current_status=STATUS_FINISHED,
+            status=STATUS_FINISHED,
         )
     response = client.get(reverse("orders_completed"), {"q": "archive"})
     assert response.status_code == 200
@@ -144,7 +144,7 @@ def test_order_detail_renders_status_indicator(client):
     client.force_login(user, backend=AUTH_BACKEND)
     model = ProductModelFactory()
     color = ColorFactory()
-    order = OrderFactory(model=model, color=color, current_status=STATUS_ON_HOLD)
+    order = OrderFactory(model=model, color=color, status=STATUS_ON_HOLD)
     response = client.get(reverse("order_detail", kwargs={"pk": order.id}))
     assert response.status_code == 200
     assert b"text-orange-500" in response.content
@@ -158,11 +158,11 @@ def test_orders_create_hides_archived_catalog_items(client):
 
     active_model = ProductModelFactory(name="Active model")
     archived_model = ProductModelFactory(name="Archived model", archived_at=timezone.now())
-    active_color = ColorFactory(name="Active color", code=1001, availability_status="in_stock")
+    active_color = ColorFactory(name="Active color", code=1001, status="in_stock")
     archived_color = ColorFactory(
         name="Archived color",
         code=2002,
-        availability_status="in_stock",
+        status="in_stock",
         archived_at=timezone.now(),
     )
 
@@ -180,8 +180,8 @@ def test_order_edit_includes_archived_model_and_color_in_dropdown(client):
     client.force_login(user, backend=AUTH_BACKEND)
 
     model = ProductModelFactory(name="Model to archive")
-    color = ColorFactory(name="Color to archive", code=888, availability_status="in_stock")
-    order = OrderFactory(model=model, color=color, current_status=STATUS_NEW)
+    color = ColorFactory(name="Color to archive", code=888, status="in_stock")
+    order = OrderFactory(model=model, color=color, status=STATUS_NEW)
 
     model.archived_at = timezone.now()
     model.save(update_fields=["archived_at"])
@@ -217,8 +217,8 @@ def test_orders_bulk_status_updates_multiple_orders(client):
     client.force_login(user, backend=AUTH_BACKEND)
     model = ProductModelFactory()
     color = ColorFactory()
-    order1 = OrderFactory(model=model, color=color, current_status=STATUS_NEW)
-    order2 = OrderFactory(model=model, color=color, current_status=STATUS_NEW)
+    order1 = OrderFactory(model=model, color=color, status=STATUS_NEW)
+    order2 = OrderFactory(model=model, color=color, status=STATUS_NEW)
 
     response = client.post(
         reverse("orders_bulk_status"),
@@ -227,8 +227,8 @@ def test_orders_bulk_status_updates_multiple_orders(client):
     assert response.status_code == 302
     order1.refresh_from_db()
     order2.refresh_from_db()
-    assert order1.current_status == "doing"
-    assert order2.current_status == "doing"
+    assert order1.status == "doing"
+    assert order2.status == "doing"
 
 
 @pytest.mark.django_db(transaction=True)
@@ -255,7 +255,7 @@ def test_orders_bulk_status_no_status_shows_error(client):
     client.force_login(user, backend=AUTH_BACKEND)
     model = ProductModelFactory()
     color = ColorFactory()
-    order = OrderFactory(model=model, color=color, current_status=STATUS_NEW)
+    order = OrderFactory(model=model, color=color, status=STATUS_NEW)
 
     response = client.post(
         reverse("orders_bulk_status"),
@@ -275,7 +275,7 @@ def test_orders_bulk_status_invalid_transition_shows_error(client):
     model = ProductModelFactory()
     color = ColorFactory()
     # Order with status "doing" cannot transition back to "new"
-    order = OrderFactory(model=model, color=color, current_status="doing")
+    order = OrderFactory(model=model, color=color, status="doing")
 
     response = client.post(
         reverse("orders_bulk_status"),
@@ -299,9 +299,9 @@ def test_orders_create_post_creates_order(client):
         data={
             "model": model.id,
             "color": color.id,
-            "etsy": False,
-            "embroidery": False,
-            "urgent": False,
+            "is_etsy": False,
+            "is_embroidery": False,
+            "is_urgent": False,
             "comment": "Test order",
         },
     )
@@ -312,4 +312,4 @@ def test_orders_create_post_creates_order(client):
     order = ProductionOrder.objects.get(comment="Test order")
     assert order.model == model
     assert order.color == color
-    assert order.current_status == STATUS_NEW
+    assert order.status == STATUS_NEW

@@ -1,11 +1,10 @@
 import pytest
 from decimal import Decimal
 
-from apps.catalog.models import ProductVariant
+from apps.catalog.models import Variant
 from apps.catalog.tests.conftest import ColorFactory, ProductModelFactory
-from apps.inventory.models import StockMovement, StockRecord
-from apps.material_inventory.models import MaterialStockMovement, MaterialStockRecord
-from apps.materials.models import Material, ProductMaterial
+from apps.inventory.models import ProductStockMovement, ProductStock
+from apps.materials.models import Material, MaterialStockMovement, MaterialStock, BOM
 from apps.production.legacy_import import run_final_import_and_verify, run_import_legacy
 from apps.production.legacy_import_mappings import (
     LEGACY_FINISHED_MOVEMENT_REASON_TO_V2,
@@ -28,7 +27,7 @@ def test_legacy_movement_reason_mappings_contain_core_values():
 
 @pytest.mark.django_db
 def test_dry_run_reports_pending_updates_without_writing():
-    order = OrderFactory(current_status="almost_finished")
+    order = OrderFactory(status="almost_finished")
     ProductionOrderStatusHistory.objects.create(
         order=order,
         changed_by=None,
@@ -38,7 +37,7 @@ def test_dry_run_reports_pending_updates_without_writing():
     result = run_import_legacy(mode="dry-run")
 
     order.refresh_from_db()
-    assert order.current_status == "almost_finished"
+    assert order.status == "almost_finished"
     assert result["pending_updates"]["order_statuses"] >= 1
     assert result["pending_updates"]["order_status_history"] >= 1
 
@@ -83,16 +82,16 @@ def test_verify_mode_returns_finished_balance_by_warehouse():
     )
     product = ProductModelFactory(is_bundle=False)
     color = ColorFactory()
-    variant = ProductVariant.objects.create(product=product, color=color)
-    stock_record = StockRecord.objects.create(
+    variant = Variant.objects.create(product=product, color=color)
+    stock_record = ProductStock.objects.create(
         warehouse=warehouse,
-        product_variant=variant,
+        variant=variant,
         quantity=5,
     )
-    StockMovement.objects.create(
+    ProductStockMovement.objects.create(
         stock_record=stock_record,
         quantity_change=4,
-        reason=StockMovement.Reason.ADJUSTMENT_IN,
+        reason=ProductStockMovement.Reason.ADJUSTMENT_IN,
     )
 
     result = run_import_legacy(mode="verify")
@@ -113,10 +112,10 @@ def test_verify_mode_returns_material_balance_by_warehouse_and_unit():
         is_active=True,
     )
     material = Material.objects.create(name="Verify Leather")
-    stock_record = MaterialStockRecord.objects.create(
+    stock_record = MaterialStock.objects.create(
         warehouse=warehouse,
         material=material,
-        unit=ProductMaterial.Unit.PIECE,
+        unit=BOM.Unit.PIECE,
         quantity=Decimal("2.500"),
     )
     MaterialStockMovement.objects.create(
@@ -130,7 +129,7 @@ def test_verify_mode_returns_material_balance_by_warehouse_and_unit():
     row = next(
         item
         for item in rows
-        if item["warehouse_code"] == "VRF-MAT" and item["unit"] == ProductMaterial.Unit.PIECE
+        if item["warehouse_code"] == "VRF-MAT" and item["unit"] == BOM.Unit.PIECE
     )
     assert row["stock_total"] == "2.500"
     assert row["movement_net_total"] == "1.250"
@@ -139,7 +138,7 @@ def test_verify_mode_returns_material_balance_by_warehouse_and_unit():
 
 @pytest.mark.django_db
 def test_apply_mode_normalizes_legacy_order_statuses():
-    order = OrderFactory(current_status="almost_finished")
+    order = OrderFactory(status="almost_finished")
     ProductionOrderStatusHistory.objects.create(
         order=order,
         changed_by=None,
@@ -150,7 +149,7 @@ def test_apply_mode_normalizes_legacy_order_statuses():
 
     order.refresh_from_db()
     history_status = order.history.latest("id").new_status
-    assert order.current_status == "finished"
+    assert order.status == "finished"
     assert history_status == "finished"
     assert result["updated"]["order_statuses"] >= 1
     assert result["updated"]["order_status_history"] >= 1
@@ -167,10 +166,10 @@ def test_verify_mode_strict_fails_when_deltas_are_non_zero():
     )
     product = ProductModelFactory(is_bundle=False)
     color = ColorFactory()
-    variant = ProductVariant.objects.create(product=product, color=color)
-    StockRecord.objects.create(
+    variant = Variant.objects.create(product=product, color=color)
+    ProductStock.objects.create(
         warehouse=warehouse,
-        product_variant=variant,
+        variant=variant,
         quantity=1,
     )
 
@@ -184,7 +183,7 @@ def test_verify_mode_strict_fails_when_deltas_are_non_zero():
 
 @pytest.mark.django_db
 def test_verify_mode_reports_unknown_values():
-    order = OrderFactory(current_status="new")
+    order = OrderFactory(status="new")
     ProductionOrderStatusHistory.objects.create(
         order=order,
         changed_by=None,
@@ -199,7 +198,7 @@ def test_verify_mode_reports_unknown_values():
 
 @pytest.mark.django_db
 def test_run_final_import_and_verify_normalizes_statuses_and_succeeds():
-    order = OrderFactory(current_status="almost_finished")
+    order = OrderFactory(status="almost_finished")
     ProductionOrderStatusHistory.objects.create(
         order=order,
         changed_by=None,
@@ -209,7 +208,7 @@ def test_run_final_import_and_verify_normalizes_statuses_and_succeeds():
     result = run_final_import_and_verify()
 
     order.refresh_from_db()
-    assert order.current_status == "finished"
+    assert order.status == "finished"
     assert result["mode"] == "final"
     assert result["apply"]["mode"] == "apply"
     assert result["verify"]["mode"] == "verify"
@@ -227,10 +226,10 @@ def test_run_final_import_and_verify_fails_when_verify_checks_fail():
     )
     product = ProductModelFactory(is_bundle=False)
     color = ColorFactory()
-    variant = ProductVariant.objects.create(product=product, color=color)
-    StockRecord.objects.create(
+    variant = Variant.objects.create(product=product, color=color)
+    ProductStock.objects.create(
         warehouse=warehouse,
-        product_variant=variant,
+        variant=variant,
         quantity=1,
     )
 

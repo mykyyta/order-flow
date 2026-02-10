@@ -19,9 +19,9 @@ def test_create_and_change_production_order_status_via_production_context():
         order = create_production_order(
             model=model,
             color=color,
-            embroidery=False,
-            urgent=False,
-            etsy=False,
+            is_embroidery=False,
+            is_urgent=False,
+            is_etsy=False,
             comment="production wrapper",
             created_by=user,
             orders_url=None,
@@ -33,7 +33,7 @@ def test_create_and_change_production_order_status_via_production_context():
         )
 
     order.refresh_from_db()
-    assert order.current_status == STATUS_FINISHED
+    assert order.status == STATUS_FINISHED
 
 
 @pytest.mark.django_db
@@ -47,9 +47,9 @@ def test_production_context_allows_writes_when_legacy_writes_are_frozen():
         order = create_production_order(
             model=model,
             color=color,
-            embroidery=False,
-            urgent=False,
-            etsy=False,
+            is_embroidery=False,
+            is_urgent=False,
+            is_etsy=False,
             comment="production wrapper",
             created_by=user,
             orders_url=None,
@@ -61,4 +61,4 @@ def test_production_context_allows_writes_when_legacy_writes_are_frozen():
         )
 
     order.refresh_from_db()
-    assert order.current_status == STATUS_FINISHED
+    assert order.status == STATUS_FINISHED

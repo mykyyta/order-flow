@@ -15,8 +15,8 @@ from .conftest import ColorFactory, ProductModelFactory
 
 @pytest.mark.django_db
 def test_product_model_is_bundle_defaults_to_false():
-    product_model = ProductModelFactory()
-    assert product_model.is_bundle is False
+    product = ProductModelFactory()
+    assert product.is_bundle is False
 
 
 @pytest.mark.django_db

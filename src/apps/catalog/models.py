@@ -2,9 +2,12 @@ from django.db import models
 from django.utils import timezone
 
 
-class ProductModel(models.Model):
+class Product(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255, unique=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    currency = models.CharField(max_length=3, default="UAH")
+    cost_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     is_bundle = models.BooleanField(default=False)
     primary_material = models.ForeignKey(
         "materials.Material",
@@ -38,7 +41,7 @@ class Color(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255, unique=True)
     code = models.IntegerField(unique=True)
-    availability_status = models.CharField(
+    status = models.CharField(
         max_length=20, choices=AVAILABILITY_CHOICES, default="in_stock"
     )
     archived_at = models.DateTimeField(null=True, blank=True, db_index=True)
@@ -49,9 +52,9 @@ class Color(models.Model):
         return f"{self.name}"
 
 
-class ProductVariant(models.Model):
+class Variant(models.Model):
     product = models.ForeignKey(
-        ProductModel,
+        Product,
         on_delete=models.CASCADE,
         related_name="variants",
     )
@@ -60,21 +63,21 @@ class ProductVariant(models.Model):
         on_delete=models.PROTECT,
         null=True,
         blank=True,
-        related_name="product_variants",
+        related_name="variants",
     )
     primary_material_color = models.ForeignKey(
         "materials.MaterialColor",
         on_delete=models.PROTECT,
         null=True,
         blank=True,
-        related_name="product_variants_primary",
+        related_name="variants_primary",
     )
     secondary_material_color = models.ForeignKey(
         "materials.MaterialColor",
         on_delete=models.PROTECT,
         null=True,
         blank=True,
-        related_name="product_variants_secondary",
+        related_name="variants_secondary",
     )
     sku = models.CharField(max_length=128, blank=True)
     is_active = models.BooleanField(default=True)
@@ -147,13 +150,13 @@ class ProductVariant(models.Model):
 
 class BundleComponent(models.Model):
     bundle = models.ForeignKey(
-        ProductModel,
+        Product,
         on_delete=models.CASCADE,
         related_name="components",
         limit_choices_to={"is_bundle": True},
     )
     component = models.ForeignKey(
-        ProductModel,
+        Product,
         on_delete=models.CASCADE,
         related_name="part_of_bundles",
         limit_choices_to={"is_bundle": False},
@@ -173,7 +176,7 @@ class BundleComponent(models.Model):
 
 class BundleColorMapping(models.Model):
     bundle = models.ForeignKey(
-        ProductModel,
+        Product,
         on_delete=models.CASCADE,
         related_name="color_mappings",
         limit_choices_to={"is_bundle": True},
@@ -184,7 +187,7 @@ class BundleColorMapping(models.Model):
         related_name="as_bundle_color",
     )
     component = models.ForeignKey(
-        ProductModel,
+        Product,
         on_delete=models.CASCADE,
         related_name="bundle_color_components",
         limit_choices_to={"is_bundle": False},
@@ -207,7 +210,7 @@ class BundleColorMapping(models.Model):
 
 class BundlePreset(models.Model):
     bundle = models.ForeignKey(
-        ProductModel,
+        Product,
         on_delete=models.CASCADE,
         related_name="presets",
         limit_choices_to={"is_bundle": True},
@@ -232,7 +235,7 @@ class BundlePresetComponent(models.Model):
         related_name="components",
     )
     component = models.ForeignKey(
-        ProductModel,
+        Product,
         on_delete=models.CASCADE,
         related_name="bundle_presets",
         limit_choices_to={"is_bundle": False},

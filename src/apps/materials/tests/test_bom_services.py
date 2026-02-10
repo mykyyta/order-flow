@@ -3,9 +3,9 @@ from decimal import Decimal
 
 import pytest
 
-from apps.catalog.models import BundleComponent
+from apps.catalog.models import BundleComponent, Variant
 from apps.catalog.tests.conftest import ColorFactory, ProductModelFactory
-from apps.materials.models import Material, ProductMaterial
+from apps.materials.models import Material, BOM
 from apps.materials.services import calculate_material_requirements_for_customer_order_line
 from apps.sales.models import SalesOrder, SalesOrderLine
 
@@ -16,26 +16,26 @@ def test_calculate_material_requirements_for_single_product_line():
     leather = Material.objects.create(name="Leather smooth")
     product = ProductModelFactory(name="Shopper", is_bundle=False)
     color = ColorFactory()
-    ProductMaterial.objects.create(
-        product_model=product,
+    BOM.objects.create(
+        product=product,
         material=felt,
         quantity_per_unit="0.60",
-        unit=ProductMaterial.Unit.SQUARE_METER,
+        unit=BOM.Unit.SQUARE_METER,
     )
-    ProductMaterial.objects.create(
-        product_model=product,
+    BOM.objects.create(
+        product=product,
         material=leather,
         quantity_per_unit="0.20",
-        unit=ProductMaterial.Unit.SQUARE_METER,
+        unit=BOM.Unit.SQUARE_METER,
     )
-    customer_order = SalesOrder.objects.create(
+    sales_order = SalesOrder.objects.create(
         source=SalesOrder.Source.WHOLESALE,
         customer_info="ТОВ Тест",
     )
     line = SalesOrderLine.objects.create(
-        customer_order=customer_order,
-        product_model=product,
-        color=color,
+        sales_order=sales_order,
+        product=product,
+        variant=Variant.objects.create(product=product, color=color),
         quantity=3,
     )
 
@@ -44,7 +44,7 @@ def test_calculate_material_requirements_for_single_product_line():
 
     assert by_name["Felt"].quantity == Decimal("1.80")
     assert by_name["Leather smooth"].quantity == Decimal("0.60")
-    assert by_name["Felt"].unit == ProductMaterial.Unit.SQUARE_METER
+    assert by_name["Felt"].unit == BOM.Unit.SQUARE_METER
 
 
 @pytest.mark.django_db
@@ -57,26 +57,26 @@ def test_calculate_material_requirements_for_bundle_line():
     color = ColorFactory()
     BundleComponent.objects.create(bundle=bundle, component=clutch, quantity=1, is_primary=True)
     BundleComponent.objects.create(bundle=bundle, component=strap, quantity=2, is_primary=False)
-    ProductMaterial.objects.create(
-        product_model=clutch,
+    BOM.objects.create(
+        product=clutch,
         material=felt,
         quantity_per_unit="0.25",
-        unit=ProductMaterial.Unit.SQUARE_METER,
+        unit=BOM.Unit.SQUARE_METER,
     )
-    ProductMaterial.objects.create(
-        product_model=strap,
+    BOM.objects.create(
+        product=strap,
         material=leather,
         quantity_per_unit="1.00",
-        unit=ProductMaterial.Unit.PIECE,
+        unit=BOM.Unit.PIECE,
     )
-    customer_order = SalesOrder.objects.create(
+    sales_order = SalesOrder.objects.create(
         source=SalesOrder.Source.WHOLESALE,
         customer_info="ТОВ Опт",
     )
     line = SalesOrderLine.objects.create(
-        customer_order=customer_order,
-        product_model=bundle,
-        color=color,
+        sales_order=sales_order,
+        product=bundle,
+        variant=Variant.objects.create(product=bundle, color=color),
         quantity=2,
     )
 
@@ -85,4 +85,4 @@ def test_calculate_material_requirements_for_bundle_line():
 
     assert by_name["Felt"].quantity == Decimal("0.50")
     assert by_name["Leather smooth"].quantity == Decimal("4.00")
-    assert by_name["Leather smooth"].unit == ProductMaterial.Unit.PIECE
+    assert by_name["Leather smooth"].unit == BOM.Unit.PIECE

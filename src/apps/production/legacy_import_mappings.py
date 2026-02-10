@@ -3,7 +3,7 @@ from __future__ import annotations
 LEGACY_ORDER_STATUS_TO_V2 = {
     "new": "new",
     "doing": "doing",
-    "embroidery": "embroidery",
+    "is_embroidery": "is_embroidery",
     "deciding": "deciding",
     "on_hold": "on_hold",
     "finished": "finished",

@@ -39,7 +39,7 @@ class MaterialColor(models.Model):
         return f"{self.material.name}: {self.name}"
 
 
-class ProductMaterial(models.Model):
+class BOM(models.Model):
     class Unit(models.TextChoices):
         PIECE = "pcs", "шт"
         METER = "m", "м"
@@ -47,8 +47,8 @@ class ProductMaterial(models.Model):
         GRAM = "g", "г"
         MILLILITER = "ml", "мл"
 
-    product_model = models.ForeignKey(
-        "catalog.ProductModel",
+    product = models.ForeignKey(
+        "catalog.Product",
         on_delete=models.CASCADE,
         related_name="material_norms",
     )
@@ -64,13 +64,13 @@ class ProductMaterial(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = (("product_model", "material"),)
-        ordering = ("product_model_id", "material__name")
+        unique_together = (("product", "material"),)
+        ordering = ("product_id", "material__name")
 
     def __str__(self) -> str:
         quantity = Decimal(str(self.quantity_per_unit))
         return (
-            f"{self.product_model.name}: {self.material.name}"
+            f"{self.product.name}: {self.material.name}"
             f" {quantity:.2f} {self.unit}"
         )
 
@@ -118,7 +118,7 @@ class SupplierMaterialOffer(models.Model):
     )
     title = models.CharField(max_length=255, blank=True)
     sku = models.CharField(max_length=128, blank=True)
-    unit = models.CharField(max_length=8, choices=ProductMaterial.Unit.choices)
+    unit = models.CharField(max_length=8, choices=BOM.Unit.choices)
     price_per_unit = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     currency = models.CharField(max_length=3, choices=Currency.choices, default=Currency.UAH)
     min_order_quantity = models.DecimalField(max_digits=12, decimal_places=3, default=Decimal("0.000"))
@@ -194,7 +194,7 @@ class PurchaseOrderLine(models.Model):
     )
     quantity = models.DecimalField(max_digits=12, decimal_places=3)
     received_quantity = models.DecimalField(max_digits=12, decimal_places=3, default=Decimal("0.000"))
-    unit = models.CharField(max_length=8, choices=ProductMaterial.Unit.choices)
+    unit = models.CharField(max_length=8, choices=BOM.Unit.choices)
     unit_price = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     notes = models.CharField(max_length=255, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
@@ -216,7 +216,7 @@ class PurchaseOrderLine(models.Model):
         return f"PO #{self.purchase_order_id}: {self.material.name} {self.quantity} {self.unit}"
 
 
-class MaterialStockRecord(models.Model):
+class MaterialStock(models.Model):
     warehouse = models.ForeignKey(
         "warehouses.Warehouse",
         on_delete=models.PROTECT,
@@ -234,7 +234,7 @@ class MaterialStockRecord(models.Model):
         blank=True,
         related_name="stock_records",
     )
-    unit = models.CharField(max_length=8, choices=ProductMaterial.Unit.choices)
+    unit = models.CharField(max_length=8, choices=BOM.Unit.choices)
     quantity = models.DecimalField(max_digits=12, decimal_places=3, default=Decimal("0.000"))
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
@@ -334,7 +334,7 @@ class GoodsReceiptLine(models.Model):
         related_name="goods_receipt_lines",
     )
     quantity = models.DecimalField(max_digits=12, decimal_places=3)
-    unit = models.CharField(max_length=8, choices=ProductMaterial.Unit.choices)
+    unit = models.CharField(max_length=8, choices=BOM.Unit.choices)
     unit_cost = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     notes = models.CharField(max_length=255, blank=True)
 
@@ -349,7 +349,7 @@ class GoodsReceiptLine(models.Model):
         return f"Receipt #{self.receipt_id}: {self.material.name} {self.quantity} {self.unit}"
 
 
-class MaterialMovement(models.Model):
+class MaterialStockMovement(models.Model):
     class Reason(models.TextChoices):
         PURCHASE_IN = "purchase_in", "Надходження від постачальника"
         PRODUCTION_OUT = "production_out", "Списання у виробництво"
@@ -360,7 +360,7 @@ class MaterialMovement(models.Model):
         RETURN_IN = "return_in", "Повернення"
 
     stock_record = models.ForeignKey(
-        MaterialStockRecord,
+        MaterialStock,
         on_delete=models.CASCADE,
         related_name="movements",
     )
@@ -466,7 +466,7 @@ class MaterialStockTransferLine(models.Model):
         related_name="stock_transfer_lines",
     )
     quantity = models.DecimalField(max_digits=12, decimal_places=3)
-    unit = models.CharField(max_length=8, choices=ProductMaterial.Unit.choices)
+    unit = models.CharField(max_length=8, choices=BOM.Unit.choices)
 
     class Meta:
         ordering = ("transfer_id", "id")

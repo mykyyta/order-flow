@@ -17,9 +17,9 @@ def test_materials_views_require_authentication(client):
 @pytest.mark.django_db(transaction=True)
 def test_materials_list_hides_archived_by_default(client):
     from apps.materials.models import Material
-    from apps.accounts.models import CustomUser
+    from apps.accounts.models import User
 
-    user = CustomUser.objects.create_user(username="materials_viewer", password="pass12345")
+    user = User.objects.create_user(username="materials_viewer", password="pass12345")
     client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
 
     Material.objects.create(name="Active material")
@@ -36,9 +36,9 @@ def test_materials_list_hides_archived_by_default(client):
 @pytest.mark.django_db(transaction=True)
 def test_materials_create_and_archive_unarchive(client):
     from apps.materials.models import Material
-    from apps.accounts.models import CustomUser
+    from apps.accounts.models import User
 
-    user = CustomUser.objects.create_user(username="materials_editor", password="pass12345")
+    user = User.objects.create_user(username="materials_editor", password="pass12345")
     client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
 
     create_response = client.post(reverse("materials"), data={"name": "Linen"})
@@ -62,9 +62,9 @@ def test_materials_create_and_archive_unarchive(client):
 @pytest.mark.django_db(transaction=True)
 def test_materials_archive_page_shows_only_archived(client):
     from apps.materials.models import Material
-    from apps.accounts.models import CustomUser
+    from apps.accounts.models import User
 
-    user = CustomUser.objects.create_user(username="materials_archive_viewer", password="pass12345")
+    user = User.objects.create_user(username="materials_archive_viewer", password="pass12345")
     client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
 
     Material.objects.create(name="Active material")

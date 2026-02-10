@@ -1,9 +1,9 @@
 import pytest
 from django.db import IntegrityError
 
-from apps.catalog.models import ProductVariant
+from apps.catalog.models import Variant
 from apps.catalog.tests.conftest import ColorFactory, ProductModelFactory
-from apps.inventory.models import FinishedStockTransfer, FinishedStockTransferLine
+from apps.inventory.models import ProductStockTransfer, ProductStockTransferLine
 from apps.accounts.tests.conftest import UserFactory
 from apps.warehouses.models import Warehouse
 
@@ -20,7 +20,7 @@ def test_finished_stock_transfer_requires_different_warehouses():
     )
 
     with pytest.raises(IntegrityError):
-        FinishedStockTransfer.objects.create(
+        ProductStockTransfer.objects.create(
             from_warehouse=warehouse,
             to_warehouse=warehouse,
             created_by=user,
@@ -44,24 +44,24 @@ def test_finished_stock_transfer_line_unique_variant_per_transfer():
         is_default_for_production=False,
         is_active=True,
     )
-    transfer = FinishedStockTransfer.objects.create(
+    transfer = ProductStockTransfer.objects.create(
         from_warehouse=from_warehouse,
         to_warehouse=to_warehouse,
         created_by=user,
     )
-    variant = ProductVariant.objects.create(
+    variant = Variant.objects.create(
         product=ProductModelFactory(is_bundle=False),
         color=ColorFactory(),
     )
 
-    FinishedStockTransferLine.objects.create(
+    ProductStockTransferLine.objects.create(
         transfer=transfer,
-        product_variant=variant,
+        variant=variant,
         quantity=2,
     )
     with pytest.raises(IntegrityError):
-        FinishedStockTransferLine.objects.create(
+        ProductStockTransferLine.objects.create(
             transfer=transfer,
-            product_variant=variant,
+            variant=variant,
             quantity=1,
         )

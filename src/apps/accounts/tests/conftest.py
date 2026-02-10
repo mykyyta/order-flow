@@ -2,12 +2,12 @@
 import factory
 from factory.django import DjangoModelFactory
 
-from apps.accounts.models import CustomUser
+from apps.accounts.models import User
 
 
 class UserFactory(DjangoModelFactory):
     class Meta:
-        model = CustomUser
+        model = User
         skip_postgeneration_save = True
 
     username = factory.Sequence(lambda n: f"user_{n}")

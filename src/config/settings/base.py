@@ -106,10 +106,8 @@ INSTALLED_APPS = [
     "apps.catalog",
     "apps.fulfillment",
     "apps.inventory",
-    "apps.material_inventory",
     "apps.materials",
     "apps.production",
-    "apps.procurement",
     "apps.sales",
     "apps.warehouses",
 ]
@@ -188,7 +186,7 @@ STATIC_ROOT = PROJECT_ROOT / "staticfiles"
 STATICFILES_DIRS = [PROJECT_ROOT / "frontend" / "static"]
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-AUTH_USER_MODEL = "accounts.CustomUser"
+AUTH_USER_MODEL = "accounts.User"
 LOGIN_URL = "auth_login"
 FREEZE_LEGACY_WRITES = env_bool("FREEZE_LEGACY_WRITES", False)
 

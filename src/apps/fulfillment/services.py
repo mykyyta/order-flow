@@ -3,10 +3,9 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from apps.material_inventory.services import transfer_material_stock
-from apps.product_inventory.models import WIPStockMovement
-from apps.product_inventory.services import remove_from_wip_stock, transfer_product_stock
-from apps.procurement.services import receive_purchase_order_line
+from apps.inventory.models import WIPStockMovement
+from apps.inventory.services import remove_from_wip_stock, transfer_finished_stock
+from apps.materials.services import receive_purchase_order_line, transfer_material_stock
 from apps.production.domain.status import STATUS_FINISHED
 from apps.production.services import change_production_order_status
 from apps.sales.services import (
@@ -20,8 +19,8 @@ if TYPE_CHECKING:
     from decimal import Decimal
 
     from apps.materials.models import Material, MaterialColor
+    from apps.materials.models import PurchaseOrderLine
     from apps.production.models import ProductionOrder
-    from apps.procurement.models import PurchaseOrderLine
     from apps.sales.models import SalesOrder
 
 
@@ -90,7 +89,7 @@ def complete_production_order(
 
 def scrap_wip(
     *,
-    product_variant_id: int,
+    variant_id: int,
     quantity: int,
     user: "AbstractBaseUser | None" = None,
     warehouse_id: int | None = None,
@@ -98,7 +97,7 @@ def scrap_wip(
 ):
     return remove_from_wip_stock(
         warehouse_id=warehouse_id,
-        product_variant_id=product_variant_id,
+        variant_id=variant_id,
         quantity=quantity,
         reason=WIPStockMovement.Reason.SCRAP_OUT,
         user=user,
@@ -110,15 +109,15 @@ def transfer_finished_stock_orchestrated(
     *,
     from_warehouse_id: int,
     to_warehouse_id: int,
-    product_variant_id: int,
+    variant_id: int,
     quantity: int,
     user: "AbstractBaseUser | None" = None,
     notes: str = "",
 ):
-    return transfer_product_stock(
+    return transfer_finished_stock(
         from_warehouse_id=from_warehouse_id,
         to_warehouse_id=to_warehouse_id,
-        product_variant_id=product_variant_id,
+        variant_id=variant_id,
         quantity=quantity,
         user=user,
         notes=notes,

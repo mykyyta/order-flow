@@ -1,13 +1,27 @@
-from django.core.exceptions import ValidationError
+from decimal import Decimal
+
 from django.db import models
 
-from apps.catalog.variants import product_variant_matches_legacy_fields
+
+class Customer(models.Model):
+    name = models.CharField(max_length=200)
+    phone = models.CharField(max_length=20, blank=True)
+    email = models.EmailField(blank=True)
+    instagram = models.CharField(max_length=100, blank=True)
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "sales_customer"
+
+    def __str__(self) -> str:
+        return self.name
 
 
 class SalesOrder(models.Model):
     class Source(models.TextChoices):
         SITE = "site", "Сайт"
-        ETSY = "etsy", "Etsy"
+        ETSY = "is_etsy", "Etsy"
         WHOLESALE = "wholesale", "Опт"
 
     class Status(models.TextChoices):
@@ -19,10 +33,39 @@ class SalesOrder(models.Model):
         COMPLETED = "completed", "Завершено"
         CANCELLED = "cancelled", "Скасовано"
 
+    class PaymentStatus(models.TextChoices):
+        PENDING = "pending", "Очікує"
+        PARTIAL = "partial", "Частково"
+        PAID = "paid", "Оплачено"
+
+    class PaymentMethod(models.TextChoices):
+        CASH = "cash", "Готівка"
+        CARD = "card", "Карта"
+        TRANSFER = "transfer", "Переказ"
+        OTHER = "other", "Інше"
+
     source = models.CharField(max_length=20, choices=Source.choices)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.NEW)
+    customer = models.ForeignKey(
+        Customer,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="orders",
+    )
     customer_info = models.TextField(blank=True)
     notes = models.TextField(blank=True)
+    payment_status = models.CharField(
+        max_length=20,
+        choices=PaymentStatus.choices,
+        default=PaymentStatus.PENDING,
+    )
+    payment_method = models.CharField(
+        max_length=20,
+        choices=PaymentMethod.choices,
+        blank=True,
+    )
+    paid_amount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -44,41 +87,21 @@ class SalesOrderLine(models.Model):
         IN_PROGRESS = "in_progress", "У роботі"
         DONE = "done", "Готово"
 
-    customer_order = models.ForeignKey(
+    sales_order = models.ForeignKey(
         SalesOrder,
         on_delete=models.CASCADE,
         related_name="lines",
     )
-    product_model = models.ForeignKey(
-        "catalog.ProductModel",
+    product = models.ForeignKey(
+        "catalog.Product",
         on_delete=models.PROTECT,
     )
-    product_variant = models.ForeignKey(
-        "catalog.ProductVariant",
+    variant = models.ForeignKey(
+        "catalog.Variant",
         on_delete=models.PROTECT,
         null=True,
         blank=True,
         related_name="sales_order_lines",
-    )
-    color = models.ForeignKey(
-        "catalog.Color",
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True,
-    )
-    primary_material_color = models.ForeignKey(
-        "materials.MaterialColor",
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True,
-        related_name="sales_order_line_primary_colors",
-    )
-    secondary_material_color = models.ForeignKey(
-        "materials.MaterialColor",
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True,
-        related_name="sales_order_line_secondary_colors",
     )
     bundle_preset = models.ForeignKey(
         "catalog.BundlePreset",
@@ -103,119 +126,37 @@ class SalesOrderLine(models.Model):
         ordering = ("id",)
 
     @property
-    def sales_order_id(self) -> int:
-        return self.customer_order_id
-
-    @property
-    def sales_order(self) -> SalesOrder:
-        return self.customer_order
-
-    @property
     def is_bundle(self) -> bool:
-        return self.product_model.is_bundle
+        return self.product.is_bundle
 
     def __str__(self) -> str:
-        if self.primary_material_color:
-            color_str = self.primary_material_color.name
-            if self.secondary_material_color:
-                color_str = f"{color_str} / {self.secondary_material_color.name}"
-        elif self.color:
-            color_str = self.color.name
-        else:
-            color_str = "custom"
-        return f"{self.product_model.name} ({color_str}) x {self.quantity}"
-
-    def _validate_product_variant_consistency(self) -> None:
-        if self.product_variant_id is None:
-            return
-
-        if not product_variant_matches_legacy_fields(
-            product_variant=self.product_variant,
-            product_model_id=self.product_model_id,
-            color_id=self.color_id,
-            primary_material_color_id=self.primary_material_color_id,
-            secondary_material_color_id=self.secondary_material_color_id,
-        ):
-            raise ValidationError(
-                {"product_variant": "Product variant must match product/color/material colors fields."}
-            )
-
-    def save(self, *args, **kwargs) -> None:
-        self._validate_product_variant_consistency()
-        super().save(*args, **kwargs)
+        if self.variant:
+            return f"{self.variant} x {self.quantity}"
+        return f"{self.product.name} x {self.quantity}"
 
 
 class SalesOrderLineComponentSelection(models.Model):
     order_line = models.ForeignKey(
         SalesOrderLine,
         on_delete=models.CASCADE,
-        related_name="component_colors",
+        related_name="component_selections",
     )
     component = models.ForeignKey(
-        "catalog.ProductModel",
+        "catalog.Product",
         on_delete=models.PROTECT,
     )
-    product_variant = models.ForeignKey(
-        "catalog.ProductVariant",
+    variant = models.ForeignKey(
+        "catalog.Variant",
         on_delete=models.PROTECT,
         null=True,
         blank=True,
         related_name="sales_order_line_components",
     )
-    color = models.ForeignKey(
-        "catalog.Color",
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True,
-    )
-    primary_material_color = models.ForeignKey(
-        "materials.MaterialColor",
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True,
-        related_name="sales_order_component_primary_colors",
-    )
-    secondary_material_color = models.ForeignKey(
-        "materials.MaterialColor",
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True,
-        related_name="sales_order_component_secondary_colors",
-    )
 
     class Meta:
         unique_together = ("order_line", "component")
 
-    @property
-    def sales_order_line_id(self) -> int:
-        return self.order_line_id
-
-    @property
-    def sales_order_line(self) -> SalesOrderLine:
-        return self.order_line
-
     def __str__(self) -> str:
-        if self.primary_material_color:
-            return f"{self.component.name} -> {self.primary_material_color.name}"
-        if self.color:
-            return f"{self.component.name} -> {self.color.name}"
-        return f"{self.component.name} -> custom"
-
-    def _validate_product_variant_consistency(self) -> None:
-        if self.product_variant_id is None:
-            return
-
-        if not product_variant_matches_legacy_fields(
-            product_variant=self.product_variant,
-            product_model_id=self.component_id,
-            color_id=self.color_id,
-            primary_material_color_id=self.primary_material_color_id,
-            secondary_material_color_id=self.secondary_material_color_id,
-        ):
-            raise ValidationError(
-                {"product_variant": "Product variant must match component/color/material colors fields."}
-            )
-
-    def save(self, *args, **kwargs) -> None:
-        self._validate_product_variant_consistency()
-        super().save(*args, **kwargs)
+        if self.variant:
+            return f"{self.component.name} -> {self.variant}"
+        return f"{self.component.name}"

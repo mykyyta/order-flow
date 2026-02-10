@@ -10,7 +10,7 @@ from django.views.decorators.http import require_POST
 from django.utils import timezone
 
 from .forms import ColorForm, ProductModelForm
-from .models import Color, ProductModel
+from .models import Color, Product
 
 
 class ProductModelListCreateView(LoginRequiredMixin, View):
@@ -18,7 +18,7 @@ class ProductModelListCreateView(LoginRequiredMixin, View):
     template_name = "catalog/product_models.html"
 
     def get(self, request, *args, **kwargs):
-        product_models = ProductModel.objects.filter(archived_at__isnull=True).order_by("name")
+        product_models = Product.objects.filter(archived_at__isnull=True).order_by("name")
         form = ProductModelForm()
         return render(
             request,
@@ -31,7 +31,7 @@ class ProductModelListCreateView(LoginRequiredMixin, View):
         if form.is_valid():
             form.save()
             return redirect(reverse_lazy("product_models"))
-        product_models = ProductModel.objects.filter(archived_at__isnull=True).order_by("name")
+        product_models = Product.objects.filter(archived_at__isnull=True).order_by("name")
         return render(
             request,
             self.template_name,
@@ -50,9 +50,9 @@ class ColorListCreateView(LoginRequiredMixin, ListView):
             Color.objects.filter(archived_at__isnull=True)
             .order_by(
                 models.Case(
-                    models.When(availability_status="in_stock", then=0),
-                    models.When(availability_status="low_stock", then=1),
-                    models.When(availability_status="out_of_stock", then=2),
+                    models.When(status="in_stock", then=0),
+                    models.When(status="low_stock", then=1),
+                    models.When(status="out_of_stock", then=2),
                     default=3,
                     output_field=models.IntegerField(),
                 ),
@@ -106,7 +106,7 @@ class ColorDetailUpdateView(LoginRequiredMixin, UpdateView):
 
 @login_required(login_url=reverse_lazy("auth_login"))
 def product_models_archive(request):
-    product_models = ProductModel.objects.filter(archived_at__isnull=False).order_by("name")
+    product_models = Product.objects.filter(archived_at__isnull=False).order_by("name")
     return render(
         request,
         "catalog/product_models_archive.html",
@@ -123,9 +123,9 @@ def product_models_archive(request):
 def colors_archive(request):
     colors = Color.objects.filter(archived_at__isnull=False).order_by(
         models.Case(
-            models.When(availability_status="in_stock", then=0),
-            models.When(availability_status="low_stock", then=1),
-            models.When(availability_status="out_of_stock", then=2),
+            models.When(status="in_stock", then=0),
+            models.When(status="low_stock", then=1),
+            models.When(status="out_of_stock", then=2),
             default=3,
             output_field=models.IntegerField(),
         ),
@@ -145,10 +145,10 @@ def colors_archive(request):
 
 class ProductModelDetailUpdateView(LoginRequiredMixin, UpdateView):
     login_url = reverse_lazy("auth_login")
-    model = ProductModel
+    model = Product
     form_class = ProductModelForm
     template_name = "catalog/product_model_edit.html"
-    context_object_name = "product_model"
+    context_object_name = "product"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -178,10 +178,10 @@ class ProductModelDetailUpdateView(LoginRequiredMixin, UpdateView):
 @login_required(login_url=reverse_lazy("auth_login"))
 @require_POST
 def product_model_archive(request, pk: int):
-    product_model = get_object_or_404(ProductModel, pk=pk)
-    if product_model.archived_at is None:
-        product_model.archived_at = timezone.now()
-        product_model.save(update_fields=["archived_at"])
+    product = get_object_or_404(Product, pk=pk)
+    if product.archived_at is None:
+        product.archived_at = timezone.now()
+        product.save(update_fields=["archived_at"])
         messages.success(request, "Готово! Модель відправлено в архів.")
     return redirect("product_model_edit", pk=pk)
 
@@ -189,10 +189,10 @@ def product_model_archive(request, pk: int):
 @login_required(login_url=reverse_lazy("auth_login"))
 @require_POST
 def product_model_unarchive(request, pk: int):
-    product_model = get_object_or_404(ProductModel, pk=pk)
-    if product_model.archived_at is not None:
-        product_model.archived_at = None
-        product_model.save(update_fields=["archived_at"])
+    product = get_object_or_404(Product, pk=pk)
+    if product.archived_at is not None:
+        product.archived_at = None
+        product.save(update_fields=["archived_at"])
         messages.success(request, "Готово! Модель відновлено з архіву.")
     return redirect("product_model_edit", pk=pk)
 

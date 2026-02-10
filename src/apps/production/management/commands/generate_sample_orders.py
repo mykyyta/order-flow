@@ -10,7 +10,7 @@ from apps.production.domain.status import (
     STATUS_NEW,
     STATUS_ON_HOLD,
 )
-from apps.catalog.models import Color, ProductModel
+from apps.catalog.models import Color, Product
 from apps.production.models import ProductionOrder
 
 
@@ -41,7 +41,7 @@ class Command(BaseCommand):
             "Косметичка",
         ]
         for name in models_data:
-            ProductModel.objects.get_or_create(name=name)
+            Product.objects.get_or_create(name=name)
         self.stdout.write(f"Ensured {len(models_data)} product models.")
 
     def _ensure_colors(self) -> None:
@@ -59,7 +59,7 @@ class Command(BaseCommand):
         self.stdout.write(f"Ensured {len(colors_data)} colors.")
 
     def _create_orders(self, count: int) -> int:
-        models = list(ProductModel.objects.all())
+        models = list(Product.objects.all())
         colors = list(Color.objects.all())
         statuses = [
             STATUS_NEW,
@@ -92,11 +92,11 @@ class Command(BaseCommand):
             order = ProductionOrder.objects.create(
                 model=model,
                 color=color,
-                embroidery=(i % 3 == 0),
+                is_embroidery=(i % 3 == 0),
                 comment=comment or "",
-                urgent=(i % 5 == 0),
-                etsy=(i % 7 == 0),
-                current_status=status,
+                is_urgent=(i % 5 == 0),
+                is_etsy=(i % 7 == 0),
+                status=status,
             )
             if status == STATUS_FINISHED:
                 order.finished_at = timezone.now()

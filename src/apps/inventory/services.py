@@ -5,13 +5,13 @@ from typing import TYPE_CHECKING, TypedDict
 from django.db import transaction
 from django.utils import timezone
 
-from apps.catalog.models import ProductVariant
+from apps.catalog.models import Variant
 from apps.catalog.variants import resolve_or_create_product_variant
 from apps.inventory.models import (
-    FinishedStockTransfer,
-    FinishedStockTransferLine,
-    StockMovement,
-    StockRecord,
+    ProductStockTransfer,
+    ProductStockTransferLine,
+    ProductStockMovement,
+    ProductStock,
     WIPStockMovement,
     WIPStockRecord,
 )
@@ -26,22 +26,22 @@ if TYPE_CHECKING:
 
 class StockKey(TypedDict):
     warehouse_id: int
-    product_variant_id: int
+    variant_id: int
 
 
 def get_stock_quantity(
     *,
     warehouse_id: int | None = None,
-    product_variant_id: int | None = None,
-    product_model_id: int | None = None,
+    variant_id: int | None = None,
+    product_id: int | None = None,
     color_id: int | None = None,
     primary_material_color_id: int | None = None,
     secondary_material_color_id: int | None = None,
 ) -> int:
     stock_key = _resolve_stock_key(
         warehouse_id=warehouse_id,
-        product_variant_id=product_variant_id,
-        product_model_id=product_model_id,
+        variant_id=variant_id,
+        product_id=product_id,
         color_id=color_id,
         primary_material_color_id=primary_material_color_id,
         secondary_material_color_id=secondary_material_color_id,
@@ -49,8 +49,8 @@ def get_stock_quantity(
     lookup = _build_stock_lookup(stock_key=stock_key)
 
     try:
-        record = StockRecord.objects.get(**lookup)
-    except StockRecord.DoesNotExist:
+        record = ProductStock.objects.get(**lookup)
+    except ProductStock.DoesNotExist:
         return 0
     return record.quantity
 
@@ -59,38 +59,38 @@ def get_stock_quantity(
 def add_to_stock(
     *,
     warehouse_id: int | None = None,
-    product_variant_id: int | None = None,
-    product_model_id: int | None = None,
+    variant_id: int | None = None,
+    product_id: int | None = None,
     quantity: int,
     reason: str,
     color_id: int | None = None,
     primary_material_color_id: int | None = None,
     secondary_material_color_id: int | None = None,
     production_order: "ProductionOrder | None" = None,
-    customer_order_line: "SalesOrderLine | None" = None,
-    related_transfer: FinishedStockTransfer | None = None,
+    sales_order_line: "SalesOrderLine | None" = None,
+    related_transfer: ProductStockTransfer | None = None,
     user: "AbstractBaseUser | None" = None,
     notes: str = "",
-) -> StockRecord:
+) -> ProductStock:
     stock_key = _resolve_stock_key(
         warehouse_id=warehouse_id,
-        product_variant_id=product_variant_id,
-        product_model_id=product_model_id,
+        variant_id=variant_id,
+        product_id=product_id,
         color_id=color_id,
         primary_material_color_id=primary_material_color_id,
         secondary_material_color_id=secondary_material_color_id,
     )
     lookup = _build_stock_lookup(stock_key=stock_key)
-    record, _ = StockRecord.objects.get_or_create(**lookup)
+    record, _ = ProductStock.objects.get_or_create(**lookup)
     record.quantity += quantity
     record.save(update_fields=["quantity"])
 
-    StockMovement.objects.create(
+    ProductStockMovement.objects.create(
         stock_record=record,
         quantity_change=quantity,
         reason=reason,
         related_production_order=production_order,
-        related_customer_order_line=customer_order_line,
+        sales_order_line=sales_order_line,
         related_transfer=related_transfer,
         created_by=user,
         notes=notes,
@@ -102,22 +102,22 @@ def add_to_stock(
 def remove_from_stock(
     *,
     warehouse_id: int | None = None,
-    product_variant_id: int | None = None,
-    product_model_id: int | None = None,
+    variant_id: int | None = None,
+    product_id: int | None = None,
     quantity: int,
     reason: str,
     color_id: int | None = None,
     primary_material_color_id: int | None = None,
     secondary_material_color_id: int | None = None,
-    customer_order_line: "SalesOrderLine | None" = None,
-    related_transfer: FinishedStockTransfer | None = None,
+    sales_order_line: "SalesOrderLine | None" = None,
+    related_transfer: ProductStockTransfer | None = None,
     user: "AbstractBaseUser | None" = None,
     notes: str = "",
-) -> StockRecord:
+) -> ProductStock:
     stock_key = _resolve_stock_key(
         warehouse_id=warehouse_id,
-        product_variant_id=product_variant_id,
-        product_model_id=product_model_id,
+        variant_id=variant_id,
+        product_id=product_id,
         color_id=color_id,
         primary_material_color_id=primary_material_color_id,
         secondary_material_color_id=secondary_material_color_id,
@@ -125,8 +125,8 @@ def remove_from_stock(
     lookup = _build_stock_lookup(stock_key=stock_key)
 
     try:
-        record = StockRecord.objects.get(**lookup)
-    except StockRecord.DoesNotExist as exc:
+        record = ProductStock.objects.get(**lookup)
+    except ProductStock.DoesNotExist as exc:
         raise ValueError("Недостатньо на складі: є 0") from exc
 
     if record.quantity < quantity:
@@ -135,11 +135,11 @@ def remove_from_stock(
     record.quantity -= quantity
     record.save(update_fields=["quantity"])
 
-    StockMovement.objects.create(
+    ProductStockMovement.objects.create(
         stock_record=record,
         quantity_change=-quantity,
         reason=reason,
-        related_customer_order_line=customer_order_line,
+        sales_order_line=sales_order_line,
         related_transfer=related_transfer,
         created_by=user,
         notes=notes,
@@ -150,74 +150,74 @@ def remove_from_stock(
 def _resolve_stock_key(
     *,
     warehouse_id: int | None,
-    product_variant_id: int | None,
-    product_model_id: int | None,
+    variant_id: int | None,
+    product_id: int | None,
     color_id: int | None,
     primary_material_color_id: int | None,
     secondary_material_color_id: int | None,
 ) -> StockKey:
     resolved_warehouse_id = resolve_warehouse_id(warehouse_id=warehouse_id)
-    if product_variant_id is not None:
-        variant = ProductVariant.objects.only(
+    if variant_id is not None:
+        variant = Variant.objects.only(
             "id",
             "product_id",
             "color_id",
             "primary_material_color_id",
             "secondary_material_color_id",
-        ).get(id=product_variant_id)
-        if product_model_id is not None and product_model_id != variant.product_id:
-            raise ValueError("Provided product_model_id does not match product_variant.")
+        ).get(id=variant_id)
+        if product_id is not None and product_id != variant.product_id:
+            raise ValueError("Provided product_id does not match variant.")
         if color_id is not None and color_id != variant.color_id:
-            raise ValueError("Provided color_id does not match product_variant.")
+            raise ValueError("Provided color_id does not match variant.")
         if (
             primary_material_color_id is not None
             and primary_material_color_id != variant.primary_material_color_id
         ):
-            raise ValueError("Provided primary_material_color_id does not match product_variant.")
+            raise ValueError("Provided primary_material_color_id does not match variant.")
         if (
             secondary_material_color_id is not None
             and secondary_material_color_id != variant.secondary_material_color_id
         ):
-            raise ValueError("Provided secondary_material_color_id does not match product_variant.")
+            raise ValueError("Provided secondary_material_color_id does not match variant.")
         return {
             "warehouse_id": resolved_warehouse_id,
-            "product_variant_id": variant.id,
+            "variant_id": variant.id,
         }
 
-    if product_model_id is None:
-        raise ValueError("Stock key requires product_variant_id or product_model_id")
+    if product_id is None:
+        raise ValueError("Stock key requires variant_id or product_id")
     if color_id is None and primary_material_color_id is None:
         raise ValueError("Stock key requires color_id or primary_material_color_id")
 
     variant = resolve_or_create_product_variant(
-        product_model_id=product_model_id,
+        product_id=product_id,
         color_id=color_id,
         primary_material_color_id=primary_material_color_id,
         secondary_material_color_id=secondary_material_color_id,
     )
     return {
         "warehouse_id": resolved_warehouse_id,
-        "product_variant_id": variant.id,
+        "variant_id": variant.id,
     }
 
 
 def _build_stock_lookup(*, stock_key: StockKey) -> dict[str, int | None]:
     return {
         "warehouse_id": stock_key["warehouse_id"],
-        "product_variant_id": stock_key["product_variant_id"],
+        "variant_id": stock_key["variant_id"],
     }
 
 
 def get_wip_stock_quantity(
     *,
-    product_variant_id: int,
+    variant_id: int,
     warehouse_id: int | None = None,
 ) -> int:
     resolved_warehouse_id = resolve_warehouse_id(warehouse_id=warehouse_id)
     try:
         record = WIPStockRecord.objects.get(
             warehouse_id=resolved_warehouse_id,
-            product_variant_id=product_variant_id,
+            variant_id=variant_id,
         )
     except WIPStockRecord.DoesNotExist:
         return 0
@@ -227,7 +227,7 @@ def get_wip_stock_quantity(
 @transaction.atomic
 def add_to_wip_stock(
     *,
-    product_variant_id: int,
+    variant_id: int,
     quantity: int,
     reason: str,
     warehouse_id: int | None = None,
@@ -241,7 +241,7 @@ def add_to_wip_stock(
     resolved_warehouse_id = resolve_warehouse_id(warehouse_id=warehouse_id)
     record, _ = WIPStockRecord.objects.get_or_create(
         warehouse_id=resolved_warehouse_id,
-        product_variant_id=product_variant_id,
+        variant_id=variant_id,
     )
     record.quantity += quantity
     record.save(update_fields=["quantity"])
@@ -260,7 +260,7 @@ def add_to_wip_stock(
 @transaction.atomic
 def remove_from_wip_stock(
     *,
-    product_variant_id: int,
+    variant_id: int,
     quantity: int,
     reason: str,
     warehouse_id: int | None = None,
@@ -275,7 +275,7 @@ def remove_from_wip_stock(
     try:
         record = WIPStockRecord.objects.get(
             warehouse_id=resolved_warehouse_id,
-            product_variant_id=product_variant_id,
+            variant_id=variant_id,
         )
     except WIPStockRecord.DoesNotExist as exc:
         raise ValueError("Недостатньо WIP на складі: є 0") from exc
@@ -302,49 +302,49 @@ def transfer_finished_stock(
     *,
     from_warehouse_id: int,
     to_warehouse_id: int,
-    product_variant_id: int,
+    variant_id: int,
     quantity: int,
     user: "AbstractBaseUser | None" = None,
     notes: str = "",
-) -> FinishedStockTransfer:
+) -> ProductStockTransfer:
     if from_warehouse_id == to_warehouse_id:
         raise ValueError("Transfer warehouses must be different")
     if quantity <= 0:
         raise ValueError("Quantity must be greater than 0")
 
-    transfer = FinishedStockTransfer.objects.create(
+    transfer = ProductStockTransfer.objects.create(
         from_warehouse_id=from_warehouse_id,
         to_warehouse_id=to_warehouse_id,
-        status=FinishedStockTransfer.Status.IN_TRANSIT,
+        status=ProductStockTransfer.Status.IN_TRANSIT,
         created_by=user,
         notes=notes,
     )
-    FinishedStockTransferLine.objects.create(
+    ProductStockTransferLine.objects.create(
         transfer=transfer,
-        product_variant_id=product_variant_id,
+        variant_id=variant_id,
         quantity=quantity,
     )
 
     remove_from_stock(
         warehouse_id=from_warehouse_id,
-        product_variant_id=product_variant_id,
+        variant_id=variant_id,
         quantity=quantity,
-        reason=StockMovement.Reason.TRANSFER_OUT,
+        reason=ProductStockMovement.Reason.TRANSFER_OUT,
         related_transfer=transfer,
         user=user,
         notes=notes,
     )
     add_to_stock(
         warehouse_id=to_warehouse_id,
-        product_variant_id=product_variant_id,
+        variant_id=variant_id,
         quantity=quantity,
-        reason=StockMovement.Reason.TRANSFER_IN,
+        reason=ProductStockMovement.Reason.TRANSFER_IN,
         related_transfer=transfer,
         user=user,
         notes=notes,
     )
 
-    transfer.status = FinishedStockTransfer.Status.COMPLETED
+    transfer.status = ProductStockTransfer.Status.COMPLETED
     transfer.completed_at = timezone.now()
     transfer.save(update_fields=["status", "completed_at"])
     return transfer

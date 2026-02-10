@@ -4,7 +4,7 @@ from django.db import models
 from apps.ui.themes import DEFAULT_THEME, THEME_CHOICES
 
 
-class CustomUser(AbstractUser):
+class User(AbstractUser):
     telegram_id = models.CharField(
         max_length=50,
         blank=True,

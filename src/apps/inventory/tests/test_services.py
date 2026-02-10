@@ -2,8 +2,8 @@
 import pytest
 from django.db import IntegrityError
 
-from apps.catalog.models import ProductVariant
-from apps.inventory.models import FinishedStockTransfer, StockMovement, StockRecord
+from apps.catalog.models import Variant
+from apps.inventory.models import ProductStockTransfer, ProductStockMovement, ProductStock
 from apps.inventory.services import (
     add_to_stock,
     get_stock_quantity,
@@ -21,7 +21,7 @@ def test_get_stock_quantity_returns_zero_when_missing():
     model = ProductModelFactory(is_bundle=False)
     color = ColorFactory()
 
-    assert get_stock_quantity(product_model_id=model.id, color_id=color.id) == 0
+    assert get_stock_quantity(product_id=model.id, color_id=color.id) == 0
 
 
 @pytest.mark.django_db
@@ -31,24 +31,24 @@ def test_add_to_stock_creates_record_and_movement():
     user = UserFactory()
 
     record = add_to_stock(
-        product_model_id=model.id,
+        product_id=model.id,
         color_id=color.id,
         quantity=4,
-        reason=StockMovement.Reason.PRODUCTION_IN,
+        reason=ProductStockMovement.Reason.PRODUCTION_IN,
         user=user,
     )
 
     assert record.quantity == 4
     assert record.warehouse is not None
     assert record.warehouse.code == "MAIN"
-    assert record.product_variant is not None
-    assert record.product_variant.product_id == model.id
-    assert record.product_variant.color_id == color.id
-    assert StockRecord.objects.get(product_variant=record.product_variant).quantity == 4
+    assert record.variant is not None
+    assert record.variant.product_id == model.id
+    assert record.variant.color_id == color.id
+    assert ProductStock.objects.get(variant=record.variant).quantity == 4
 
-    movement = StockMovement.objects.get(stock_record=record)
+    movement = ProductStockMovement.objects.get(stock_record=record)
     assert movement.quantity_change == 4
-    assert movement.reason == StockMovement.Reason.PRODUCTION_IN
+    assert movement.reason == ProductStockMovement.Reason.PRODUCTION_IN
     assert movement.created_by == user
 
 
@@ -58,26 +58,26 @@ def test_remove_from_stock_updates_quantity_and_writes_movement():
     color = ColorFactory()
     user = UserFactory()
     add_to_stock(
-        product_model_id=model.id,
+        product_id=model.id,
         color_id=color.id,
         quantity=5,
-        reason=StockMovement.Reason.ADJUSTMENT_IN,
+        reason=ProductStockMovement.Reason.ADJUSTMENT_IN,
         user=user,
     )
 
     record = remove_from_stock(
-        product_model_id=model.id,
+        product_id=model.id,
         color_id=color.id,
         quantity=2,
-        reason=StockMovement.Reason.ORDER_OUT,
+        reason=ProductStockMovement.Reason.ORDER_OUT,
         user=user,
     )
 
     assert record.quantity == 3
-    movements = StockMovement.objects.filter(stock_record=record).order_by("created_at")
+    movements = ProductStockMovement.objects.filter(stock_record=record).order_by("created_at")
     assert movements.count() == 2
     assert movements.last().quantity_change == -2
-    assert movements.last().reason == StockMovement.Reason.ORDER_OUT
+    assert movements.last().reason == ProductStockMovement.Reason.ORDER_OUT
 
 
 @pytest.mark.django_db
@@ -86,19 +86,19 @@ def test_remove_from_stock_raises_when_not_enough():
     color = ColorFactory()
     user = UserFactory()
     add_to_stock(
-        product_model_id=model.id,
+        product_id=model.id,
         color_id=color.id,
         quantity=1,
-        reason=StockMovement.Reason.ADJUSTMENT_IN,
+        reason=ProductStockMovement.Reason.ADJUSTMENT_IN,
         user=user,
     )
 
     with pytest.raises(ValueError, match="Недостатньо на складі"):
         remove_from_stock(
-            product_model_id=model.id,
+            product_id=model.id,
             color_id=color.id,
             quantity=2,
-            reason=StockMovement.Reason.ORDER_OUT,
+            reason=ProductStockMovement.Reason.ORDER_OUT,
             user=user,
         )
 
@@ -117,16 +117,16 @@ def test_add_and_remove_stock_by_material_colors():
     user = UserFactory()
 
     add_to_stock(
-        product_model_id=product.id,
+        product_id=product.id,
         primary_material_color_id=blue.id,
         secondary_material_color_id=black.id,
         quantity=3,
-        reason=StockMovement.Reason.ADJUSTMENT_IN,
+        reason=ProductStockMovement.Reason.ADJUSTMENT_IN,
         user=user,
     )
     assert (
         get_stock_quantity(
-            product_model_id=product.id,
+            product_id=product.id,
             primary_material_color_id=blue.id,
             secondary_material_color_id=black.id,
         )
@@ -134,17 +134,17 @@ def test_add_and_remove_stock_by_material_colors():
     )
 
     record = remove_from_stock(
-        product_model_id=product.id,
+        product_id=product.id,
         primary_material_color_id=blue.id,
         secondary_material_color_id=black.id,
         quantity=1,
-        reason=StockMovement.Reason.ORDER_OUT,
+        reason=ProductStockMovement.Reason.ORDER_OUT,
         user=user,
     )
     assert record.quantity == 2
     assert (
-        StockRecord.objects.get(
-            product_variant=record.product_variant,
+        ProductStock.objects.get(
+            variant=record.variant,
         ).quantity
         == 2
     )
@@ -154,14 +154,14 @@ def test_add_and_remove_stock_by_material_colors():
 def test_stock_record_requires_warehouse():
     model = ProductModelFactory(is_bundle=False)
     color = ColorFactory()
-    variant = ProductVariant.objects.create(
+    variant = Variant.objects.create(
         product=model,
         color=color,
     )
 
     with pytest.raises(IntegrityError):
-        StockRecord.objects.create(
-            product_variant=variant,
+        ProductStock.objects.create(
+            variant=variant,
             quantity=1,
         )
 
@@ -177,64 +177,64 @@ def test_stock_record_requires_product_variant():
     )
 
     with pytest.raises(IntegrityError):
-        StockRecord.objects.create(
+        ProductStock.objects.create(
             warehouse=warehouse,
             quantity=1,
         )
 
 
 @pytest.mark.django_db
-def test_get_stock_quantity_accepts_product_variant_id():
+def test_get_stock_quantity_accepts_variant_id():
     model = ProductModelFactory(is_bundle=False)
     color = ColorFactory()
-    variant = ProductVariant.objects.create(product=model, color=color)
+    variant = Variant.objects.create(product=model, color=color)
     user = UserFactory()
 
     add_to_stock(
-        product_variant_id=variant.id,
+        variant_id=variant.id,
         quantity=2,
-        reason=StockMovement.Reason.ADJUSTMENT_IN,
+        reason=ProductStockMovement.Reason.ADJUSTMENT_IN,
         user=user,
     )
 
-    assert get_stock_quantity(product_variant_id=variant.id) == 2
+    assert get_stock_quantity(variant_id=variant.id) == 2
 
 
 @pytest.mark.django_db
-def test_add_to_stock_accepts_product_variant_id_without_legacy_fields():
+def test_add_to_stock_accepts_variant_id_without_legacy_fields():
     model = ProductModelFactory(is_bundle=False)
     color = ColorFactory()
-    variant = ProductVariant.objects.create(product=model, color=color)
+    variant = Variant.objects.create(product=model, color=color)
     user = UserFactory()
 
     record = add_to_stock(
-        product_variant_id=variant.id,
+        variant_id=variant.id,
         quantity=3,
-        reason=StockMovement.Reason.PRODUCTION_IN,
+        reason=ProductStockMovement.Reason.PRODUCTION_IN,
         user=user,
     )
 
-    assert record.product_variant_id == variant.id
+    assert record.variant_id == variant.id
     assert record.quantity == 3
 
 
 @pytest.mark.django_db
-def test_remove_from_stock_accepts_product_variant_id():
+def test_remove_from_stock_accepts_variant_id():
     model = ProductModelFactory(is_bundle=False)
     color = ColorFactory()
-    variant = ProductVariant.objects.create(product=model, color=color)
+    variant = Variant.objects.create(product=model, color=color)
     user = UserFactory()
 
     add_to_stock(
-        product_variant_id=variant.id,
+        variant_id=variant.id,
         quantity=5,
-        reason=StockMovement.Reason.ADJUSTMENT_IN,
+        reason=ProductStockMovement.Reason.ADJUSTMENT_IN,
         user=user,
     )
     record = remove_from_stock(
-        product_variant_id=variant.id,
+        variant_id=variant.id,
         quantity=2,
-        reason=StockMovement.Reason.ORDER_OUT,
+        reason=ProductStockMovement.Reason.ORDER_OUT,
         user=user,
     )
 
@@ -263,30 +263,30 @@ def test_add_to_stock_supports_multiple_warehouses():
 
     add_to_stock(
         warehouse_id=main.id,
-        product_model_id=model.id,
+        product_id=model.id,
         color_id=color.id,
         quantity=3,
-        reason=StockMovement.Reason.ADJUSTMENT_IN,
+        reason=ProductStockMovement.Reason.ADJUSTMENT_IN,
         user=user,
     )
     add_to_stock(
         warehouse_id=retail.id,
-        product_model_id=model.id,
+        product_id=model.id,
         color_id=color.id,
         quantity=4,
-        reason=StockMovement.Reason.ADJUSTMENT_IN,
+        reason=ProductStockMovement.Reason.ADJUSTMENT_IN,
         user=user,
     )
 
     assert (
-        StockRecord.objects.get(warehouse=main, product_variant__product=model, product_variant__color=color).quantity
+        ProductStock.objects.get(warehouse=main, variant__product=model, variant__color=color).quantity
         == 3
     )
     assert (
-        StockRecord.objects.get(
+        ProductStock.objects.get(
             warehouse=retail,
-            product_variant__product=model,
-            product_variant__color=color,
+            variant__product=model,
+            variant__color=color,
         ).quantity
         == 4
     )
@@ -296,7 +296,7 @@ def test_add_to_stock_supports_multiple_warehouses():
 def test_transfer_finished_stock_moves_between_warehouses():
     model = ProductModelFactory(is_bundle=False)
     color = ColorFactory()
-    variant = ProductVariant.objects.create(product=model, color=color)
+    variant = Variant.objects.create(product=model, color=color)
     user = UserFactory()
     from_warehouse = Warehouse.objects.create(
         name="From Finished",
@@ -314,16 +314,16 @@ def test_transfer_finished_stock_moves_between_warehouses():
     )
     add_to_stock(
         warehouse_id=from_warehouse.id,
-        product_variant_id=variant.id,
+        variant_id=variant.id,
         quantity=5,
-        reason=StockMovement.Reason.ADJUSTMENT_IN,
+        reason=ProductStockMovement.Reason.ADJUSTMENT_IN,
         user=user,
     )
 
     transfer = transfer_finished_stock(
         from_warehouse_id=from_warehouse.id,
         to_warehouse_id=to_warehouse.id,
-        product_variant_id=variant.id,
+        variant_id=variant.id,
         quantity=2,
         user=user,
         notes="Move to retail",
@@ -332,19 +332,19 @@ def test_transfer_finished_stock_moves_between_warehouses():
     assert transfer.status == transfer.Status.COMPLETED
     assert transfer.lines.count() == 1
     assert transfer.lines.first().quantity == 2
-    assert get_stock_quantity(warehouse_id=from_warehouse.id, product_variant_id=variant.id) == 3
-    assert get_stock_quantity(warehouse_id=to_warehouse.id, product_variant_id=variant.id) == 2
+    assert get_stock_quantity(warehouse_id=from_warehouse.id, variant_id=variant.id) == 3
+    assert get_stock_quantity(warehouse_id=to_warehouse.id, variant_id=variant.id) == 2
 
-    out_movement = StockMovement.objects.filter(
+    out_movement = ProductStockMovement.objects.filter(
         stock_record__warehouse_id=from_warehouse.id,
-        stock_record__product_variant_id=variant.id,
+        stock_record__variant_id=variant.id,
     ).latest("created_at")
-    in_movement = StockMovement.objects.filter(
+    in_movement = ProductStockMovement.objects.filter(
         stock_record__warehouse_id=to_warehouse.id,
-        stock_record__product_variant_id=variant.id,
+        stock_record__variant_id=variant.id,
     ).latest("created_at")
-    assert out_movement.reason == StockMovement.Reason.TRANSFER_OUT
-    assert in_movement.reason == StockMovement.Reason.TRANSFER_IN
+    assert out_movement.reason == ProductStockMovement.Reason.TRANSFER_OUT
+    assert in_movement.reason == ProductStockMovement.Reason.TRANSFER_IN
     assert out_movement.related_transfer == transfer
     assert in_movement.related_transfer == transfer
 
@@ -353,7 +353,7 @@ def test_transfer_finished_stock_moves_between_warehouses():
 def test_transfer_finished_stock_requires_different_warehouses():
     model = ProductModelFactory(is_bundle=False)
     color = ColorFactory()
-    variant = ProductVariant.objects.create(product=model, color=color)
+    variant = Variant.objects.create(product=model, color=color)
     warehouse = Warehouse.objects.create(
         name="Transfer Same",
         code="FIN-SAME",
@@ -366,7 +366,7 @@ def test_transfer_finished_stock_requires_different_warehouses():
         transfer_finished_stock(
             from_warehouse_id=warehouse.id,
             to_warehouse_id=warehouse.id,
-            product_variant_id=variant.id,
+            variant_id=variant.id,
             quantity=1,
         )
 
@@ -375,7 +375,7 @@ def test_transfer_finished_stock_requires_different_warehouses():
 def test_transfer_finished_stock_rolls_back_when_not_enough_stock():
     model = ProductModelFactory(is_bundle=False)
     color = ColorFactory()
-    variant = ProductVariant.objects.create(product=model, color=color)
+    variant = Variant.objects.create(product=model, color=color)
     from_warehouse = Warehouse.objects.create(
         name="From Finished Empty",
         code="FIN-EMPTY",
@@ -395,16 +395,16 @@ def test_transfer_finished_stock_rolls_back_when_not_enough_stock():
         transfer_finished_stock(
             from_warehouse_id=from_warehouse.id,
             to_warehouse_id=to_warehouse.id,
-            product_variant_id=variant.id,
+            variant_id=variant.id,
             quantity=1,
         )
 
-    assert get_stock_quantity(warehouse_id=to_warehouse.id, product_variant_id=variant.id) == 0
-    assert not FinishedStockTransfer.objects.filter(
+    assert get_stock_quantity(warehouse_id=to_warehouse.id, variant_id=variant.id) == 0
+    assert not ProductStockTransfer.objects.filter(
         from_warehouse_id=from_warehouse.id,
         to_warehouse_id=to_warehouse.id,
     ).exists()
-    assert not StockMovement.objects.filter(
+    assert not ProductStockMovement.objects.filter(
         stock_record__warehouse_id=to_warehouse.id,
-        stock_record__product_variant_id=variant.id,
+        stock_record__variant_id=variant.id,
     ).exists()

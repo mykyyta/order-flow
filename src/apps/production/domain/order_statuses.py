@@ -5,7 +5,7 @@ from typing import Dict, Set, Tuple
 
 STATUS_NEW = "new"
 STATUS_DOING = "doing"
-STATUS_EMBROIDERY = "embroidery"
+STATUS_EMBROIDERY = "is_embroidery"
 STATUS_DECIDING = "deciding"
 STATUS_ON_HOLD = "on_hold"
 STATUS_FINISHED = "finished"
@@ -147,8 +147,8 @@ def status_ui_map(*, include_legacy: bool) -> Dict[str, Dict[str, str]]:
     return ui
 
 
-def get_allowed_transitions(current_status: str) -> Set[str]:
-    current = STATUS_BY_CODE.get(current_status)
+def get_allowed_transitions(status: str) -> Set[str]:
+    current = STATUS_BY_CODE.get(status)
     if current is None or current.is_terminal:
         return set()
 
@@ -158,8 +158,8 @@ def get_allowed_transitions(current_status: str) -> Set[str]:
         if not status.is_legacy and not status.is_terminal
     }
     allowed.add(STATUS_FINISHED)
-    allowed.discard(current_status)
-    if current_status != STATUS_NEW:
+    allowed.discard(status)
+    if status != STATUS_NEW:
         allowed.discard(STATUS_NEW)
     return allowed
 

@@ -41,10 +41,10 @@ def resolve_line_production_status(
 
 def resolve_sales_order_status(
     *,
-    current_status: str,
+    status: str,
     line_production_statuses: Iterable[str],
 ) -> str | None:
-    if current_status in TERMINAL_SALES_ORDER_STATUSES:
+    if status in TERMINAL_SALES_ORDER_STATUSES:
         return None
 
     statuses = list(line_production_statuses)
@@ -56,6 +56,6 @@ def resolve_sales_order_status(
     else:
         next_status = STATUS_PRODUCTION
 
-    if next_status == current_status:
+    if next_status == status:
         return None
     return next_status

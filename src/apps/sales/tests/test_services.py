@@ -21,7 +21,7 @@ def test_create_sales_order_delegates_to_customer_order_service():
             customer_info="ТОВ Продаж",
             lines_data=[
                 {
-                    "product_model_id": model.id,
+                    "product_id": model.id,
                     "color_id": color.id,
                     "quantity": 1,
                 }
@@ -44,7 +44,7 @@ def test_create_production_orders_for_sales_order_works_when_legacy_writes_are_f
         customer_info="ТОВ Продаж",
         lines_data=[
             {
-                "product_model_id": model.id,
+                "product_id": model.id,
                 "color_id": color.id,
                 "quantity": 1,
             }
@@ -75,7 +75,7 @@ def test_create_sales_order_with_production_orders_works_when_legacy_writes_are_
             customer_info="ТОВ Продаж",
             lines_data=[
                 {
-                    "product_model_id": model.id,
+                    "product_id": model.id,
                     "color_id": color.id,
                     "quantity": 1,
                 }

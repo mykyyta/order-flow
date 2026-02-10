@@ -1,24 +1,25 @@
 from django.db import models
+
 from config import settings
 
 
-class StockRecord(models.Model):
+class ProductStock(models.Model):
     warehouse = models.ForeignKey(
         "warehouses.Warehouse",
         on_delete=models.PROTECT,
-        related_name="finished_stock_records_legacy",
+        related_name="product_stocks",
     )
-    product_variant = models.ForeignKey(
-        "catalog.ProductVariant",
+    variant = models.ForeignKey(
+        "catalog.Variant",
         on_delete=models.PROTECT,
-        related_name="stock_records_legacy",
+        related_name="product_stocks",
     )
     quantity = models.PositiveIntegerField(default=0)
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["warehouse", "product_variant"],
+                fields=["warehouse", "variant"],
                 name="inventory_stockrecord_warehouse_variant_uniq",
             ),
         ]
@@ -26,10 +27,10 @@ class StockRecord(models.Model):
         verbose_name_plural = "Залишки на складі"
 
     def __str__(self):
-        return f"{self.product_variant}: {self.quantity}"
+        return f"{self.variant}: {self.quantity}"
 
 
-class StockMovement(models.Model):
+class ProductStockMovement(models.Model):
     class Reason(models.TextChoices):
         PRODUCTION_IN = "production_in", "Надходження з виробництва"
         ORDER_OUT = "order_out", "Відвантаження клієнту"
@@ -40,7 +41,7 @@ class StockMovement(models.Model):
         RETURN_IN = "return_in", "Повернення"
 
     stock_record = models.ForeignKey(
-        StockRecord,
+        ProductStock,
         on_delete=models.CASCADE,
         related_name="movements",
     )
@@ -52,14 +53,14 @@ class StockMovement(models.Model):
         null=True,
         blank=True,
     )
-    related_customer_order_line = models.ForeignKey(
+    sales_order_line = models.ForeignKey(
         "sales.SalesOrderLine",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
     )
     related_transfer = models.ForeignKey(
-        "inventory.FinishedStockTransfer",
+        "inventory.ProductStockTransfer",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -82,27 +83,23 @@ class StockMovement(models.Model):
         return f"{self.stock_record}: {sign}{self.quantity_change}"
 
 
-FinishedStockRecord = StockRecord
-FinishedStockMovement = StockMovement
-
-
 class WIPStockRecord(models.Model):
     warehouse = models.ForeignKey(
         "warehouses.Warehouse",
         on_delete=models.PROTECT,
-        related_name="wip_stock_records",
+        related_name="wip_stocks",
     )
-    product_variant = models.ForeignKey(
-        "catalog.ProductVariant",
+    variant = models.ForeignKey(
+        "catalog.Variant",
         on_delete=models.PROTECT,
-        related_name="wip_stock_records",
+        related_name="wip_stocks",
     )
     quantity = models.PositiveIntegerField(default=0)
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["warehouse", "product_variant"],
+                fields=["warehouse", "variant"],
                 name="inventory_wipstockrecord_warehouse_variant_uniq",
             ),
         ]
@@ -110,7 +107,7 @@ class WIPStockRecord(models.Model):
         verbose_name_plural = "WIP залишки"
 
     def __str__(self) -> str:
-        return f"{self.warehouse.code}: {self.product_variant} ({self.quantity})"
+        return f"{self.warehouse.code}: {self.variant} ({self.quantity})"
 
 
 class WIPStockMovement(models.Model):
@@ -151,7 +148,7 @@ class WIPStockMovement(models.Model):
         return f"{self.stock_record}: {sign}{self.quantity_change}"
 
 
-class FinishedStockTransfer(models.Model):
+class ProductStockTransfer(models.Model):
     class Status(models.TextChoices):
         DRAFT = "draft", "Чернетка"
         IN_TRANSIT = "in_transit", "В дорозі"
@@ -161,12 +158,12 @@ class FinishedStockTransfer(models.Model):
     from_warehouse = models.ForeignKey(
         "warehouses.Warehouse",
         on_delete=models.PROTECT,
-        related_name="finished_stock_transfers_out",
+        related_name="product_stock_transfers_out",
     )
     to_warehouse = models.ForeignKey(
         "warehouses.Warehouse",
         on_delete=models.PROTECT,
-        related_name="finished_stock_transfers_in",
+        related_name="product_stock_transfers_in",
     )
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.DRAFT)
     created_by = models.ForeignKey(
@@ -174,7 +171,7 @@ class FinishedStockTransfer(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name="created_finished_stock_transfers",
+        related_name="created_product_stock_transfers",
     )
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -193,26 +190,26 @@ class FinishedStockTransfer(models.Model):
         return f"{self.from_warehouse.code} -> {self.to_warehouse.code} ({self.status})"
 
 
-class FinishedStockTransferLine(models.Model):
+class ProductStockTransferLine(models.Model):
     transfer = models.ForeignKey(
-        FinishedStockTransfer,
+        ProductStockTransfer,
         on_delete=models.CASCADE,
         related_name="lines",
     )
-    product_variant = models.ForeignKey(
-        "catalog.ProductVariant",
+    variant = models.ForeignKey(
+        "catalog.Variant",
         on_delete=models.PROTECT,
-        related_name="finished_stock_transfer_lines",
+        related_name="product_stock_transfer_lines",
     )
     quantity = models.PositiveIntegerField()
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["transfer", "product_variant"],
+                fields=["transfer", "variant"],
                 name="inventory_finishedstocktransferline_transfer_variant_uniq",
             ),
         ]
 
     def __str__(self) -> str:
-        return f"{self.transfer_id}: {self.product_variant_id} x {self.quantity}"
+        return f"{self.transfer_id}: {self.variant_id} x {self.quantity}"

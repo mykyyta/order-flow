@@ -3,15 +3,16 @@ from decimal import Decimal
 
 import pytest
 
-from apps.material_inventory.models import MaterialStockMovement, MaterialStockRecord
-from apps.material_inventory.services import add_material_stock, remove_material_stock
+from apps.materials.models import MaterialStockMovement, MaterialStock
+from apps.materials.services import add_material_stock, remove_material_stock, receive_purchase_order_line
 from apps.materials.models import (
     Material,
-    ProductMaterial,
+    BOM,
+    PurchaseOrder,
+    PurchaseOrderLine,
+    Supplier,
 )
 from apps.accounts.tests.conftest import UserFactory
-from apps.procurement.models import PurchaseOrder, PurchaseOrderLine, Supplier
-from apps.procurement.services import receive_purchase_order_line
 from apps.warehouses.models import Warehouse
 
 
@@ -23,7 +24,7 @@ def test_add_material_stock_creates_stock_and_movement():
     stock_record = add_material_stock(
         material=material,
         quantity=Decimal("2.500"),
-        unit=ProductMaterial.Unit.SQUARE_METER,
+        unit=BOM.Unit.SQUARE_METER,
         reason=MaterialStockMovement.Reason.ADJUSTMENT_IN,
         created_by=user,
     )
@@ -44,7 +45,7 @@ def test_remove_material_stock_fails_when_not_enough():
     add_material_stock(
         material=material,
         quantity=Decimal("1.000"),
-        unit=ProductMaterial.Unit.PIECE,
+        unit=BOM.Unit.PIECE,
         reason=MaterialStockMovement.Reason.ADJUSTMENT_IN,
     )
 
@@ -52,7 +53,7 @@ def test_remove_material_stock_fails_when_not_enough():
         remove_material_stock(
             material=material,
             quantity=Decimal("2.000"),
-            unit=ProductMaterial.Unit.PIECE,
+            unit=BOM.Unit.PIECE,
             reason=MaterialStockMovement.Reason.PRODUCTION_OUT,
         )
 
@@ -71,7 +72,7 @@ def test_receive_purchase_order_line_updates_stock_and_po_status():
         purchase_order=purchase_order,
         material=material,
         quantity=Decimal("10.000"),
-        unit=ProductMaterial.Unit.PIECE,
+        unit=BOM.Unit.PIECE,
         unit_price=Decimal("1.00"),
     )
 
@@ -82,9 +83,9 @@ def test_receive_purchase_order_line_updates_stock_and_po_status():
     )
     line.refresh_from_db()
     purchase_order.refresh_from_db()
-    stock_record = MaterialStockRecord.objects.get(
+    stock_record = MaterialStock.objects.get(
         material=material,
-        unit=ProductMaterial.Unit.PIECE,
+        unit=BOM.Unit.PIECE,
     )
     receipt_line.refresh_from_db()
 

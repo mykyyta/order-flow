@@ -13,7 +13,7 @@ from apps.production.models import ProductionOrder, ProductionOrderStatusHistory
 if TYPE_CHECKING:
     from django.contrib.auth.models import AbstractBaseUser
 
-    from apps.catalog.models import Color, ProductModel
+    from apps.catalog.models import Color, Product, Variant
     from apps.materials.models import MaterialColor
     from apps.sales.models import SalesOrderLine
 
@@ -21,40 +21,45 @@ if TYPE_CHECKING:
 @transaction.atomic
 def create_production_order(
     *,
-    model: "ProductModel",
-    color: "Color | None",
+    product: "Product | None" = None,
+    model: "Product | None" = None,
+    variant: "Variant | None" = None,
+    color: "Color | None" = None,
     primary_material_color: "MaterialColor | None" = None,
     secondary_material_color: "MaterialColor | None" = None,
-    embroidery: bool,
-    urgent: bool,
-    etsy: bool,
+    is_embroidery: bool,
+    is_urgent: bool,
+    is_etsy: bool,
     comment: str | None,
     created_by: "AbstractBaseUser",
     orders_url: str | None,
-    customer_order_line: "SalesOrderLine | None" = None,
+    sales_order_line: "SalesOrderLine | None" = None,
 ) -> ProductionOrder:
-    if color is None and primary_material_color is None:
-        raise ValueError("Order requires color or primary material color")
+    product = product or model
+    if product is None:
+        raise ValueError("Product is required")
 
-    product_variant = resolve_or_create_product_variant(
-        product_model_id=model.id,
-        color_id=color.id if color else None,
-        primary_material_color_id=primary_material_color.id if primary_material_color else None,
-        secondary_material_color_id=secondary_material_color.id if secondary_material_color else None,
-    )
+    if variant is None:
+        if color is None and primary_material_color is None:
+            raise ValueError("Order requires color or primary material color")
+        variant = resolve_or_create_product_variant(
+            product_id=product.id,
+            color_id=color.id if color else None,
+            primary_material_color_id=primary_material_color.id if primary_material_color else None,
+            secondary_material_color_id=secondary_material_color.id if secondary_material_color else None,
+        )
+    if variant is None:
+        raise ValueError("Order requires resolvable variant")
 
     order = ProductionOrder.objects.create(
-        model=model,
-        product_variant=product_variant,
-        color=color,
-        primary_material_color=primary_material_color,
-        secondary_material_color=secondary_material_color,
-        embroidery=embroidery,
-        urgent=urgent,
-        etsy=etsy,
+        product=product,
+        variant=variant,
+        is_embroidery=is_embroidery,
+        is_urgent=is_urgent,
+        is_etsy=is_etsy,
         comment=comment,
-        current_status=STATUS_NEW,
-        customer_order_line=customer_order_line,
+        status=STATUS_NEW,
+        sales_order_line=sales_order_line,
     )
     ProductionOrderStatusHistory.objects.create(
         order=order,
@@ -88,22 +93,22 @@ def _handle_finished_order(
     order: ProductionOrder,
     changed_by: "AbstractBaseUser",
 ) -> None:
-    from apps.inventory.models import StockMovement
+    from apps.inventory.models import ProductStockMovement
     from apps.inventory.services import add_to_stock
 
     add_to_stock(
-        product_variant_id=order.product_variant_id,
-        product_model_id=order.model_id,
+        variant_id=order.variant_id,
+        product_id=order.product_id,
         quantity=1,
-        reason=StockMovement.Reason.PRODUCTION_IN,
+        reason=ProductStockMovement.Reason.PRODUCTION_IN,
         production_order=order,
-        customer_order_line=order.customer_order_line,
+        sales_order_line=order.sales_order_line,
         user=changed_by,
     )
 
-    if order.customer_order_line_id is None:
+    if order.sales_order_line_id is None:
         return
 
     from apps.sales.services import sync_sales_order_line_production
 
-    sync_sales_order_line_production(order.customer_order_line)
+    sync_sales_order_line_production(order.sales_order_line)

@@ -3,7 +3,8 @@ from unittest.mock import patch
 
 import pytest
 
-from apps.inventory.models import StockMovement, StockRecord
+from apps.catalog.models import Variant
+from apps.inventory.models import ProductStockMovement, ProductStock
 from apps.production.domain.status import STATUS_FINISHED
 from apps.production.services import change_production_order_status, create_production_order
 from apps.materials.models import Material, MaterialColor
@@ -17,14 +18,14 @@ def test_change_order_status_finished_adds_item_to_stock_for_customer_line():
     user = UserFactory()
     model = ProductModelFactory(is_bundle=False)
     color = ColorFactory()
-    customer_order = SalesOrder.objects.create(
+    sales_order = SalesOrder.objects.create(
         source=SalesOrder.Source.WHOLESALE,
         customer_info="ТОВ Інтеграція",
     )
     line = SalesOrderLine.objects.create(
-        customer_order=customer_order,
-        product_model=model,
-        color=color,
+        sales_order=sales_order,
+        product=model,
+        variant=Variant.objects.create(product=model, color=color),
         quantity=1,
     )
 
@@ -32,13 +33,13 @@ def test_change_order_status_finished_adds_item_to_stock_for_customer_line():
         order = create_production_order(
             model=model,
             color=color,
-            embroidery=False,
-            urgent=False,
-            etsy=False,
+            is_embroidery=False,
+            is_urgent=False,
+            is_etsy=False,
             comment=None,
             created_by=user,
             orders_url=None,
-            customer_order_line=line,
+            sales_order_line=line,
         )
         change_production_order_status(
             production_orders=[order],
@@ -46,12 +47,12 @@ def test_change_order_status_finished_adds_item_to_stock_for_customer_line():
             changed_by=user,
         )
 
-    record = StockRecord.objects.get(product_variant=order.product_variant)
+    record = ProductStock.objects.get(variant=order.variant)
     assert record.quantity == 1
 
-    movement = StockMovement.objects.get(related_production_order=order)
+    movement = ProductStockMovement.objects.get(related_production_order=order)
     assert movement.quantity_change == 1
-    assert movement.reason == StockMovement.Reason.PRODUCTION_IN
+    assert movement.reason == ProductStockMovement.Reason.PRODUCTION_IN
 
 
 @pytest.mark.django_db
@@ -66,16 +67,19 @@ def test_change_order_status_finished_uses_material_color_stock_key():
         primary_material=felt,
         secondary_material=leather,
     )
-    customer_order = SalesOrder.objects.create(
+    sales_order = SalesOrder.objects.create(
         source=SalesOrder.Source.WHOLESALE,
         customer_info="ТОВ Матеріал",
     )
     line = SalesOrderLine.objects.create(
-        customer_order=customer_order,
-        product_model=product,
+        sales_order=sales_order,
+        product=product,
         quantity=1,
-        primary_material_color=blue,
-        secondary_material_color=black,
+        variant=Variant.objects.create(
+            product=product,
+            primary_material_color=blue,
+            secondary_material_color=black,
+        ),
     )
 
     with patch("apps.production.services.send_order_created"), patch("apps.production.services.send_order_finished"):
@@ -84,13 +88,13 @@ def test_change_order_status_finished_uses_material_color_stock_key():
             color=None,
             primary_material_color=blue,
             secondary_material_color=black,
-            embroidery=False,
-            urgent=False,
-            etsy=False,
+            is_embroidery=False,
+            is_urgent=False,
+            is_etsy=False,
             comment=None,
             created_by=user,
             orders_url=None,
-            customer_order_line=line,
+            sales_order_line=line,
         )
         change_production_order_status(
             production_orders=[order],
@@ -98,5 +102,5 @@ def test_change_order_status_finished_uses_material_color_stock_key():
             changed_by=user,
         )
 
-    record = StockRecord.objects.get(product_variant=order.product_variant)
+    record = ProductStock.objects.get(variant=order.variant)
     assert record.quantity == 1
