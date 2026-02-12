@@ -45,13 +45,24 @@ jobs:
           IMAGE_URI="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/${IMAGE}:${GITHUB_SHA}"
           docker build --platform=linux/amd64 -t "${IMAGE_URI}" .
           docker push "${IMAGE_URI}"
+          IMAGE_DIGEST_URI="$(docker inspect --format='{{index .RepoDigests 0}}' "${IMAGE_URI}")"
+          if [ -z "${IMAGE_DIGEST_URI}" ]; then
+            echo "Failed to resolve pushed image digest"
+            exit 1
+          fi
           echo "IMAGE_URI=${IMAGE_URI}" >> $GITHUB_ENV
+          echo "IMAGE_DIGEST_URI=${IMAGE_DIGEST_URI}" >> $GITHUB_ENV
 
       - name: Migrate
         run: |
-          gcloud run jobs update "${MIGRATE_JOB}" --region "${REGION}" --image "${IMAGE_URI}"
+          gcloud run jobs update "${MIGRATE_JOB}" --region "${REGION}" --image "${IMAGE_DIGEST_URI}"
+          APPLIED_IMAGE="$(gcloud run jobs describe "${MIGRATE_JOB}" --region "${REGION}" --format='value(template.template.containers[0].image)')"
+          if [ "${APPLIED_IMAGE}" != "${IMAGE_DIGEST_URI}" ]; then
+            echo "Cloud Run job image mismatch: expected ${IMAGE_DIGEST_URI}, got ${APPLIED_IMAGE}"
+            exit 1
+          fi
           gcloud run jobs execute "${MIGRATE_JOB}" --region "${REGION}" --wait
 
       - name: Deploy
         run: |
-          gcloud run services update "${SERVICE}" --region "${REGION}" --image "${IMAGE_URI}"
+          gcloud run services update "${SERVICE}" --region "${REGION}" --image "${IMAGE_DIGEST_URI}"
