@@ -49,10 +49,7 @@ jobs:
       - name: Migrate
         run: |
           gcloud run jobs update "${MIGRATE_JOB}" --region "${REGION}" --image "${IMAGE_DIGEST_URI}"
-          APPLIED_IMAGE="$(
-            gcloud run jobs describe "${MIGRATE_JOB}" --region "${REGION}" --format=json \
-              | jq -r '.template.template.containers[0].image // ""'
-          )"
+          APPLIED_IMAGE="$(gcloud run jobs describe "${MIGRATE_JOB}" --region "${REGION}" --format='value(spec.template.spec.template.spec.containers[0].image)')"
           if [ "${APPLIED_IMAGE}" != "${IMAGE_DIGEST_URI}" ]; then
             echo "Cloud Run job image mismatch: expected ${IMAGE_DIGEST_URI}, got ${APPLIED_IMAGE}"
             exit 1
