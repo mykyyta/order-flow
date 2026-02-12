@@ -4,8 +4,13 @@ from django.utils import timezone
 
 class Product(models.Model):
     name = models.CharField(max_length=255, unique=True)
+    section = models.CharField(max_length=255, blank=True, db_index=True)
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     currency = models.CharField(max_length=3, default="UAH")
+    # Роздрібна ціна в Україні (грн). Інші ціни — окремими полями пізніше.
+    price_retail_uah = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True
+    )
     cost_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     is_bundle = models.BooleanField(default=False)
     primary_material = models.ForeignKey(
