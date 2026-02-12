@@ -37,7 +37,9 @@
                 <tr>
                     <td class="text-slate-500">{{ order.id }}</td>
                     <td>
-                        <a href="{% url 'order_detail' order.id %}" class="font-medium text-slate-800 hover:text-teal-600 transition-colors">{{ order.model.name }} · {{ order.color.name }}</a>
+                        <a href="{% url 'order_detail' order.id %}" class="font-medium text-slate-800 hover:text-teal-600 transition-colors">
+                            {{ order.product.name }} · {% if order.variant and order.variant.color %}{{ order.variant.color.name }}{% else %}—{% endif %}
+                        </a>
                     </td>
                     <td class="text-slate-500">{{ order.finished_at|date:"d.m.Y H:i" }}</td>
                 </tr>

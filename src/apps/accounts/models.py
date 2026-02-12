@@ -1,13 +1,23 @@
-from django.conf import settings
+from django.contrib.auth.models import AbstractUser
 from django.db import models
 
+from apps.ui.themes import DEFAULT_THEME, THEME_CHOICES
 
-class NotificationSetting(models.Model):
-    user = models.OneToOneField(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name="notification_settings",
+
+class User(AbstractUser):
+    telegram_id = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        unique=True,
+        verbose_name="Telegram ID",
     )
-    notify_order_created = models.BooleanField(default=True)
-    notify_order_finished = models.BooleanField(default=True)
-    notify_order_created_pause = models.BooleanField(default=True)
+    theme = models.CharField(
+        max_length=32,
+        choices=THEME_CHOICES,
+        default=DEFAULT_THEME,
+        verbose_name="Theme",
+    )
+
+    def __str__(self) -> str:
+        return self.username

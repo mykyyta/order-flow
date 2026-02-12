@@ -101,9 +101,15 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "apps.accounts",
+    "apps.user_settings",
+    "apps.ui",
     "apps.catalog",
+    "apps.fulfillment",
+    "apps.inventory",
     "apps.materials",
-    "apps.orders",
+    "apps.production",
+    "apps.sales",
+    "apps.warehouses",
 ]
 
 MIDDLEWARE = [
@@ -180,8 +186,9 @@ STATIC_ROOT = PROJECT_ROOT / "staticfiles"
 STATICFILES_DIRS = [PROJECT_ROOT / "frontend" / "static"]
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-AUTH_USER_MODEL = "orders.CustomUser"
+AUTH_USER_MODEL = "accounts.User"
 LOGIN_URL = "auth_login"
+FREEZE_LEGACY_WRITES = env_bool("FREEZE_LEGACY_WRITES", False)
 
 CSRF_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_SAMESITE = "Lax"

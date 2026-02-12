@@ -1,0 +1,91 @@
+{% comment %}
+Dropdown action menu using Alpine.js.
+
+Usage:
+  {% include "partials/action_menu.html" with items=action_items %}
+
+  Where action_items is a list of dicts:
+  [
+    {"label": "Редагувати", "url": "/edit/", "icon": "edit"},
+    {"label": "Видалити", "url": "/delete/", "icon": "trash", "danger": True, "confirm": "Видалити?"},
+    {"divider": True},
+    {"label": "В архів", "url": "/archive/", "method": "post"},
+  ]
+
+  Or manually:
+  {% include "partials/action_menu.html" %}
+    {% block menu_items %}
+      <a href="..." class="action-menu-item">Edit</a>
+    {% endblock %}
+  {% endinclude %}
+
+Parameters:
+  - items: list of action items (see above)
+  - label: button label (default: "Дії")
+  - icon_only: show only icon, no label (default: False)
+  - align: dropdown alignment "left" or "right" (default: "right")
+  - size: "sm" or "md" (default: "md")
+{% endcomment %}
+
+<div
+    class="relative inline-block text-left"
+    x-data="{ open: false }"
+    @keydown.escape.window="open = false"
+>
+    {# Trigger button #}
+    <button
+        type="button"
+        class="{% if icon_only %}btn-secondary flex h-10 w-10 items-center justify-center px-0{% else %}btn-secondary inline-flex items-center gap-1.5{% endif %}"
+        @click="open = !open"
+        :aria-expanded="open"
+        aria-haspopup="true"
+    >
+        {% if not icon_only %}<span>{{ label|default:"Дії" }}</span>{% endif %}
+        <svg class="h-4 w-4 {% if icon_only %}{% else %}opacity-60{% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/>
+        </svg>
+    </button>
+
+    {# Dropdown panel #}
+    <div
+        class="absolute {% if align == 'left' %}left-0{% else %}right-0{% endif %} z-50 mt-1 w-48 origin-top-right rounded-md border border-slate-200 bg-white py-1 shadow-lg"
+        x-show="open"
+        x-transition:enter="transition ease-out duration-100"
+        x-transition:enter-start="opacity-0 scale-95"
+        x-transition:enter-end="opacity-100 scale-100"
+        x-transition:leave="transition ease-in duration-75"
+        x-transition:leave-start="opacity-100 scale-100"
+        x-transition:leave-end="opacity-0 scale-95"
+        @click.away="open = false"
+        x-cloak
+    >
+        {% block menu_items %}
+        {% for item in items %}
+            {% if item.divider %}
+            <div class="my-1 border-t border-slate-100"></div>
+            {% elif item.method == "post" %}
+            <form method="post" action="{{ item.url }}" class="m-0">
+                {% csrf_token %}
+                <button
+                    type="submit"
+                    class="action-menu-item w-full text-left {% if item.danger %}text-red-600 hover:bg-red-50{% endif %}"
+                    {% if item.confirm %}onclick="return confirm('{{ item.confirm }}')"{% endif %}
+                >
+                    {% if item.icon %}{% include "partials/action_menu_icon.html" with icon=item.icon %}{% endif %}
+                    {{ item.label }}
+                </button>
+            </form>
+            {% else %}
+            <a
+                href="{{ item.url }}"
+                class="action-menu-item {% if item.danger %}text-red-600 hover:bg-red-50{% endif %}"
+                {% if item.confirm %}onclick="return confirm('{{ item.confirm }}')"{% endif %}
+            >
+                {% if item.icon %}{% include "partials/action_menu_icon.html" with icon=item.icon %}{% endif %}
+                {{ item.label }}
+            </a>
+            {% endif %}
+        {% endfor %}
+        {% endblock %}
+    </div>
+</div>

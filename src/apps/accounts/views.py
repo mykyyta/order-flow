@@ -14,8 +14,8 @@ from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 
-from apps.accounts.models import NotificationSetting
-from apps.orders.themes import THEME_CHOICES, normalize_theme
+from apps.ui.themes import THEME_CHOICES, normalize_theme
+from apps.user_settings.models import NotificationSetting
 
 
 def auth_login(request):

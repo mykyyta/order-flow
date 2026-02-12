@@ -6,5 +6,6 @@ urlpatterns = [
     path("", include("apps.catalog.urls")),
     path("", include("apps.materials.urls")),
     path("", include("apps.accounts.urls")),
-    path("", include("apps.orders.urls")),
+    path("", include("apps.ui.urls")),
+    path("", include("apps.production.urls")),
 ]

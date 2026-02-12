@@ -17,19 +17,19 @@
                 <dd class="sr-only">Замовлення</dd>
                 <div class="detail-row">
                     <dt class="detail-dt">Модель · Колір</dt>
-                    <dd class="detail-hero">{{ order.model }} · {{ order.color }}</dd>
+                    <dd class="detail-hero">{{ order.product }} · {{ order.color }}</dd>
                 </div>
                 <div class="detail-row">
                     <dt class="detail-dt">Вишивка</dt>
-                    <dd class="detail-dd">{% if order.embroidery %}<span class="inline-block text-[1rem] leading-none" title="Вишивка" aria-hidden="true">👨🏻‍🦳</span> Так{% else %}—{% endif %}</dd>
+                    <dd class="detail-dd">{% if order.is_embroidery %}<span class="inline-block text-[1rem] leading-none" title="Вишивка" aria-hidden="true">👨🏻‍🦳</span> Так{% else %}—{% endif %}</dd>
                 </div>
                 <div class="detail-row">
                     <dt class="detail-dt">Etsy</dt>
-                    <dd class="detail-dd">{% if order.etsy %}<span class="inline-block text-[1rem] leading-none" title="Etsy" aria-hidden="true">🌍</span> Так{% else %}—{% endif %}</dd>
+                    <dd class="detail-dd">{% if order.is_etsy %}<span class="inline-block text-[1rem] leading-none" title="Etsy" aria-hidden="true">🌍</span> Так{% else %}—{% endif %}</dd>
                 </div>
                 <div class="detail-row">
                     <dt class="detail-dt">Терміново</dt>
-                    <dd class="detail-dd">{% if order.urgent %}<span class="inline-block text-[1rem] leading-none" title="Терміново" aria-hidden="true">⚡</span> Так{% else %}—{% endif %}</dd>
+                    <dd class="detail-dd">{% if order.is_urgent %}<span class="inline-block text-[1rem] leading-none" title="Терміново" aria-hidden="true">⚡</span> Так{% else %}—{% endif %}</dd>
                 </div>
                 <div class="detail-row">
                     <dt class="detail-dt">Коментар</dt>
@@ -56,7 +56,7 @@
                 <div class="detail-row">
                     <dt class="detail-dt">Поточний</dt>
                     <dd>
-                        {% status_indicator order.current_status_code order.current_status_display %}
+                        {% status_indicator order.status_code order.status_display %}
                     </dd>
                 </div>
             </div>

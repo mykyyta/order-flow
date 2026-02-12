@@ -11,7 +11,7 @@
         {% if colors %}
         <div class="flex flex-wrap gap-2">
             {% for color in colors %}
-            <a href="{% url 'color_edit' color.id %}" class="catalog-chip-link {% if color.availability_status == 'out_of_stock' %}catalog-chip-availability-out{% elif color.availability_status == 'low_stock' %}catalog-chip-availability-low{% else %}catalog-chip-availability-in{% endif %}">
+            <a href="{% url 'color_edit' color.id %}" class="catalog-chip-link {% if color.status == 'out_of_stock' %}catalog-chip-availability-out{% elif color.status == 'low_stock' %}catalog-chip-availability-low{% else %}catalog-chip-availability-in{% endif %}">
                 {{ color.name }} ({{ color.code }})
             </a>
             {% endfor %}
@@ -40,10 +40,10 @@
                 {% endif %}
             </div>
             <div>
-                <label for="id_availability_status" class="sr-only">Наявність</label>
-                {{ color_form.availability_status }}
-                {% if color_form.availability_status.errors %}
-                <p class="form-error">{{ color_form.availability_status.errors.0 }}</p>
+                <label for="id_status" class="sr-only">Наявність</label>
+                {{ color_form.status }}
+                {% if color_form.status.errors %}
+                <p class="form-error">{{ color_form.status.errors.0 }}</p>
                 {% endif %}
             </div>
             <button type="submit" class="btn-primary">

@@ -3,13 +3,13 @@ Icons for order tags: urgent (lightning), embroidery (👨🏻‍🦳), etsy (gl
 Use in order_row: include with order context.
 {% endcomment %}
 <span class="inline-flex items-center gap-1 flex-shrink-0">
-  {% if order.urgent %}
+  {% if order.is_urgent %}
   <span class="inline-block text-[1rem] leading-none" title="Терміново" aria-hidden="true">⚡</span>
   {% endif %}
-  {% if order.embroidery %}
+  {% if order.is_embroidery %}
   <span class="inline-block text-[1rem] leading-none" title="Вишивка" aria-hidden="true">👨🏻‍🦳</span>
   {% endif %}
-  {% if order.etsy %}
+  {% if order.is_etsy %}
   <span class="inline-block text-[1rem] leading-none" title="Etsy" aria-hidden="true">🌍</span>
   {% endif %}
 </span>

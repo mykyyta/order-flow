@@ -11,16 +11,16 @@ Pult is an order management system for small production workflows with Telegram 
 - Supports delayed notifications for after-hours orders.
 
 ## Architecture
-Core app: `orders`
+Core app: `production`
 
-- `orders/domain`: domain rules (statuses, transitions, policies)
-- `orders/application`: use-cases and ports
-- `orders/adapters`: ORM, notifications, and clock adapters
-- `orders/views.py`: HTTP layer
+- `production/domain`: domain rules (statuses, transitions, policies)
+- `production/services.py`: orchestration for production lifecycle
+- `production/views/`: HTTP layer
+- `production/notifications.py`: Telegram notifications
 
 Status model:
-- `Order.current_status` is the source of truth for the current state.
-- `OrderStatusHistory` is the audit trail.
+- `ProductionOrder.status` is the source of truth for the current state.
+- `ProductionOrderStatusHistory` is the audit trail.
 
 ## Tech Stack
 - Python 3.12+
@@ -34,6 +34,9 @@ Status model:
 - **Дизайн і layout** — [docs/design/](docs/design/):
   - **[design_components.md](docs/design/design_components.md)** — єдиний довідник з UI: компоненти, відступи/тіні, чеклісти, куди дивитись при зміні.
   - [style_decisions.md](docs/design/style_decisions.md) — конвенції коду (неймінг, views, шаблони, CSS/JS, мова).
+- **Data model V2**:
+  - [v2_model_design_proposal.md](docs/v2_model_design_proposal.md) — цільова структура апок,
+    моделі, принципи orchestration, multi-warehouse і план імпорту з legacy.
 - **DevOps / Infra** — [docs/devops/](docs/devops/):
   - [Infrastructure overview](docs/devops/infrastructure_overview.md)
   - [Runbook](docs/devops/runbook.md)
@@ -42,12 +45,33 @@ Status model:
 ## Quick Start (Docker)
 ```bash
 cp .env.example .env
-docker compose up --build
+make dev-bootstrap
 ```
 
-Run migrations in a separate terminal:
+`make dev-bootstrap` does:
+- removes old compose containers (`down --remove-orphans`)
+- starts db/web in detached mode
+- runs migrations
+- bootstraps local admin + catalog + sample production orders
+
+If containers are already running:
 ```bash
-docker compose run --rm web python manage.py migrate
+make init-local
+```
+
+Useful local shortcuts:
+```bash
+make help            # all commands with descriptions
+make dev-refresh     # full backend refresh (same as dev-bootstrap)
+make dev-refresh-ui  # full refresh + Tailwind CSS rebuild
+make down-reset      # full reset with DB volume removal
+```
+
+Manual equivalents:
+```bash
+docker compose up -d --build
+docker compose run --rm web python src/manage.py migrate --run-syncdb
+docker compose run --rm web python src/manage.py bootstrap_local --orders 10
 ```
 
 Open:
@@ -70,9 +94,14 @@ Palette lab page (requires login):
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements-dev.txt
-python manage.py migrate
-python manage.py runserver
+python src/manage.py migrate
+python src/manage.py bootstrap_local --orders 10
+python src/manage.py runserver
 ```
+
+Default local login created by `bootstrap_local`:
+- username: `local_admin`
+- password: `local-pass-12345`
 
 ## Quality Checks
 ```bash
@@ -84,17 +113,17 @@ make lint
 ## Useful Commands
 Data consistency check:
 ```bash
-python manage.py check_order_statuses
+python src/manage.py check_order_statuses
 ```
 
 Application healthcheck (DB + required tokens):
 ```bash
-python manage.py healthcheck_app --require-telegram-token --require-delayed-token
+python src/manage.py healthcheck_app --require-telegram-token --require-delayed-token
 ```
 
 Send delayed notifications manually:
 ```bash
-python manage.py send_delayed_notifications
+python src/manage.py send_delayed_notifications
 ```
 
 ## Environment Variables

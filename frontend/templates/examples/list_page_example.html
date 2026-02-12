@@ -1,0 +1,79 @@
+{% extends "base_list_page.html" %}
+{% comment %}
+EXAMPLE: List page with filters, table, and actions.
+Copy this as a starting point for new list pages.
+
+Required context:
+  - page_title: "Матеріали"
+  - items: queryset of objects
+  - search_value: current search query
+{% endcomment %}
+
+{% load static %}
+
+{% block page_title_text %}Матеріали{% endblock %}
+
+{% block page_header_actions %}
+<a href="#" class="btn-primary">
+    <svg class="mr-1.5 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+    </svg>
+    Додати
+</a>
+{% endblock %}
+
+{% block filters %}
+{% include "partials/filter_bar.html" with search=True search_value=search_value clear_url="." %}
+{% endblock %}
+
+{% block list_header %}
+{# Table header - hidden on mobile #}
+<div class="hidden sm:grid sm:grid-cols-12 gap-4 px-4 py-2 border-b border-slate-200 bg-slate-50/80">
+    <div class="col-span-4 text-xs font-medium uppercase tracking-wider text-slate-400">Назва</div>
+    <div class="col-span-3 text-xs font-medium uppercase tracking-wider text-slate-400">Категорія</div>
+    <div class="col-span-2 text-xs font-medium uppercase tracking-wider text-slate-400">Кольорів</div>
+    <div class="col-span-2 text-xs font-medium uppercase tracking-wider text-slate-400">Статус</div>
+    <div class="col-span-1"></div>
+</div>
+{% endblock %}
+
+{% block list_content %}
+{# Example rows - replace with loop #}
+{% for i in "123"|make_list %}
+<div class="grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-4 px-4 py-3 border-b border-slate-100 hover:bg-slate-50/80 transition-colors items-center">
+    {# Name #}
+    <div class="sm:col-span-4">
+        <a href="#" class="font-medium text-slate-900 hover:text-teal-600">Шкіра натуральна</a>
+    </div>
+
+    {# Category - hidden label on mobile #}
+    <div class="sm:col-span-3 text-sm text-slate-600">
+        <span class="sm:hidden text-slate-400">Категорія: </span>
+        Основні матеріали
+    </div>
+
+    {# Count #}
+    <div class="sm:col-span-2 text-sm text-slate-600">
+        <span class="sm:hidden text-slate-400">Кольорів: </span>
+        24
+    </div>
+
+    {# Status #}
+    <div class="sm:col-span-2">
+        {% include "partials/badge.html" with label="Активний" variant="success" size="sm" %}
+    </div>
+
+    {# Actions #}
+    <div class="sm:col-span-1 flex justify-end">
+        {% include "partials/action_menu.html" with icon_only=True items=example_actions %}
+    </div>
+</div>
+{% endfor %}
+
+{# Empty state - show when no items #}
+{# {% include "partials/empty_state.html" with message="Матеріалів поки немає." %} #}
+{% endblock %}
+
+{% block list_footer %}
+{% include "partials/pagination.html" %}
+{% endblock %}

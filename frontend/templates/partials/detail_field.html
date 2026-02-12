@@ -1,0 +1,35 @@
+{% comment %}
+Detail field - key-value pair for detail pages.
+
+Usage:
+  {% include "partials/detail_field.html" with label="Назва" value=object.name %}
+  {% include "partials/detail_field.html" with label="Статус" value=object.status badge=True badge_variant="success" %}
+  {% include "partials/detail_field.html" with label="Опис" value=object.description|linebreaks multiline=True %}
+
+Parameters:
+  - label: field label (required)
+  - value: field value (required)
+  - badge: show value as badge (default: False)
+  - badge_variant: badge variant if badge=True
+  - multiline: allow text wrapping (default: False)
+  - muted: show value in muted color (default: False)
+  - href: make value a link
+  - empty_text: text to show if value is empty (default: "—")
+{% endcomment %}
+
+<div class="detail-row">
+    <dt class="detail-dt">{{ label }}</dt>
+    <dd class="detail-dd {% if muted %}text-slate-500{% endif %} {% if not multiline %}truncate{% endif %}">
+        {% if value %}
+            {% if badge %}
+                {% include "partials/badge.html" with label=value variant=badge_variant|default:"default" %}
+            {% elif href %}
+                <a href="{{ href }}" class="text-teal-600 hover:text-teal-700 hover:underline">{{ value }}</a>
+            {% else %}
+                {{ value }}
+            {% endif %}
+        {% else %}
+            <span class="text-slate-400">{{ empty_text|default:"—" }}</span>
+        {% endif %}
+    </dd>
+</div>

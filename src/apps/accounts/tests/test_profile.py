@@ -5,8 +5,8 @@ import re
 import pytest
 from django.urls import reverse
 
-from apps.accounts.models import NotificationSetting
-from apps.orders.themes import DEFAULT_THEME
+from apps.ui.themes import DEFAULT_THEME
+from apps.user_settings.models import NotificationSetting
 
 from .conftest import UserFactory
 

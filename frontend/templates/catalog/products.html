@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Моделі{% endblock %}
+
+{% block content %}
+
+{% include "partials/messages.html" %}
+
+<div class="space-y-6">
+    <div>
+        <div class="flex flex-wrap gap-2">
+            {% for product in products %}
+            <a href="{% url 'product_edit' product.id %}" class="catalog-chip-link catalog-chip-availability-in">{{ product.name }}</a>
+            {% empty %}
+            <p class="text-sm text-slate-500">Поки що моделей немає.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="card form-card-body">
+        <h2 class="section-title mb-4">Додати модель</h2>
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            <div>
+                <label for="id_name" class="sr-only">Назва моделі</label>
+                {{ form.name }}
+                {% if form.name.errors %}
+                <p class="form-error">{{ form.name.errors.0 }}</p>
+                {% endif %}
+            </div>
+            <button type="submit" class="btn-primary">
+                Додати
+            </button>
+        </form>
+    </div>
+
+    <div class="pt-4">
+        <div class="flex items-center justify-center">
+            <a href="{% url 'products_archive' %}"
+               class="link-muted inline-flex items-center gap-2 rounded-md px-3 py-2 hover:bg-slate-50">
+                <span aria-hidden="true">🗄️</span>
+                <span>Архів</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

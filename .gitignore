@@ -52,6 +52,9 @@ test_db.sqlite3
 *.sql
 *.dump
 
+# Local seed data (not committed)
+data-seed/
+
 # Django specific
 *.log
 local_settings.py

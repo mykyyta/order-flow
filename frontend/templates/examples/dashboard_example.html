@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% comment %}
+EXAMPLE: Dashboard page with stats and quick actions.
+Copy this as a starting point for dashboard/overview pages.
+{% endcomment %}
+
+{% load static %}
+
+{% block content %}
+<div class="space-y-6">
+    {# Page header #}
+    <div>
+        <h1 class="text-xl font-semibold text-slate-900">Огляд</h1>
+        <p class="mt-1 text-sm text-slate-500">Статистика виробництва за сьогодні</p>
+    </div>
+
+    {# Stats grid #}
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {% include "partials/stats_card.html" with label="В роботі" value="12" icon="clipboard" href="#" %}
+        {% include "partials/stats_card.html" with label="Порізано (WIP)" value="8" icon="scissors" variant="warning" %}
+        {% include "partials/stats_card.html" with label="Готово сьогодні" value="5" trend="+2" trend_up=True icon="check" variant="success" %}
+        {% include "partials/stats_card.html" with label="Очікує матеріалів" value="3" icon="alert" variant="danger" %}
+    </div>
+
+    {# Two column layout #}
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {# Recent orders #}
+        <div class="card">
+            <div class="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+                <h3 class="text-sm font-semibold text-slate-900">Останні замовлення</h3>
+                <a href="#" class="text-sm font-medium text-teal-600 hover:text-teal-700">Всі</a>
+            </div>
+            <div class="divide-y divide-slate-100">
+                {% for i in "1234"|make_list %}
+                <div class="flex items-center justify-between px-4 py-3 hover:bg-slate-50/80 transition-colors">
+                    <div class="min-w-0 flex-1">
+                        <p class="text-sm font-medium text-slate-900 truncate">Сумка Класик · Чорний</p>
+                        <p class="text-xs text-slate-500">10 хв тому</p>
+                    </div>
+                    {% include "partials/badge.html" with label="Нове" variant="success" size="sm" %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        {# Low stock alerts #}
+        <div class="card">
+            <div class="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+                <h3 class="text-sm font-semibold text-slate-900">Закінчуються матеріали</h3>
+                <a href="#" class="text-sm font-medium text-teal-600 hover:text-teal-700">Закупівлі</a>
+            </div>
+            <div class="divide-y divide-slate-100">
+                {% for i in "123"|make_list %}
+                <div class="flex items-center justify-between px-4 py-3 hover:bg-slate-50/80 transition-colors">
+                    <div class="min-w-0 flex-1">
+                        <p class="text-sm font-medium text-slate-900 truncate">Шкіра натуральна</p>
+                        <p class="text-xs text-slate-500">Чорний · 2.5 м² залишилось</p>
+                    </div>
+                    {% include "partials/badge.html" with label="Мало" variant="warning" size="sm" %}
+                </div>
+                {% endfor %}
+            </div>
+            {% comment %}
+            Empty state:
+            <div class="px-4 py-8 text-center">
+                <p class="text-sm text-slate-500">Все в нормі!</p>
+            </div>
+            {% endcomment %}
+        </div>
+    </div>
+
+    {# Quick actions #}
+    <div class="card p-4">
+        <h3 class="text-sm font-semibold text-slate-900 mb-3">Швидкі дії</h3>
+        <div class="flex flex-wrap gap-2">
+            <a href="#" class="btn-primary">+ Нове замовлення</a>
+            <a href="#" class="btn-secondary">Порізати на склад</a>
+            <a href="#" class="btn-secondary">Прийняти матеріали</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

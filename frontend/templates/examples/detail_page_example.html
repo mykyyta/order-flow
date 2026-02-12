@@ -1,0 +1,94 @@
+{% extends "base_detail_page.html" %}
+{% comment %}
+EXAMPLE: Detail page showing a single object.
+Copy this as a starting point for new detail pages.
+
+Required context:
+  - page_title: "Замовлення #123"
+  - object: the object to display
+  - back_url: URL to go back
+  - back_label: "До списку"
+{% endcomment %}
+
+{% load static %}
+
+{% block page_title_text %}Замовлення #123{% endblock %}
+
+{% block page_header_actions %}
+<a href="#" class="btn-secondary">Редагувати</a>
+{% include "partials/action_menu.html" with icon_only=True items=actions %}
+{% endblock %}
+
+{% block detail_content %}
+{# Main info card #}
+<div class="card">
+    <div class="px-4 py-3 border-b border-slate-100">
+        <h3 class="text-sm font-semibold text-slate-900">Основна інформація</h3>
+    </div>
+    <div class="p-4 space-y-1">
+        {% include "partials/detail_field.html" with label="Продукт" value="Сумка Класик" %}
+        {% include "partials/detail_field.html" with label="Колір" value="Чорний" %}
+        {% include "partials/detail_field.html" with label="Статус" value="В роботі" badge=True badge_variant="info" %}
+        {% include "partials/detail_field.html" with label="Створено" value="12.02.2025, 14:30" muted=True %}
+    </div>
+</div>
+
+{# Additional info #}
+<div class="card">
+    <div class="px-4 py-3 border-b border-slate-100">
+        <h3 class="text-sm font-semibold text-slate-900">Матеріали</h3>
+    </div>
+    <div class="divide-y divide-slate-100">
+        <div class="flex items-center justify-between px-4 py-3">
+            <div>
+                <p class="text-sm font-medium text-slate-900">Шкіра натуральна</p>
+                <p class="text-xs text-slate-500">Чорний</p>
+            </div>
+            <span class="text-sm text-slate-600">0.8 м²</span>
+        </div>
+        <div class="flex items-center justify-between px-4 py-3">
+            <div>
+                <p class="text-sm font-medium text-slate-900">Підкладка</p>
+                <p class="text-xs text-slate-500">Сірий</p>
+            </div>
+            <span class="text-sm text-slate-600">0.5 м²</span>
+        </div>
+    </div>
+</div>
+
+{# Comments/notes #}
+<div class="card">
+    <div class="px-4 py-3 border-b border-slate-100">
+        <h3 class="text-sm font-semibold text-slate-900">Коментар</h3>
+    </div>
+    <div class="p-4">
+        <p class="text-sm text-slate-600 whitespace-pre-line">Терміново! Клієнт забирає в п'ятницю.</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block detail_sidebar %}
+{# Status/timeline card #}
+<div class="card">
+    <div class="px-4 py-3 border-b border-slate-100">
+        <h3 class="text-sm font-semibold text-slate-900">Історія</h3>
+    </div>
+    <div class="p-4">
+        <ol class="relative border-l border-slate-200 ml-2 space-y-4">
+            <li class="ml-4">
+                <div class="absolute w-2.5 h-2.5 bg-teal-500 rounded-full -left-[5px] border-2 border-white"></div>
+                <p class="text-sm font-medium text-slate-900">В роботі</p>
+                <p class="text-xs text-slate-500">12.02.2025, 15:00</p>
+            </li>
+            <li class="ml-4">
+                <div class="absolute w-2.5 h-2.5 bg-slate-300 rounded-full -left-[5px] border-2 border-white"></div>
+                <p class="text-sm text-slate-600">Створено</p>
+                <p class="text-xs text-slate-500">12.02.2025, 14:30</p>
+            </li>
+        </ol>
+    </div>
+</div>
+
+{# Quick stats #}
+{% include "partials/stats_card.html" with label="Час в роботі" value="2 год" icon="clock" %}
+{% endblock %}

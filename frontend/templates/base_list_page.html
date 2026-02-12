@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% comment %}
+Base template for list/table pages with optional filters and actions.
+
+Required context:
+  - page_title: shown in nav and as h1 (optional, uses block)
+
+Blocks to override:
+  - page_header_actions: buttons in header (e.g. "+ Додати")
+  - filters: filter bar content
+  - list_content: main content (table, cards, etc.)
+  - list_footer: pagination, bulk actions
+  - empty_state: shown when no items
+
+Example usage:
+  {% extends "base_list_page.html" %}
+  {% block page_header_actions %}
+    <a href="{% url 'materials:create' %}" class="btn-primary">+ Додати</a>
+  {% endblock %}
+  {% block list_content %}
+    {% include "partials/data_table.html" with ... %}
+  {% endblock %}
+{% endcomment %}
+
+{% block content %}
+{% include "partials/messages.html" %}
+
+<div class="space-y-4">
+    {# Page header with title and actions #}
+    <div class="flex items-center justify-between gap-4">
+        <h1 class="text-xl font-semibold text-slate-900">
+            {% block page_title_text %}{{ page_title }}{% endblock %}
+        </h1>
+        <div class="flex items-center gap-2">
+            {% block page_header_actions %}{% endblock %}
+        </div>
+    </div>
+
+    {# Filters (search, dropdowns, etc.) #}
+    {% block filters %}{% endblock %}
+
+    {# Main content area #}
+    {% block list_wrapper %}
+    <div class="card">
+        {% block list_header %}{% endblock %}
+        {% block list_content %}{% endblock %}
+    </div>
+    {% endblock %}
+
+    {# Footer (pagination, bulk actions) #}
+    {% block list_footer %}{% endblock %}
+</div>
+{% endblock %}
