@@ -16,7 +16,7 @@ from apps.production.models import ProductionOrder, ProductionOrderStatusHistory
 if TYPE_CHECKING:
     from django.contrib.auth.models import AbstractBaseUser
 
-    from apps.catalog.models import Color, Product, Variant
+    from apps.catalog.models import Product, Variant
     from apps.materials.models import MaterialColor
     from apps.sales.models import SalesOrderLine
 
@@ -26,7 +26,6 @@ def create_production_order(
     *,
     product: "Product",
     variant: "Variant | None" = None,
-    color: "Color | None" = None,
     primary_material_color: "MaterialColor | None" = None,
     secondary_material_color: "MaterialColor | None" = None,
     is_embroidery: bool,
@@ -38,11 +37,20 @@ def create_production_order(
     sales_order_line: "SalesOrderLine | None" = None,
 ) -> ProductionOrder:
     if variant is None:
-        if color is None and primary_material_color is None:
-            raise ValueError("Order requires color or primary material color")
+        requires_primary_color = bool(
+            product.primary_material_id
+            and product.primary_material.colors.filter(archived_at__isnull=True).exists()
+        )
+        if requires_primary_color and primary_material_color is None:
+            raise ValueError("Order requires primary material color")
+        if (
+            primary_material_color is not None
+            and product.primary_material_id is not None
+            and primary_material_color.material_id != product.primary_material_id
+        ):
+            raise ValueError("Primary material color does not match product material")
         variant = resolve_or_create_variant(
             product_id=product.id,
-            color_id=color.id if color else None,
             primary_material_color_id=primary_material_color.id if primary_material_color else None,
             secondary_material_color_id=secondary_material_color.id if secondary_material_color else None,
         )

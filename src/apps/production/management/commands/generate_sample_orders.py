@@ -1,10 +1,11 @@
-"""Generate sample products, colors, and production orders for local development."""
+"""Generate sample products, primary colors, and production orders for local development."""
 
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
-from apps.catalog.models import Color, Product
+from apps.catalog.models import Product
 from apps.catalog.variants import resolve_or_create_variant
+from apps.materials.models import Material, MaterialColor
 from apps.production.domain.status import (
     STATUS_BLOCKED,
     STATUS_DECIDING,
@@ -17,7 +18,7 @@ from apps.production.models import ProductionOrder, ProductionOrderStatusHistory
 
 
 class Command(BaseCommand):
-    help = "Generate sample products, colors, and production orders for development."
+    help = "Generate sample products, primary colors, and production orders for development."
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -29,12 +30,12 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         count = options["count"]
-        self._ensure_products()
-        self._ensure_colors()
-        created = self._create_orders(count)
+        primary_material = self._ensure_primary_colors()
+        self._ensure_products(primary_material=primary_material)
+        created = self._create_orders(count=count, primary_material=primary_material)
         self.stdout.write(self.style.SUCCESS(f"Created {created} sample orders."))
 
-    def _ensure_products(self) -> None:
+    def _ensure_products(self, *, primary_material: Material) -> None:
         products_data = [
             "Сумка клатч",
             "Сумка на плече",
@@ -43,10 +44,17 @@ class Command(BaseCommand):
             "Косметичка",
         ]
         for name in products_data:
-            Product.objects.get_or_create(name=name)
+            product, _ = Product.objects.get_or_create(
+                name=name,
+                defaults={"primary_material": primary_material},
+            )
+            if product.primary_material_id is None:
+                product.primary_material = primary_material
+                product.save(update_fields=["primary_material"])
         self.stdout.write(f"Ensured {len(products_data)} products.")
 
-    def _ensure_colors(self) -> None:
+    def _ensure_primary_colors(self) -> Material:
+        material, _ = Material.objects.get_or_create(name="Повсть")
         colors_data = [
             ("Чорний", 1001),
             ("Білий", 1002),
@@ -57,12 +65,22 @@ class Command(BaseCommand):
             ("Коричневий", 1007),
         ]
         for name, code in colors_data:
-            Color.objects.get_or_create(code=code, defaults={"name": name})
-        self.stdout.write(f"Ensured {len(colors_data)} colors.")
+            MaterialColor.objects.get_or_create(
+                material=material,
+                code=code,
+                defaults={"name": name},
+            )
+        self.stdout.write(f"Ensured {len(colors_data)} primary colors.")
+        return material
 
-    def _create_orders(self, count: int) -> int:
+    def _create_orders(self, *, count: int, primary_material: Material) -> int:
         products = list(Product.objects.filter(archived_at__isnull=True).order_by("id"))
-        colors = list(Color.objects.all())
+        colors = list(
+            MaterialColor.objects.filter(
+                material=primary_material,
+                archived_at__isnull=True,
+            ).order_by("name")
+        )
         statuses = [
             STATUS_NEW,
             STATUS_NEW,
@@ -81,7 +99,7 @@ class Command(BaseCommand):
         ]
 
         if not products or not colors:
-            self.stdout.write(self.style.WARNING("No products or colors found."))
+            self.stdout.write(self.style.WARNING("No products or primary colors found."))
             return 0
 
         created = 0
@@ -90,7 +108,10 @@ class Command(BaseCommand):
             color = colors[i % len(colors)]
             status = statuses[i % len(statuses)]
             comment = comments[i % len(comments)]
-            variant = resolve_or_create_variant(product_id=product.id, color_id=color.id)
+            variant = resolve_or_create_variant(
+                product_id=product.id,
+                primary_material_color_id=color.id,
+            )
 
             order = ProductionOrder.objects.create(
                 product=product,

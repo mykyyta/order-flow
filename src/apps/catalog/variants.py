@@ -10,6 +10,9 @@ def resolve_or_create_variant(
     primary_material_color_id: int | None = None,
     secondary_material_color_id: int | None = None,
 ) -> Variant | None:
+    if secondary_material_color_id is not None and primary_material_color_id is None:
+        return None
+
     if color_id is not None:
         if primary_material_color_id is not None or secondary_material_color_id is not None:
             return None
@@ -23,7 +26,14 @@ def resolve_or_create_variant(
         return variant
 
     if primary_material_color_id is None:
-        return None
+        variant, _ = Variant.objects.get_or_create(
+            product_id=product_id,
+            color_id=None,
+            primary_material_color_id=None,
+            secondary_material_color_id=None,
+            defaults={"is_active": True},
+        )
+        return variant
 
     variant, _ = Variant.objects.get_or_create(
         product_id=product_id,

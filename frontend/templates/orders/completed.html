@@ -12,7 +12,7 @@
             type="text"
             name="q"
             value="{{ search_query }}"
-            placeholder="Пошук: №, модель, колір або коментар"
+            placeholder="Пошук: №, модель, основний колір або коментар"
             class="form-input"
         >
     </div>
@@ -38,7 +38,7 @@
                     <td class="text-slate-500">{{ order.id }}</td>
                     <td>
                         <a href="{% url 'order_detail' order.id %}" class="font-medium text-slate-800 hover:text-teal-600 transition-colors">
-                            {{ order.product.name }} · {% if order.variant and order.variant.color %}{{ order.variant.color.name }}{% else %}—{% endif %}
+                            {{ order.product.name }} · {% if order.variant %}{{ order.variant.display_color_label }}{% else %}—{% endif %}
                         </a>
                     </td>
                     <td class="text-slate-500">{{ order.finished_at|date:"d.m.Y H:i" }}</td>

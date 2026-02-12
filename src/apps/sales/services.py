@@ -100,7 +100,6 @@ def create_production_orders_for_sales_order(
                     create_production_order(
                         product=variant.product,
                         variant=variant,
-                        color=None,
                         is_embroidery=False,
                         is_urgent=False,
                         is_etsy=False,

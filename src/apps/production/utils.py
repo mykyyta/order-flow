@@ -42,9 +42,7 @@ def get_telegram_ids_for_group(group_name):
 
 
 def generate_order_details(order):
-    color_name = "-"
-    if order.variant and order.variant.color:
-        color_name = order.variant.color.name
+    color_name = order.variant.display_color_label() if order.variant else "-"
     details = f"{order.product.name}, {color_name}"
     additional = []
 

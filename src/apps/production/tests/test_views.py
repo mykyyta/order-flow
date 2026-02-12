@@ -158,11 +158,10 @@ def test_orders_create_hides_archived_catalog_items(client):
 
     active_model = ProductFactory(name="Active model")
     archived_model = ProductFactory(name="Archived model", archived_at=timezone.now())
-    active_color = ColorFactory(name="Active color", code=1001, status="in_stock")
+    active_color = ColorFactory(name="Active color", code=1001)
     archived_color = ColorFactory(
         name="Archived color",
         code=2002,
-        status="in_stock",
         archived_at=timezone.now(),
     )
 
@@ -180,7 +179,7 @@ def test_order_edit_includes_archived_model_and_color_in_dropdown(client):
     client.force_login(user, backend=AUTH_BACKEND)
 
     model = ProductFactory(name="Model to archive")
-    color = ColorFactory(name="Color to archive", code=888, status="in_stock")
+    color = ColorFactory(name="Color to archive", code=888)
     order = OrderFactory(product=model, color=color, status=STATUS_NEW)
 
     model.archived_at = timezone.now()
@@ -291,14 +290,14 @@ def test_orders_bulk_status_invalid_transition_shows_error(client):
 def test_orders_create_post_creates_order(client):
     user = UserFactory()
     client.force_login(user, backend=AUTH_BACKEND)
-    model = ProductFactory()
     color = ColorFactory()
+    model = ProductFactory(primary_material=color.material)
 
     response = client.post(
         reverse("orders_create"),
         data={
             "product": model.id,
-            "color": color.id,
+            "primary_material_color": color.id,
             "is_etsy": False,
             "is_embroidery": False,
             "is_urgent": False,
@@ -311,7 +310,7 @@ def test_orders_create_post_creates_order(client):
 
     order = ProductionOrder.objects.get(comment="Test order")
     assert order.product == model
-    assert order.variant.color == color
+    assert order.variant.primary_material_color == color
     assert order.status == STATUS_NEW
 
 
@@ -319,13 +318,14 @@ def test_orders_create_post_creates_order(client):
 def test_orders_create_post_without_color_shows_form_error(client):
     user = UserFactory()
     client.force_login(user, backend=AUTH_BACKEND)
-    model = ProductFactory()
+    color = ColorFactory()
+    model = ProductFactory(primary_material=color.material)
 
     response = client.post(
         reverse("orders_create"),
         data={
             "product": model.id,
-            "color": "",
+            "primary_material_color": "",
             "is_etsy": False,
             "is_embroidery": False,
             "is_urgent": False,
@@ -334,4 +334,25 @@ def test_orders_create_post_without_color_shows_form_error(client):
     )
 
     assert response.status_code == 200
-    assert "Обери колір".encode() in response.content
+    assert "Обери основний колір".encode() in response.content
+
+
+@pytest.mark.django_db(transaction=True)
+def test_orders_create_post_without_primary_color_is_allowed_for_model_without_primary_material(client):
+    user = UserFactory()
+    client.force_login(user, backend=AUTH_BACKEND)
+    model = ProductFactory(primary_material=None)
+
+    response = client.post(
+        reverse("orders_create"),
+        data={
+            "product": model.id,
+            "primary_material_color": "",
+            "is_etsy": False,
+            "is_embroidery": False,
+            "is_urgent": False,
+            "comment": "No primary material",
+        },
+    )
+
+    assert response.status_code == 302

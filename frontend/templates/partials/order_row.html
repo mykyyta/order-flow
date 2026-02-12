@@ -32,7 +32,7 @@
         >
             <div class="flex items-center gap-1.5 min-w-0">
                 <span class="truncate text-sm font-medium text-slate-800">
-                    {{ order.product.name }} · {% if order.variant and order.variant.color %}{{ order.variant.color.name }}{% else %}—{% endif %}
+                    {{ order.product.name }} · {% if order.variant %}{{ order.variant.display_color_label }}{% else %}—{% endif %}
                 </span>
                 {% include "partials/order_tags_icons.html" with order=order %}
             </div>

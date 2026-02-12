@@ -7,7 +7,7 @@ from django.urls import reverse, reverse_lazy
 from django.utils.timezone import localtime
 from django.views.decorators.http import require_POST
 
-from apps.catalog.models import Color, Product
+from apps.catalog.models import Product
 from apps.production.exceptions import InvalidStatusTransition
 from apps.production.forms import OrderForm, OrderStatusUpdateForm
 from apps.production.domain.order_statuses import (
@@ -44,7 +44,12 @@ def _filtered_current_orders_queryset(*, filter_value: str):
         output_field=IntegerField(),
     )
     queryset = (
-        ProductionOrder.objects.select_related("product", "variant", "variant__color")
+        ProductionOrder.objects.select_related(
+            "product",
+            "variant",
+            "variant__primary_material_color",
+            "variant__secondary_material_color",
+        )
         .exclude(status=STATUS_DONE)
         .annotate(_status_rank=status_rank)
         .order_by("_status_rank", "-created_at", "-id")
@@ -178,14 +183,20 @@ def orders_completed(request):
     search_query = (request.GET.get("q") or "").strip()
     orders = (
         ProductionOrder.objects.only("id", "finished_at", "product_id", "variant_id")
-        .select_related("product", "variant", "variant__color")
+        .select_related(
+            "product",
+            "variant",
+            "variant__primary_material_color",
+            "variant__secondary_material_color",
+        )
         .filter(status=STATUS_DONE)
         .order_by("-finished_at")
     )
     if search_query:
         search_filters = (
             Q(product__name__icontains=search_query)
-            | Q(variant__color__name__icontains=search_query)
+            | Q(variant__primary_material_color__name__icontains=search_query)
+            | Q(variant__secondary_material_color__name__icontains=search_query)
             | Q(comment__icontains=search_query)
         )
         if search_query.isdigit():
@@ -223,7 +234,7 @@ def orders_create(request):
             try:
                 create_production_order(
                     product=form.cleaned_data["product"],
-                    color=form.cleaned_data["color"],
+                    primary_material_color=form.cleaned_data["primary_material_color"],
                     is_etsy=form.cleaned_data["is_etsy"],
                     is_embroidery=form.cleaned_data["is_embroidery"],
                     is_urgent=form.cleaned_data["is_urgent"],
@@ -232,7 +243,7 @@ def orders_create(request):
                     orders_url=orders_url,
                 )
             except ValueError:
-                form.add_error("color", "Обери колір для замовлення.")
+                form.add_error("primary_material_color", "Обери основний колір для цієї моделі.")
                 context["form"] = form
                 return render(request, template_name, context)
             messages.success(request, "Готово! Замовлення створено.")
@@ -253,7 +264,7 @@ def order_detail(request, pk):
     order_data = {
         "id": order.id,
         "product": order.product.name,
-        "color": order.variant.color.name if order.variant and order.variant.color else "-",
+        "color": order.variant.display_color_label() if order.variant else "-",
         "is_embroidery": order.is_embroidery,
         "comment": order.comment,
         "is_urgent": order.is_urgent,
@@ -298,13 +309,8 @@ def order_edit(request, pk):
             return redirect("order_detail", pk=order.id)
     else:
         form = OrderForm(instance=order)
-    # Ensure current order color stays in dropdown even if out_of_stock
     form.fields["product"].queryset = Product.objects.filter(
         Q(archived_at__isnull=True) | Q(pk=order.product_id)
-    ).order_by("name")
-    order_color_id = order.variant.color_id if order.variant_id else None
-    form.fields["color"].queryset = Color.objects.filter(
-        Q(pk=order_color_id) | (Q(archived_at__isnull=True) & Q(status__in=["in_stock", "low_stock"]))
     ).order_by("name")
     return render(
         request,

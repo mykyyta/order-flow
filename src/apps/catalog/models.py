@@ -117,18 +117,21 @@ class Variant(models.Model):
                 ),
                 name="catalog_productvariant_primary_secondary_uniq",
             ),
+            models.UniqueConstraint(
+                fields=["product"],
+                condition=(
+                    models.Q(color__isnull=True)
+                    & models.Q(primary_material_color__isnull=True)
+                    & models.Q(secondary_material_color__isnull=True)
+                ),
+                name="catalog_productvariant_uncolored_uniq",
+            ),
             models.CheckConstraint(
                 condition=(
-                    (
-                        models.Q(color__isnull=False)
-                        & models.Q(primary_material_color__isnull=True)
-                    )
-                    | (
-                        models.Q(color__isnull=True)
-                        & models.Q(primary_material_color__isnull=False)
-                    )
+                    models.Q(color__isnull=True)
+                    | models.Q(primary_material_color__isnull=True)
                 ),
-                name="catalog_productvariant_color_xor_primary",
+                name="catalog_productvariant_color_primary_exclusive",
             ),
             models.CheckConstraint(
                 condition=(
@@ -146,9 +149,14 @@ class Variant(models.Model):
             if self.secondary_material_color:
                 return f"{self.product.name} ({primary_name} / {self.secondary_material_color.name})"
             return f"{self.product.name} ({primary_name})"
-        if self.color:
-            return f"{self.product.name} ({self.color.name})"
         return f"{self.product.name} (custom)"
+
+    def display_color_label(self) -> str:
+        if self.primary_material_color:
+            if self.secondary_material_color:
+                return f"{self.primary_material_color.name} / {self.secondary_material_color.name}"
+            return self.primary_material_color.name
+        return "-"
 
 
 class BundleComponent(models.Model):

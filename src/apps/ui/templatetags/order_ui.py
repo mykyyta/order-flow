@@ -28,7 +28,6 @@ NAV_ITEMS = [
         "label": "Моделі",
         "active_on": ("products", "product_edit", "products_archive"),
     },
-    {"url_name": "colors", "label": "Кольори", "active_on": ("colors", "color_edit", "colors_archive")},
     {
         "url_name": "materials",
         "label": "Матеріали",

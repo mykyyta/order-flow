@@ -4,7 +4,8 @@ from django.contrib.auth import get_user_model
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 
-from apps.catalog.models import Color, Product
+from apps.catalog.models import Product
+from apps.materials.models import Material, MaterialColor
 from apps.user_settings.models import NotificationSetting
 
 
@@ -70,6 +71,8 @@ class Command(BaseCommand):
         return user, created
 
     def _ensure_catalog(self) -> None:
+        primary_material, _ = Material.objects.get_or_create(name="Повсть")
+
         product_names = [
             "Сумка клатч",
             "Сумка на плече",
@@ -78,7 +81,13 @@ class Command(BaseCommand):
             "Косметичка",
         ]
         for name in product_names:
-            Product.objects.get_or_create(name=name)
+            product, _ = Product.objects.get_or_create(
+                name=name,
+                defaults={"primary_material": primary_material},
+            )
+            if product.primary_material_id is None:
+                product.primary_material = primary_material
+                product.save(update_fields=["primary_material"])
 
         color_values = [
             ("Чорний", 1001),
@@ -88,4 +97,8 @@ class Command(BaseCommand):
             ("Зелений", 1005),
         ]
         for name, code in color_values:
-            Color.objects.get_or_create(code=code, defaults={"name": name, "status": "in_stock"})
+            MaterialColor.objects.get_or_create(
+                material=primary_material,
+                code=code,
+                defaults={"name": name},
+            )

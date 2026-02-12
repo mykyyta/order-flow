@@ -16,8 +16,8 @@ from .conftest import ColorFactory, ProductFactory, UserFactory
 @pytest.mark.django_db
 def test_change_order_status_finished_adds_item_to_stock_for_customer_line():
     user = UserFactory()
-    model = ProductFactory(is_bundle=False)
     color = ColorFactory()
+    model = ProductFactory(is_bundle=False, primary_material=color.material)
     sales_order = SalesOrder.objects.create(
         source=SalesOrder.Source.WHOLESALE,
         customer_info="ТОВ Інтеграція",
@@ -25,14 +25,14 @@ def test_change_order_status_finished_adds_item_to_stock_for_customer_line():
     line = SalesOrderLine.objects.create(
         sales_order=sales_order,
         product=model,
-        variant=Variant.objects.create(product=model, color=color),
+        variant=Variant.objects.create(product=model, primary_material_color=color),
         quantity=1,
     )
 
     with patch("apps.production.services.send_order_created"), patch("apps.production.services.send_order_finished"):
         order = create_production_order(
             product=model,
-            color=color,
+            primary_material_color=color,
             is_embroidery=False,
             is_urgent=False,
             is_etsy=False,
@@ -85,7 +85,6 @@ def test_change_order_status_finished_uses_material_color_stock_key():
     with patch("apps.production.services.send_order_created"), patch("apps.production.services.send_order_finished"):
         order = create_production_order(
             product=product,
-            color=None,
             primary_material_color=blue,
             secondary_material_color=black,
             is_embroidery=False,

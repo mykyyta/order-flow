@@ -65,9 +65,7 @@ def send_order_finished(*, order: "ProductionOrder") -> None:
     for setting in users_to_notify:
         user = setting.user
         if user.telegram_id:
-            color_name = "-"
-            if order.variant and order.variant.color:
-                color_name = order.variant.color.name
+            color_name = order.variant.display_color_label() if order.variant else "-"
             message = f"Замовлення завершено: {order.product.name}, {color_name}."
             sent = send_tg_message(user.telegram_id, message)
             if sent:

@@ -3,10 +3,11 @@ from unittest.mock import patch
 import pytest
 from django.test import override_settings
 
-from apps.catalog.tests.conftest import ColorFactory, ProductFactory
 from apps.production.domain.status import STATUS_DONE
 from apps.accounts.tests.conftest import UserFactory
 from apps.production.services import change_production_order_status, create_production_order
+
+from .conftest import ColorFactory, ProductFactory
 
 
 @pytest.mark.django_db
@@ -18,7 +19,7 @@ def test_create_and_change_production_order_status_via_production_context():
     with patch("apps.production.services.send_order_created"), patch("apps.production.services.send_order_finished"):
         order = create_production_order(
             product=model,
-            color=color,
+            primary_material_color=color,
             is_embroidery=False,
             is_urgent=False,
             is_etsy=False,
@@ -46,7 +47,7 @@ def test_production_context_allows_writes_when_legacy_writes_are_frozen():
     with patch("apps.production.services.send_order_created"), patch("apps.production.services.send_order_finished"):
         order = create_production_order(
             product=model,
-            color=color,
+            primary_material_color=color,
             is_embroidery=False,
             is_urgent=False,
             is_etsy=False,

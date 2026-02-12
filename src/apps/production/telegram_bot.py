@@ -33,7 +33,10 @@ async def not_finished_orders(update: Update, context: ContextTypes.DEFAULT_TYPE
     """Handle /not_finished_orders command to retrieve unfinished orders from the database."""
     try:
         unfinished_orders = ProductionOrder.objects.exclude(status=STATUS_DONE).select_related(
-            "product", "variant", "variant__color"
+            "product",
+            "variant",
+            "variant__primary_material_color",
+            "variant__secondary_material_color",
         )
         if unfinished_orders.exists():
             response = "Here are your unfinished orders:\n"

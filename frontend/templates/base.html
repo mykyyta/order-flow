@@ -70,7 +70,7 @@
                 <div class="hidden md:flex md:items-center md:gap-0.5">
                     {% for item in nav_items %}
                     {% include "partials/nav_item.html" with url_name=item.url_name label=item.label is_active=item.is_active variant="desktop" %}
-                    {% if forloop.counter == 4 %}
+                    {% if item.url_name == "products" %}
                     <span class="mx-1.5 h-5 w-px bg-slate-200" aria-hidden="true"></span>
                     <a href="{% url 'orders_create' %}" class="btn-primary px-3 py-1.5">+ Нове замовлення</a>
                     <span class="mx-1.5 h-5 w-px bg-slate-200" aria-hidden="true"></span>
@@ -96,7 +96,7 @@
             <div class="space-y-1 px-4 pb-3 pt-2 sm:px-6">
                 {% for item in nav_items %}
                 {% include "partials/nav_item.html" with url_name=item.url_name label=item.label is_active=item.is_active variant="mobile" %}
-                {% if forloop.counter == 4 %}
+                {% if item.url_name == "products" %}
                 <div class="my-2 border-t border-slate-100"></div>
                 <a href="{% url 'orders_create' %}" class="btn-primary block px-3 py-2 {% if current_url == 'orders_create' %}ring-2 ring-slate-500/30{% endif %}">+ Нове замовлення</a>
                 <div class="my-2 border-t border-slate-100"></div>

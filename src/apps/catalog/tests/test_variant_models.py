@@ -20,8 +20,9 @@ def test_variant_unique_per_dimensions():
 
 
 @pytest.mark.django_db
-def test_variant_requires_color_or_primary_material_color():
+def test_variant_allows_single_uncolored_variant_per_product():
     product = ProductFactory()
+    Variant.objects.create(product=product)
 
     with pytest.raises(IntegrityError):
         Variant.objects.create(product=product)
