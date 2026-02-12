@@ -11,7 +11,7 @@
         {% if materials %}
         <div class="flex flex-wrap gap-2">
             {% for material in materials %}
-            <a href="{% url 'material_edit' material.id %}" class="catalog-chip-link catalog-chip-availability-in">{{ material.name }}</a>
+            <a href="{% url 'material_detail' material.id %}" class="catalog-chip-link catalog-chip-availability-in">{{ material.name }}</a>
             {% endfor %}
         </div>
         {% else %}

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% comment %}
+Simple child form page with title and close button.
+Used for adding/editing child objects (e.g. MaterialColor within Material).
+
+Required context:
+  - drawer_title: title shown in header
+  - back_url: URL to return to (parent page)
+
+Blocks to override:
+  - drawer_content: form and content
+  - drawer_footer: optional footer (danger actions like archive)
+
+Example:
+  {% extends "base_drawer_page.html" %}
+  {% block drawer_content %}
+    <form method="post" class="space-y-4">
+      {% csrf_token %}
+      {% include "partials/form_field.html" with field=form.name label="Назва" %}
+      <button type="submit" class="btn-primary w-full">Зберегти</button>
+    </form>
+  {% endblock %}
+{% endcomment %}
+
+{% block content %}
+{% include "partials/messages.html" %}
+<div class="mx-auto max-w-md">
+    <div class="card">
+        {# Header with title and close button #}
+        <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+            <h2 class="text-base font-semibold text-slate-900">
+                {% block drawer_title_text %}{{ drawer_title }}{% endblock %}
+            </h2>
+            <a href="{{ back_url }}" class="p-2 -m-2 text-slate-400 hover:text-slate-600 transition-colors" aria-label="Закрити">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </a>
+        </div>
+
+        {# Content #}
+        <div class="p-5">
+            {% block drawer_content %}{% endblock %}
+        </div>
+
+        {# Footer (optional, for danger actions) #}
+        {% block drawer_footer %}{% endblock %}
+    </div>
+</div>
+{% endblock %}

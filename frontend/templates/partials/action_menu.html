@@ -23,6 +23,7 @@ Parameters:
   - items: list of action items (see above)
   - label: button label (default: "Дії")
   - icon_only: show only icon, no label (default: False)
+  - icon_style: "vertical" (default) or "horizontal" dots
   - align: dropdown alignment "left" or "right" (default: "right")
   - size: "sm" or "md" (default: "md")
 {% endcomment %}
@@ -41,9 +42,15 @@ Parameters:
         aria-haspopup="true"
     >
         {% if not icon_only %}<span>{{ label|default:"Дії" }}</span>{% endif %}
-        <svg class="h-4 w-4 {% if icon_only %}{% else %}opacity-60{% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        {% if icon_style == "horizontal" %}
+        <svg class="h-4 w-4 {% if not icon_only %}opacity-60{% endif %}" fill="currentColor" viewBox="0 0 24 24">
+            <circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>
+        </svg>
+        {% else %}
+        <svg class="h-4 w-4 {% if not icon_only %}opacity-60{% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/>
         </svg>
+        {% endif %}
     </button>
 
     {# Dropdown panel #}

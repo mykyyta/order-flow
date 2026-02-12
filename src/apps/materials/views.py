@@ -2,14 +2,14 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.views import View
 from django.views.decorators.http import require_POST
-from django.views.generic import UpdateView
+from django.views.generic import CreateView, UpdateView
 
-from apps.materials.forms import MaterialForm
-from apps.materials.models import Material
+from apps.materials.forms import MaterialColorForm, MaterialForm
+from apps.materials.models import Material, MaterialColor
 
 
 class MaterialListCreateView(LoginRequiredMixin, View):
@@ -38,28 +38,44 @@ class MaterialListCreateView(LoginRequiredMixin, View):
         )
 
 
-class MaterialDetailUpdateView(LoginRequiredMixin, UpdateView):
+class MaterialDetailView(LoginRequiredMixin, UpdateView):
+    """Material detail page with inline name editing and colors list."""
+
     login_url = reverse_lazy("auth_login")
     model = Material
     form_class = MaterialForm
-    template_name = "materials/material_edit.html"
+    template_name = "materials/material_detail.html"
     context_object_name = "material"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["page_title"] = "Підправити матеріал"
-        context["object"] = self.object
-        context["form_id"] = "material-edit-form"
-        context["cancel_url"] = reverse_lazy("materials")
-        context["archive_url"] = reverse_lazy(
-            "material_archive", kwargs={"pk": self.object.pk}
-        )
-        context["unarchive_url"] = reverse_lazy(
-            "material_unarchive", kwargs={"pk": self.object.pk}
-        )
+        context["page_title"] = self.object.name
         context["back_url"] = reverse_lazy("materials")
-        context["back_label"] = "Назад до матеріалів"
-        context["archived_message"] = "Цей матеріал в архіві."
+        context["back_label"] = "Матеріали"
+
+        # Actions menu for material
+        actions = []
+        if self.object.archived_at:
+            actions.append({
+                "label": "Відновити",
+                "url": reverse("material_unarchive", kwargs={"pk": self.object.pk}),
+                "method": "post",
+                "icon": "restore",
+            })
+        else:
+            actions.append({
+                "label": "В архів",
+                "url": reverse("material_archive", kwargs={"pk": self.object.pk}),
+                "method": "post",
+                "icon": "archive",
+            })
+        context["actions"] = actions
+
+        # Colors list
+        context["colors"] = self.object.colors.filter(
+            archived_at__isnull=True
+        ).order_by("code", "name")
+
         return context
 
     def form_valid(self, form):
@@ -67,7 +83,7 @@ class MaterialDetailUpdateView(LoginRequiredMixin, UpdateView):
         return super().form_valid(form)
 
     def get_success_url(self):
-        return reverse_lazy("materials")
+        return reverse("material_detail", kwargs={"pk": self.object.pk})
 
 
 @login_required(login_url=reverse_lazy("auth_login"))
@@ -93,7 +109,7 @@ def material_archive(request, pk: int):
         material.archived_at = timezone.now()
         material.save(update_fields=["archived_at"])
         messages.success(request, "Готово! Матеріал відправлено в архів.")
-    return redirect("material_edit", pk=pk)
+    return redirect("material_detail", pk=pk)
 
 
 @login_required(login_url=reverse_lazy("auth_login"))
@@ -104,4 +120,80 @@ def material_unarchive(request, pk: int):
         material.archived_at = None
         material.save(update_fields=["archived_at"])
         messages.success(request, "Готово! Матеріал відновлено з архіву.")
-    return redirect("material_edit", pk=pk)
+    return redirect("material_detail", pk=pk)
+
+
+# Material Color views
+
+
+class MaterialColorCreateView(LoginRequiredMixin, CreateView):
+    """Drawer form for adding a new color to a material."""
+
+    login_url = reverse_lazy("auth_login")
+    model = MaterialColor
+    form_class = MaterialColorForm
+    template_name = "materials/color_drawer.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        self.material = get_object_or_404(Material, pk=kwargs["pk"])
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["drawer_title"] = "Новий колір"
+        context["back_url"] = reverse("material_detail", kwargs={"pk": self.material.pk})
+        context["material"] = self.material
+        context["color"] = None
+        return context
+
+    def form_valid(self, form):
+        form.instance.material = self.material
+        messages.success(self.request, "Готово! Колір додано.")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse("material_detail", kwargs={"pk": self.material.pk})
+
+
+class MaterialColorUpdateView(LoginRequiredMixin, UpdateView):
+    """Drawer form for editing a material color."""
+
+    login_url = reverse_lazy("auth_login")
+    model = MaterialColor
+    form_class = MaterialColorForm
+    template_name = "materials/color_drawer.html"
+    pk_url_kwarg = "color_pk"
+
+    def dispatch(self, request, *args, **kwargs):
+        self.material = get_object_or_404(Material, pk=kwargs["pk"])
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_queryset(self):
+        return MaterialColor.objects.filter(material=self.material)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["drawer_title"] = "Редагувати колір"
+        context["back_url"] = reverse("material_detail", kwargs={"pk": self.material.pk})
+        context["material"] = self.material
+        context["color"] = self.object
+        return context
+
+    def form_valid(self, form):
+        messages.success(self.request, "Готово! Колір оновлено.")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse("material_detail", kwargs={"pk": self.material.pk})
+
+
+@login_required(login_url=reverse_lazy("auth_login"))
+@require_POST
+def material_color_archive(request, pk: int, color_pk: int):
+    material = get_object_or_404(Material, pk=pk)
+    color = get_object_or_404(MaterialColor, pk=color_pk, material=material)
+    if color.archived_at is None:
+        color.archived_at = timezone.now()
+        color.save(update_fields=["archived_at"])
+        messages.success(request, "Готово! Колір відправлено в архів.")
+    return redirect("material_detail", pk=pk)

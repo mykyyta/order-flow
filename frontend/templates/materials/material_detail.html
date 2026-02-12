@@ -1,0 +1,56 @@
+{% extends "base_detail_page.html" %}
+
+{% block page_title_text %}{{ material.name }}{% endblock %}
+
+{% block page_header_actions %}
+{% include "partials/action_menu.html" with items=actions icon_only=True icon_style="horizontal" %}
+{% endblock %}
+
+{% block detail_layout %}{% endblock %}{# Single column on all screens #}
+
+{% block detail_content %}
+{# Main info form #}
+<div class="card">
+    <div class="p-4 sm:p-5">
+        {% if material.archived_at %}
+        <div class="alert alert-warning mb-4">Цей матеріал в архіві.</div>
+        {% endif %}
+
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            {% include "partials/form_field.html" with field=form.name label="Назва" %}
+            <button type="submit" class="btn-primary">Зберегти</button>
+        </form>
+    </div>
+</div>
+
+{# Colors section #}
+<div class="card mt-4">
+    <div class="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+        <h3 class="text-sm font-semibold text-slate-900">Кольори</h3>
+        <a href="{% url 'material_color_add' material.pk %}" class="text-sm font-medium text-teal-600 hover:text-teal-700">
+            + Додати
+        </a>
+    </div>
+
+    {% if colors %}
+    <ul class="divide-y divide-slate-100">
+        {% for color in colors %}
+        <a href="{% url 'material_color_edit' material.pk color.pk %}" class="flex items-center px-4 py-3 hover:bg-slate-50/80 transition-colors group">
+            <span class="text-xs font-mono text-slate-400 w-8">{{ color.code }}</span>
+            <span class="text-sm font-medium text-slate-900 flex-1 truncate">{{ color.name }}</span>
+            <svg class="w-4 h-4 text-slate-300 group-hover:text-slate-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+        </a>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <div class="px-4 py-8 text-center">
+        <p class="text-sm text-slate-500">Кольорів ще немає.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block detail_sidebar %}{% endblock %}{# No sidebar #}
