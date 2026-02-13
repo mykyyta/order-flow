@@ -3,6 +3,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const orderForm = document.querySelector("form[data-order-create-form]");
     const productSelectForm = document.querySelector("form[data-product-select-form]");
     const productSubmit = document.querySelector("[data-product-select-submit]");
+    const changeProductLink = document.querySelector("[data-change-product]");
 
     function isFormDirty(formEl) {
         if (!formEl) return false;
@@ -27,30 +28,11 @@ document.addEventListener("DOMContentLoaded", function () {
         return false;
     }
 
-    if (productSelect) {
-        let lastProductValue = (productSelect.value || "").trim();
-        productSelect.addEventListener("change", function () {
-            const nextValue = (productSelect.value || "").trim();
-            if (orderForm && isFormDirty(orderForm)) {
-                const ok = window.confirm("Введені дані буде втрачено. Продовжити?");
-                if (!ok) {
-                    productSelect.value = lastProductValue;
-                    return;
-                }
-            }
-
-            if (productSelectForm) {
-                productSelectForm.submit();
-            } else {
-                const url = new URL(window.location.href);
-                if (nextValue) {
-                    url.searchParams.set("product", nextValue);
-                } else {
-                    url.searchParams.delete("product");
-                }
-                window.location.href = url.toString();
-            }
-            lastProductValue = nextValue;
+    if (changeProductLink && orderForm) {
+        changeProductLink.addEventListener("click", function (event) {
+            if (!isFormDirty(orderForm)) return;
+            const ok = window.confirm("Введені дані буде втрачено. Продовжити?");
+            if (!ok) event.preventDefault();
         });
     }
 
@@ -58,22 +40,6 @@ document.addEventListener("DOMContentLoaded", function () {
         productSubmit.disabled = !(productSelect.value || "").trim();
         productSelect.addEventListener("change", function () {
             productSubmit.disabled = !(productSelect.value || "").trim();
-        });
-    }
-
-    const clearBtn = document.querySelector("[data-clear-colors]");
-    if (clearBtn && orderForm) {
-        clearBtn.addEventListener("click", function () {
-            const selects = orderForm.querySelectorAll(
-                'select[name="primary_material_color"],' +
-                    'select[name="secondary_material_color"],' +
-                    'select[name$="_primary_material_color"],' +
-                    'select[name$="_secondary_material_color"]'
-            );
-            selects.forEach(function (sel) {
-                sel.value = "";
-                sel.dispatchEvent(new Event("change", { bubbles: true }));
-            });
         });
     }
 
