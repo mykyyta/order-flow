@@ -5,6 +5,11 @@ from apps.materials.models import MaterialUnit
 
 
 class Product(models.Model):
+    class Kind(models.TextChoices):
+        STANDARD = "standard", "Звичайний"
+        COMPONENT = "component", "Компонент"
+        BUNDLE = "bundle", "Бандл"
+
     name = models.CharField(max_length=255, unique=True)
     section = models.CharField(max_length=255, blank=True, db_index=True)
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
@@ -14,7 +19,12 @@ class Product(models.Model):
         max_digits=10, decimal_places=2, null=True, blank=True
     )
     cost_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    is_bundle = models.BooleanField(default=False)
+    kind = models.CharField(
+        max_length=16,
+        choices=Kind.choices,
+        default=Kind.STANDARD,
+        db_index=True,
+    )
     primary_material = models.ForeignKey(
         "materials.Material",
         on_delete=models.PROTECT,
@@ -32,6 +42,10 @@ class Product(models.Model):
     archived_at = models.DateTimeField(null=True, blank=True, db_index=True)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
+
+    @property
+    def is_bundle(self) -> bool:
+        return self.kind == self.Kind.BUNDLE
 
     def __str__(self):
         return f"{self.name}"
@@ -230,13 +244,13 @@ class BundleComponent(models.Model):
         Product,
         on_delete=models.CASCADE,
         related_name="components",
-        limit_choices_to={"is_bundle": True},
+        limit_choices_to={"kind": Product.Kind.BUNDLE},
     )
     component = models.ForeignKey(
         Product,
         on_delete=models.CASCADE,
         related_name="part_of_bundles",
-        limit_choices_to={"is_bundle": False},
+        limit_choices_to=models.Q(kind=Product.Kind.STANDARD) | models.Q(kind=Product.Kind.COMPONENT),
     )
     is_primary = models.BooleanField(default=False)
     is_required = models.BooleanField(default=True)
@@ -256,7 +270,7 @@ class BundleColorMapping(models.Model):
         Product,
         on_delete=models.CASCADE,
         related_name="color_mappings",
-        limit_choices_to={"is_bundle": True},
+        limit_choices_to={"kind": Product.Kind.BUNDLE},
     )
     bundle_color = models.ForeignKey(
         Color,
@@ -267,7 +281,7 @@ class BundleColorMapping(models.Model):
         Product,
         on_delete=models.CASCADE,
         related_name="bundle_color_components",
-        limit_choices_to={"is_bundle": False},
+        limit_choices_to=models.Q(kind=Product.Kind.STANDARD) | models.Q(kind=Product.Kind.COMPONENT),
     )
     component_color = models.ForeignKey(
         Color,
@@ -290,7 +304,7 @@ class BundlePreset(models.Model):
         Product,
         on_delete=models.CASCADE,
         related_name="presets",
-        limit_choices_to={"is_bundle": True},
+        limit_choices_to={"kind": Product.Kind.BUNDLE},
     )
     name = models.CharField(max_length=255)
     archived_at = models.DateTimeField(null=True, blank=True, db_index=True)
@@ -315,7 +329,7 @@ class BundlePresetComponent(models.Model):
         Product,
         on_delete=models.CASCADE,
         related_name="bundle_presets",
-        limit_choices_to={"is_bundle": False},
+        limit_choices_to=models.Q(kind=Product.Kind.STANDARD) | models.Q(kind=Product.Kind.COMPONENT),
     )
     primary_material_color = models.ForeignKey(
         "materials.MaterialColor",

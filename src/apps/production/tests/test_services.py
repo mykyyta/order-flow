@@ -13,7 +13,7 @@ from .conftest import ColorFactory, ProductFactory
 @pytest.mark.django_db
 def test_create_and_change_production_order_status_via_production_context():
     user = UserFactory()
-    model = ProductFactory(is_bundle=False)
+    model = ProductFactory(kind="standard")
     color = ColorFactory()
 
     with patch("apps.production.services.send_order_created"), patch("apps.production.services.send_order_finished"):
@@ -41,7 +41,7 @@ def test_create_and_change_production_order_status_via_production_context():
 @override_settings(FREEZE_LEGACY_WRITES=True)
 def test_production_context_allows_writes_when_legacy_writes_are_frozen():
     user = UserFactory()
-    model = ProductFactory(is_bundle=False)
+    model = ProductFactory(kind="standard")
     color = ColorFactory()
 
     with patch("apps.production.services.send_order_created"), patch("apps.production.services.send_order_finished"):

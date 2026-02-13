@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 from django.db import transaction
 
 from apps.catalog.models import BundleColorMapping, BundleComponent, BundlePresetComponent
+from apps.catalog.models import Product
 from apps.catalog.variants import resolve_or_create_variant
 from apps.inventory.domain import VariantId, WarehouseId
 from apps.production.domain.status import STATUS_DONE
@@ -36,6 +37,9 @@ def create_sales_order(
 
     for line_data in lines_data:
         product_id = int(line_data["product_id"])
+        product = Product.objects.only("id", "kind").get(pk=product_id)
+        if product.kind == Product.Kind.COMPONENT:
+            raise ValueError("Цей продукт не можна продавати окремо. Використай його як компонент бандла.")
         variant_id = line_data.get("variant_id")
         if variant_id is None:
             variant = resolve_or_create_variant(

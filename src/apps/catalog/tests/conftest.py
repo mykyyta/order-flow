@@ -10,6 +10,7 @@ class ProductFactory(DjangoModelFactory):
         model = Product
 
     name = factory.Sequence(lambda n: f"Model {n}")
+    kind = Product.Kind.STANDARD
 
 
 class ColorFactory(DjangoModelFactory):

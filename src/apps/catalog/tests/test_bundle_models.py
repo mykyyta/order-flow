@@ -21,8 +21,8 @@ def test_product_is_bundle_defaults_to_false():
 
 @pytest.mark.django_db
 def test_bundle_component_unique_per_bundle_component_pair():
-    bundle = ProductFactory(is_bundle=True)
-    component = ProductFactory(is_bundle=False)
+    bundle = ProductFactory(kind="bundle")
+    component = ProductFactory(kind="standard")
 
     BundleComponent.objects.create(
         bundle=bundle,
@@ -42,8 +42,8 @@ def test_bundle_component_unique_per_bundle_component_pair():
 
 @pytest.mark.django_db
 def test_bundle_component_has_required_flag_and_optional_group():
-    bundle = ProductFactory(is_bundle=True)
-    component = ProductFactory(is_bundle=False)
+    bundle = ProductFactory(kind="bundle")
+    component = ProductFactory(kind="standard")
 
     relation = BundleComponent.objects.create(
         bundle=bundle,
@@ -58,8 +58,8 @@ def test_bundle_component_has_required_flag_and_optional_group():
 
 @pytest.mark.django_db
 def test_bundle_color_mapping_unique_per_bundle_color_component():
-    bundle = ProductFactory(is_bundle=True)
-    component = ProductFactory(is_bundle=False)
+    bundle = ProductFactory(kind="bundle")
+    component = ProductFactory(kind="standard")
     bundle_color = ColorFactory()
     component_color = ColorFactory()
 
@@ -85,7 +85,7 @@ def test_product_supports_primary_and_secondary_materials():
     leather = Material.objects.create(name="Leather smooth")
 
     product = ProductFactory(
-        is_bundle=False,
+        kind="standard",
         primary_material=felt,
         secondary_material=leather,
     )
@@ -100,8 +100,8 @@ def test_bundle_preset_component_unique_per_component():
     leather = Material.objects.create(name="Leather")
     black_felt = MaterialColor.objects.create(material=felt, name="Black", code=1)
     black_leather = MaterialColor.objects.create(material=leather, name="Black", code=1)
-    bundle = ProductFactory(is_bundle=True)
-    component = ProductFactory(is_bundle=False)
+    bundle = ProductFactory(kind="bundle")
+    component = ProductFactory(kind="standard")
     preset = BundlePreset.objects.create(bundle=bundle, name="Total black")
 
     BundlePresetComponent.objects.create(

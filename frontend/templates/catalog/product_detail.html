@@ -24,15 +24,9 @@
                 <h2 class="text-sm font-semibold text-slate-900">{{ group.title }}</h2>
                 <div class="mt-4 space-y-4">
                     {% for field_name in group.fields %}
-                        {% if field_name == "is_bundle" %}
-                        <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
-                            {% include "partials/form_checkbox_option.html" with field=form.is_bundle label=form.is_bundle.label %}
-                        </div>
-                        {% else %}
-                        {% with bf=form|get_form_field:field_name %}
-                        {% include "partials/form_field.html" with field=bf label=bf.label %}
-                        {% endwith %}
-                        {% endif %}
+                    {% with bf=form|get_form_field:field_name %}
+                    {% include "partials/form_field.html" with field=bf label=bf.label %}
+                    {% endwith %}
                     {% endfor %}
                 </div>
             </section>
@@ -46,9 +40,11 @@
 <div class="card mt-4">
     <div class="flex items-center justify-between px-4 py-3 border-b border-slate-100">
         <h3 class="text-sm font-semibold text-slate-900">Матеріали моделі</h3>
+        {% if product_material_add_url %}
         <a href="{{ product_material_add_url }}" class="text-sm font-medium text-teal-600 hover:text-teal-700">
             + Додати
         </a>
+        {% endif %}
     </div>
 
     {% if product_materials %}
@@ -77,7 +73,13 @@
     </ul>
     {% else %}
     <div class="px-4 py-8 text-center">
+        {% if product.kind == "bundle" %}
+        <p class="text-sm text-slate-500">
+            Для бандлів матеріали задаються на рівні компонентів.
+        </p>
+        {% else %}
         <p class="text-sm text-slate-500">Матеріалів ще немає.</p>
+        {% endif %}
     </div>
     {% endif %}
 </div>

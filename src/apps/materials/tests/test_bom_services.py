@@ -14,7 +14,7 @@ from apps.sales.models import SalesOrder, SalesOrderLine
 def test_calculate_material_requirements_for_single_product_line():
     felt = Material.objects.create(name="Felt")
     leather = Material.objects.create(name="Leather smooth")
-    product = ProductFactory(name="Shopper", is_bundle=False)
+    product = ProductFactory(name="Shopper", kind="standard")
     color = ColorFactory()
     ProductMaterial.objects.create(
         product=product,
@@ -51,9 +51,9 @@ def test_calculate_material_requirements_for_single_product_line():
 def test_calculate_material_requirements_for_bundle_line():
     felt = Material.objects.create(name="Felt")
     leather = Material.objects.create(name="Leather smooth")
-    bundle = ProductFactory(name="Set", is_bundle=True)
-    clutch = ProductFactory(name="Clutch", is_bundle=False)
-    strap = ProductFactory(name="Strap", is_bundle=False)
+    bundle = ProductFactory(name="Set", kind="bundle")
+    clutch = ProductFactory(name="Clutch", kind="standard")
+    strap = ProductFactory(name="Strap", kind="standard")
     color = ColorFactory()
     BundleComponent.objects.create(bundle=bundle, component=clutch, quantity=1, is_primary=True)
     BundleComponent.objects.create(bundle=bundle, component=strap, quantity=2, is_primary=False)

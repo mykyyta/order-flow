@@ -11,7 +11,7 @@ from apps.warehouses.services import get_default_warehouse
 
 @pytest.mark.django_db
 def test_add_to_wip_stock_creates_record_and_movement():
-    model = ProductFactory(is_bundle=False)
+    model = ProductFactory(kind="standard")
     color = ColorFactory()
     variant = Variant.objects.create(product=model, color=color)
     user = UserFactory()
@@ -35,7 +35,7 @@ def test_add_to_wip_stock_creates_record_and_movement():
 
 @pytest.mark.django_db
 def test_remove_from_wip_stock_updates_quantity_and_movement():
-    model = ProductFactory(is_bundle=False)
+    model = ProductFactory(kind="standard")
     color = ColorFactory()
     variant = Variant.objects.create(product=model, color=color)
     user = UserFactory()
@@ -61,7 +61,7 @@ def test_remove_from_wip_stock_updates_quantity_and_movement():
 
 @pytest.mark.django_db
 def test_remove_from_wip_stock_fails_when_not_enough():
-    model = ProductFactory(is_bundle=False)
+    model = ProductFactory(kind="standard")
     color = ColorFactory()
     variant = Variant.objects.create(product=model, color=color)
     user = UserFactory()
@@ -87,7 +87,7 @@ def test_remove_from_wip_stock_fails_when_not_enough():
 
 @pytest.mark.django_db
 def test_wip_stock_split_by_warehouse():
-    model = ProductFactory(is_bundle=False)
+    model = ProductFactory(kind="standard")
     color = ColorFactory()
     variant = Variant.objects.create(product=model, color=color)
     user = UserFactory()

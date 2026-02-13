@@ -221,17 +221,21 @@ class ProductDetailUpdateView(LoginRequiredMixin, UpdateView):
 
         context["field_groups"] = [
             {"title": "Основне", "fields": ["name", "section"]},
-            {"title": "Інше", "fields": ["is_bundle"]},
+            {"title": "Інше", "fields": ["kind"]},
         ]
 
-        context["product_materials"] = (
-            ProductMaterial.objects.filter(product=self.object)
-            .select_related("material")
-            .order_by("sort_order", "id")
-        )
-        context["product_material_add_url"] = reverse(
-            "product_material_add", kwargs={"pk": self.object.pk}
-        )
+        if self.object.kind == Product.Kind.BUNDLE:
+            context["product_materials"] = []
+            context["product_material_add_url"] = None
+        else:
+            context["product_materials"] = (
+                ProductMaterial.objects.filter(product=self.object)
+                .select_related("material")
+                .order_by("sort_order", "id")
+            )
+            context["product_material_add_url"] = reverse(
+                "product_material_add", kwargs={"pk": self.object.pk}
+            )
         return context
 
     def form_valid(self, form):

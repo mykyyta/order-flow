@@ -60,18 +60,33 @@ class ProductDetailForm(forms.ModelForm):
         fields = [
             "name",
             "section",
-            "is_bundle",
+            "kind",
         ]
         labels = {
             "name": "Назва",
             "section": "Секція",
-            "is_bundle": "Бандл",
+            "kind": "Тип",
         }
         widgets = {
             "name": forms.TextInput(attrs={"class": FORM_INPUT}),
             "section": forms.TextInput(attrs={"class": FORM_INPUT, "placeholder": "Напр. сумки"}),
-            "is_bundle": forms.CheckboxInput(attrs={"class": FORM_CHECKBOX}),
+            "kind": forms.Select(attrs={"class": FORM_SELECT}),
         }
+
+    def clean(self):
+        cleaned = super().clean()
+        kind = cleaned.get("kind")
+        if (
+            kind == Product.Kind.BUNDLE
+            and self.instance
+            and self.instance.pk
+            and ProductMaterial.objects.filter(product=self.instance).exists()
+        ):
+            self.add_error(
+                "kind",
+                "Для бандла матеріали не задаються. Видали матеріали або зміни тип продукту.",
+            )
+        return cleaned
 
 
 # Backwards-compat import name used in older tests/callers.
@@ -117,6 +132,14 @@ class ProductMaterialForm(forms.ModelForm):
         quantity_per_unit = cleaned.get("quantity_per_unit")
         unit = cleaned.get("unit")
         cleaned["role"] = role
+
+        if self.product and self.product.kind == Product.Kind.BUNDLE:
+            self.add_error(
+                "material",
+                "Для бандлів матеріали не задаються. Додай матеріали для компонентів бандла.",
+            )
+            return cleaned
+
         if (
             self.product
             and material

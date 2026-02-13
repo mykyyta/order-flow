@@ -17,7 +17,7 @@ from .conftest import ColorFactory, ProductFactory, UserFactory
 def test_change_order_status_finished_adds_item_to_stock_for_customer_line():
     user = UserFactory()
     color = ColorFactory()
-    model = ProductFactory(is_bundle=False, primary_material=color.material)
+    model = ProductFactory(kind="standard", primary_material=color.material)
     sales_order = SalesOrder.objects.create(
         source=SalesOrder.Source.WHOLESALE,
         customer_info="ТОВ Інтеграція",
@@ -63,7 +63,7 @@ def test_change_order_status_finished_uses_material_color_stock_key():
     blue = MaterialColor.objects.create(material=felt, name="Blue", code=77)
     black = MaterialColor.objects.create(material=leather, name="Black", code=7)
     product = ProductFactory(
-        is_bundle=False,
+        kind="standard",
         primary_material=felt,
         secondary_material=leather,
     )

@@ -35,7 +35,7 @@ from apps.warehouses.services import get_default_warehouse
 @pytest.mark.django_db
 def test_create_sales_order_orchestrated_creates_sales_order():
     user = UserFactory()
-    model = ProductFactory(is_bundle=False)
+    model = ProductFactory(kind="standard")
     color = ColorFactory()
 
     order = create_sales_order_orchestrated(
@@ -57,7 +57,7 @@ def test_create_sales_order_orchestrated_creates_sales_order():
 @pytest.mark.django_db
 def test_create_production_orders_for_sales_order_orchestrated():
     user = UserFactory()
-    model = ProductFactory(is_bundle=False)
+    model = ProductFactory(kind="standard")
     color = ColorFactory()
     order = create_sales_order_orchestrated(
         source=SalesOrder.Source.WHOLESALE,
@@ -112,7 +112,7 @@ def test_receive_purchase_order_line_orchestrated_updates_received_quantity():
 @pytest.mark.django_db
 def test_complete_production_order_orchestrated():
     user = UserFactory()
-    model = ProductFactory(is_bundle=False)
+    model = ProductFactory(kind="standard")
     color = ColorFactory()
     with patch("apps.production.services.send_order_created"), patch("apps.production.services.send_order_finished"):
         order = create_production_orders_for_sales_order(
@@ -139,7 +139,7 @@ def test_complete_production_order_orchestrated():
 @pytest.mark.django_db
 def test_scrap_wip_orchestrated():
     user = UserFactory()
-    model = ProductFactory(is_bundle=False)
+    model = ProductFactory(kind="standard")
     variant = Variant.objects.create(product=model, color=ColorFactory())
     warehouse = get_default_warehouse()
     add_to_wip_stock(
@@ -163,7 +163,7 @@ def test_scrap_wip_orchestrated():
 @pytest.mark.django_db
 def test_transfer_finished_stock_orchestrated():
     user = UserFactory()
-    model = ProductFactory(is_bundle=False)
+    model = ProductFactory(kind="standard")
     variant = Variant.objects.create(product=model, color=ColorFactory())
     from_warehouse = Warehouse.objects.create(
         name="From Fulfillment Finished",

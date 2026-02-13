@@ -80,7 +80,7 @@ def test_verify_mode_returns_finished_balance_by_warehouse():
         is_default_for_production=False,
         is_active=True,
     )
-    product = ProductFactory(is_bundle=False)
+    product = ProductFactory(kind="standard")
     color = ColorFactory()
     variant = Variant.objects.create(product=product, color=color)
     stock_record = ProductStock.objects.create(
@@ -164,7 +164,7 @@ def test_verify_mode_strict_fails_when_deltas_are_non_zero():
         is_default_for_production=False,
         is_active=True,
     )
-    product = ProductFactory(is_bundle=False)
+    product = ProductFactory(kind="standard")
     color = ColorFactory()
     variant = Variant.objects.create(product=product, color=color)
     ProductStock.objects.create(
@@ -224,7 +224,7 @@ def test_run_final_import_and_verify_fails_when_verify_checks_fail():
         is_default_for_production=False,
         is_active=True,
     )
-    product = ProductFactory(is_bundle=False)
+    product = ProductFactory(kind="standard")
     color = ColorFactory()
     variant = Variant.objects.create(product=product, color=color)
     ProductStock.objects.create(

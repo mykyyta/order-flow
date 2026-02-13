@@ -50,7 +50,7 @@ def test_finished_stock_transfer_line_unique_variant_per_transfer():
         created_by=user,
     )
     variant = Variant.objects.create(
-        product=ProductFactory(is_bundle=False),
+        product=ProductFactory(kind="standard"),
         color=ColorFactory(),
     )
 
