@@ -156,16 +156,17 @@ def test_orders_create_hides_archived_catalog_items(client):
     user = UserFactory()
     client.force_login(user, backend=AUTH_BACKEND)
 
-    active_model = ProductFactory(name="Active model")
-    archived_model = ProductFactory(name="Archived model", archived_at=timezone.now())
     active_color = ColorFactory(name="Active color", code=1001)
+    active_model = ProductFactory(name="Active model", primary_material=active_color.material)
+    archived_model = ProductFactory(name="Archived model", archived_at=timezone.now())
     archived_color = ColorFactory(
+        material=active_color.material,
         name="Archived color",
         code=2002,
         archived_at=timezone.now(),
     )
 
-    response = client.get(reverse("orders_create"))
+    response = client.get(reverse("orders_create"), {"product": active_model.id})
     assert response.status_code == 200
     assert active_model.name.encode() in response.content
     assert archived_model.name.encode() not in response.content

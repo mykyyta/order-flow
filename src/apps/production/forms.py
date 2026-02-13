@@ -72,6 +72,7 @@ class OrderForm(forms.ModelForm):
         self.selected_product: Product | None = None
         self.is_bundle_mode = False
         self.bundle_component_rows: list[dict[str, object]] = []
+        self.show_secondary_material_color = False
         self.fields["product"].empty_label = "—"
         self.fields["primary_material_color"].empty_label = "—"
         self.fields["secondary_material_color"].empty_label = "—"
@@ -101,6 +102,12 @@ class OrderForm(forms.ModelForm):
         self.fields["secondary_material_color"].queryset = self._secondary_color_queryset(
             product=self.selected_product
         )
+        if (
+            self.selected_product
+            and self.selected_product.secondary_material_id
+            and self.fields["secondary_material_color"].queryset.exists()
+        ):
+            self.show_secondary_material_color = True
 
         if self.selected_product and self.selected_product.kind == Product.Kind.BUNDLE:
             self.is_bundle_mode = True
@@ -169,6 +176,7 @@ class OrderForm(forms.ModelForm):
             primary_field_name = f"bundle_component_{bc.pk}_primary_material_color"
             secondary_field_name = f"bundle_component_{bc.pk}_secondary_material_color"
             embroidery_field_name = f"bundle_component_{bc.pk}_is_embroidery"
+            secondary_qs = self._secondary_color_queryset(product=component)
 
             self.fields[primary_field_name] = PrimaryMaterialColorChoiceField(
                 queryset=self._primary_color_queryset(product=component),
@@ -177,7 +185,7 @@ class OrderForm(forms.ModelForm):
                 label="Основний колір",
             )
             self.fields[secondary_field_name] = SecondaryMaterialColorChoiceField(
-                queryset=self._secondary_color_queryset(product=component),
+                queryset=secondary_qs,
                 required=False,
                 widget=forms.Select(attrs={"class": FORM_SELECT}),
                 label="Другорядний колір",
@@ -201,6 +209,7 @@ class OrderForm(forms.ModelForm):
                     "primary_field_name": primary_field_name,
                     "secondary_field_name": secondary_field_name,
                     "embroidery_field_name": embroidery_field_name if component.allows_embroidery else None,
+                    "show_secondary": bool(component.secondary_material_id and secondary_qs.exists()),
                 }
             )
 
