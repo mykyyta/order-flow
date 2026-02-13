@@ -14,6 +14,10 @@
         {% if form.is_bundle_mode %}
         <div class="rounded-lg border border-slate-100 p-4 space-y-4">
             <h2 class="text-sm font-semibold text-slate-900">Кольори компонентів</h2>
+            <div class="flex items-center justify-between gap-3">
+                <p class="text-sm text-slate-500">Обери кольори для кожного компонента.</p>
+                <button type="button" class="btn-secondary" data-clear-colors>Очистити всі кольори</button>
+            </div>
             {% if form.bundle_component_rows %}
             <div class="space-y-4">
                 {% for row in form.bundle_component_rows %}
@@ -29,6 +33,13 @@
                         {% with bf=form|get_form_field:row.secondary_field_name %}
                         {% include "partials/form_field.html" with field=bf label="Другорядний колір" %}
                         {% endwith %}
+                        {% if row.embroidery_field_name %}
+                        {% with bf=form|get_form_field:row.embroidery_field_name %}
+                        <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
+                            {% include "partials/form_checkbox_option.html" with field=bf label="Вишивка" %}
+                        </div>
+                        {% endwith %}
+                        {% endif %}
                     </div>
                 </section>
                 {% endfor %}
@@ -38,13 +49,19 @@
             {% endif %}
         </div>
         {% else %}
+        <div class="flex items-center justify-between gap-3">
+            <p class="text-sm text-slate-500">Обери кольори для замовлення.</p>
+            <button type="button" class="btn-secondary" data-clear-colors>Очистити всі кольори</button>
+        </div>
         {% include "partials/form_field.html" with field=form.primary_material_color label="Основний колір" %}
         {% include "partials/form_field.html" with field=form.secondary_material_color label="Другорядний колір" %}
         {% endif %}
 
         <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
             {% include "partials/form_checkbox_option.html" with field=form.is_etsy label="Etsy" %}
+            {% if not form.is_bundle_mode and form.selected_product and form.selected_product.allows_embroidery %}
             {% include "partials/form_checkbox_option.html" with field=form.is_embroidery label="Вишивка" %}
+            {% endif %}
             {% include "partials/form_checkbox_option.html" with field=form.is_urgent label="Терміново" %}
             {% if form.is_etsy.errors or form.is_embroidery.errors or form.is_urgent.errors %}
             <p class="form-error w-full">{{ form.is_etsy.errors.0|default:form.is_embroidery.errors.0|default:form.is_urgent.errors.0 }}</p>

@@ -25,9 +25,19 @@
                 <h2 class="text-sm font-semibold text-slate-900">{{ group.title }}</h2>
                 <div class="mt-4 space-y-4">
                     {% for field_name in group.fields %}
+                    {% if field_name == "allows_embroidery" and product.kind == "bundle" %}
+                    {# Embroidery is configured on components for bundles #}
+                    {% else %}
                     {% with bf=form|get_form_field:field_name %}
+                    {% if bf.field.widget.input_type == "checkbox" %}
+                    <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
+                        {% include "partials/form_checkbox_option.html" with field=bf label=bf.label %}
+                    </div>
+                    {% else %}
                     {% include "partials/form_field.html" with field=bf label=bf.label %}
+                    {% endif %}
                     {% endwith %}
+                    {% endif %}
                     {% endfor %}
                 </div>
             </section>

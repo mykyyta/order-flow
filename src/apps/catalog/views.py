@@ -220,7 +220,7 @@ class ProductDetailUpdateView(LoginRequiredMixin, UpdateView):
         context["actions"] = actions
 
         context["field_groups"] = [
-            {"title": "Основне", "fields": ["name", "kind", "section"]},
+            {"title": "Основне", "fields": ["name", "kind", "allows_embroidery", "section"]},
         ]
 
         # Materials are not allowed for bundles, but we still show existing records (if any)

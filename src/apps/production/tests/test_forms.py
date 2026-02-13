@@ -34,4 +34,5 @@ def test_order_form_product_and_primary_color_have_named_placeholders_and_sorted
 
     color_html = str(form["primary_material_color"])
     assert 'option value=""' in color_html
-    assert "disabled" in color_html
+    # Color selects must allow clearing (used by "Очистити всі кольори" action in UI).
+    assert "disabled" not in color_html

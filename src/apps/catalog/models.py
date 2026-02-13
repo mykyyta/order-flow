@@ -25,6 +25,7 @@ class Product(models.Model):
         default=Kind.STANDARD,
         db_index=True,
     )
+    allows_embroidery = models.BooleanField(default=True)
     primary_material = models.ForeignKey(
         "materials.Material",
         on_delete=models.PROTECT,

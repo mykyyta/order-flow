@@ -61,16 +61,19 @@ class ProductDetailForm(forms.ModelForm):
             "name",
             "section",
             "kind",
+            "allows_embroidery",
         ]
         labels = {
             "name": "Назва",
             "section": "Секція",
             "kind": "Тип",
+            "allows_embroidery": "Вишивка",
         }
         widgets = {
             "name": forms.TextInput(attrs={"class": FORM_INPUT}),
             "section": forms.TextInput(attrs={"class": FORM_INPUT, "placeholder": "Напр. сумки"}),
             "kind": forms.Select(attrs={"class": FORM_SELECT}),
+            "allows_embroidery": forms.CheckboxInput(attrs={"class": FORM_CHECKBOX}),
         }
 
     def clean(self):

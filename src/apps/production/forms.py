@@ -42,12 +42,12 @@ class OrderForm(forms.ModelForm):
     primary_material_color = PrimaryMaterialColorChoiceField(
         queryset=MaterialColor.objects.none(),
         required=False,
-        widget=HiddenEmptyOptionSelect(attrs={"class": FORM_SELECT}),
+        widget=forms.Select(attrs={"class": FORM_SELECT}),
     )
     secondary_material_color = SecondaryMaterialColorChoiceField(
         queryset=MaterialColor.objects.none(),
         required=False,
-        widget=HiddenEmptyOptionSelect(attrs={"class": FORM_SELECT}),
+        widget=forms.Select(attrs={"class": FORM_SELECT}),
     )
 
     class Meta:
@@ -105,6 +105,14 @@ class OrderForm(forms.ModelForm):
         if self.selected_product and self.selected_product.kind == Product.Kind.BUNDLE:
             self.is_bundle_mode = True
             self._init_bundle_component_color_fields(bundle=self.selected_product)
+        elif (
+            self.selected_product
+            and not self.selected_product.allows_embroidery
+            and not (self.instance and self.instance.pk)
+        ):
+            # Don't allow setting embroidery for products that don't support it.
+            self.fields["is_embroidery"].disabled = True
+            self.initial["is_embroidery"] = False
 
         if self.instance and self.instance.pk and self.instance.variant_id:
             self.initial["product"] = self.instance.product_id
@@ -160,21 +168,30 @@ class OrderForm(forms.ModelForm):
             component = bc.component
             primary_field_name = f"bundle_component_{bc.pk}_primary_material_color"
             secondary_field_name = f"bundle_component_{bc.pk}_secondary_material_color"
+            embroidery_field_name = f"bundle_component_{bc.pk}_is_embroidery"
 
             self.fields[primary_field_name] = PrimaryMaterialColorChoiceField(
                 queryset=self._primary_color_queryset(product=component),
                 required=False,
-                widget=HiddenEmptyOptionSelect(attrs={"class": FORM_SELECT}),
+                widget=forms.Select(attrs={"class": FORM_SELECT}),
                 label="Основний колір",
             )
             self.fields[secondary_field_name] = SecondaryMaterialColorChoiceField(
                 queryset=self._secondary_color_queryset(product=component),
                 required=False,
-                widget=HiddenEmptyOptionSelect(attrs={"class": FORM_SELECT}),
+                widget=forms.Select(attrs={"class": FORM_SELECT}),
                 label="Другорядний колір",
             )
             self.fields[primary_field_name].empty_label = "—"
             self.fields[secondary_field_name].empty_label = "—"
+
+            if component.allows_embroidery:
+                self.fields[embroidery_field_name] = forms.BooleanField(
+                    required=False,
+                    initial=False,
+                    widget=forms.CheckboxInput(attrs={"class": FORM_CHECKBOX}),
+                    label="Вишивка",
+                )
 
             self.bundle_component_rows.append(
                 {
@@ -183,6 +200,7 @@ class OrderForm(forms.ModelForm):
                     "quantity": bc.quantity,
                     "primary_field_name": primary_field_name,
                     "secondary_field_name": secondary_field_name,
+                    "embroidery_field_name": embroidery_field_name if component.allows_embroidery else None,
                 }
             )
 
@@ -191,6 +209,8 @@ class OrderForm(forms.ModelForm):
         product = cleaned_data.get("product")
         primary_material_color = cleaned_data.get("primary_material_color")
         secondary_material_color = cleaned_data.get("secondary_material_color")
+        if product and not product.allows_embroidery and not (self.instance and self.instance.pk):
+            cleaned_data["is_embroidery"] = False
         if not product:
             return cleaned_data
 
@@ -198,6 +218,9 @@ class OrderForm(forms.ModelForm):
             return cleaned_data
 
         if product.kind == Product.Kind.BUNDLE:
+            if not self.bundle_component_rows:
+                self.add_error("product", "Спочатку додай компоненти в бандл.")
+                return cleaned_data
             self._clean_bundle_component_colors(bundle=product, cleaned_data=cleaned_data)
             return cleaned_data
 

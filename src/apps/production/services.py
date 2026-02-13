@@ -36,6 +36,8 @@ def create_production_order(
     orders_url: str | None,
     sales_order_line: "SalesOrderLine | None" = None,
 ) -> ProductionOrder:
+    if product.kind == product.Kind.BUNDLE:
+        raise ValueError("Bundle products cannot be produced directly")
     if variant is None:
         requires_primary_color = bool(
             product.primary_material_id

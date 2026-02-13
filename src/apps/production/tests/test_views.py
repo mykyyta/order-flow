@@ -418,8 +418,18 @@ def test_orders_create_post_for_bundle_creates_component_orders(client):
     bag_color = ColorFactory(material=bag_material, name="Bag color", code=1111)
     strap_color = ColorFactory(material=strap_material, name="Strap color", code=2222)
 
-    bag = ProductFactory(name="Bag", primary_material=bag_material, kind="standard")
-    strap = ProductFactory(name="Strap", primary_material=strap_material, kind="component")
+    bag = ProductFactory(
+        name="Bag",
+        primary_material=bag_material,
+        kind="standard",
+        allows_embroidery=False,
+    )
+    strap = ProductFactory(
+        name="Strap",
+        primary_material=strap_material,
+        kind="component",
+        allows_embroidery=True,
+    )
     bundle = ProductFactory(name="Bag + Strap", kind="bundle", primary_material=None)
 
     bc_bag = BundleComponent.objects.create(bundle=bundle, component=bag, quantity=1, is_primary=True)
@@ -431,6 +441,7 @@ def test_orders_create_post_for_bundle_creates_component_orders(client):
             "product": bundle.id,
             f"bundle_component_{bc_bag.pk}_primary_material_color": bag_color.id,
             f"bundle_component_{bc_strap.pk}_primary_material_color": strap_color.id,
+            f"bundle_component_{bc_strap.pk}_is_embroidery": "on",
             "is_etsy": False,
             "is_embroidery": False,
             "is_urgent": False,
@@ -446,3 +457,39 @@ def test_orders_create_post_for_bundle_creates_component_orders(client):
     assert {o.product_id for o in orders} == {bag.id, strap.id}
     assert any(o.product_id == bag.id and o.variant.primary_material_color_id == bag_color.id for o in orders)
     assert sum(1 for o in orders if o.product_id == strap.id and o.variant.primary_material_color_id == strap_color.id) == 2
+    assert any(o.product_id == strap.id and o.is_embroidery is True for o in orders)
+    assert all(o.is_embroidery is False for o in orders if o.product_id == bag.id)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_orders_create_hides_embroidery_when_product_disallows_it(client):
+    user = UserFactory()
+    client.force_login(user, backend=AUTH_BACKEND)
+
+    from apps.materials.models import Material
+
+    material = Material.objects.create(name="NoEmb material")
+    color = ColorFactory(material=material, name="NoEmb color", code=3333)
+    model = ProductFactory(primary_material=material, allows_embroidery=False)
+
+    response = client.get(reverse("orders_create"), {"product": model.id})
+    assert response.status_code == 200
+    assert b'name="is_embroidery"' not in response.content
+
+    response2 = client.post(
+        reverse("orders_create"),
+        data={
+            "product": model.id,
+            "primary_material_color": color.id,
+            "is_etsy": False,
+            "is_embroidery": True,
+            "is_urgent": False,
+            "comment": "NoEmb order",
+        },
+    )
+    assert response2.status_code == 302
+
+    from apps.production.models import ProductionOrder
+
+    order = ProductionOrder.objects.get(comment="NoEmb order")
+    assert order.is_embroidery is False

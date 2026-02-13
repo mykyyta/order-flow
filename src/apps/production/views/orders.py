@@ -234,15 +234,21 @@ def orders_create(request):
             component: Product = row["component"]  # type: ignore[assignment]
             primary_field_name = str(row["primary_field_name"])
             secondary_field_name = str(row["secondary_field_name"])
+            embroidery_field_name = row.get("embroidery_field_name")
             primary_color = form.cleaned_data.get(primary_field_name)
             secondary_color = form.cleaned_data.get(secondary_field_name)
+            is_embroidery = (
+                bool(form.cleaned_data.get(embroidery_field_name))
+                if embroidery_field_name
+                else False
+            )
             for _ in range(int(bc.quantity)):
                 create_production_order(
                     product=component,
                     primary_material_color=primary_color,
                     secondary_material_color=secondary_color,
                     is_etsy=form.cleaned_data["is_etsy"],
-                    is_embroidery=form.cleaned_data["is_embroidery"],
+                    is_embroidery=is_embroidery,
                     is_urgent=form.cleaned_data["is_urgent"],
                     comment=form.cleaned_data.get("comment"),
                     created_by=request.user,
