@@ -193,6 +193,53 @@ def test_order_edit_includes_archived_model_and_color_in_dropdown(client):
     assert color.name.encode() in response.content
 
 
+@pytest.mark.django_db(transaction=True)
+def test_order_edit_allows_saving_when_product_primary_material_changed(client):
+    """Changing Product.primary_material should not brick editing old orders."""
+    user = UserFactory()
+    client.force_login(user, backend=AUTH_BACKEND)
+
+    order = OrderFactory(comment="before")
+    product = order.product
+    old_color = order.variant.primary_material_color
+
+    from apps.materials.models import Material
+
+    product.primary_material = Material.objects.create(name="New primary material")
+    product.save(update_fields=["primary_material"])
+
+    response = client.post(
+        reverse("order_edit", kwargs={"pk": order.id}),
+        data={
+            "product": str(product.pk),
+            "primary_material_color": str(old_color.pk),
+            "comment": "after",
+        },
+    )
+    assert response.status_code == 302
+    order.refresh_from_db()
+    assert order.comment == "after"
+
+
+@pytest.mark.django_db(transaction=True)
+def test_order_edit_disables_primary_color_when_product_primary_changed(client):
+    user = UserFactory()
+    client.force_login(user, backend=AUTH_BACKEND)
+
+    order = OrderFactory()
+    product = order.product
+
+    from apps.materials.models import Material
+
+    product.primary_material = Material.objects.create(name="Other primary")
+    product.save(update_fields=["primary_material"])
+
+    response = client.get(reverse("order_edit", kwargs={"pk": order.id}))
+    assert response.status_code == 200
+    assert b'name="primary_material_color"' in response.content
+    assert b"disabled" in response.content
+
+
 def test_message_alert_class_mapping():
     from apps.ui.templatetags.order_ui import message_alert_class
     assert message_alert_class("error") == "alert alert-error"

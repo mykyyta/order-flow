@@ -1,0 +1,119 @@
+{% extends "base_detail_page.html" %}
+{% load order_ui %}
+
+{% block page_title_text %}{{ product.name }}{% endblock %}
+
+{% block page_header_actions %}
+{% include "partials/action_menu.html" with items=actions icon_only=True icon_style="horizontal" %}
+{% endblock %}
+
+{% block detail_layout %}{% endblock %}{# Single column on all screens #}
+
+{% block detail_content %}
+<div class="card">
+    <div class="p-4 sm:p-5">
+        {% if product.archived_at %}
+        <div class="alert alert-warning mb-4">Ця модель в архіві.</div>
+        {% endif %}
+
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+
+            {% for group in field_groups %}
+            <section class="rounded-lg border border-slate-100 p-4">
+                <h2 class="text-sm font-semibold text-slate-900">{{ group.title }}</h2>
+                <div class="mt-4 space-y-4">
+                    {% for field_name in group.fields %}
+                        {% if field_name == "is_bundle" %}
+                        <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
+                            {% include "partials/form_checkbox_option.html" with field=form.is_bundle label=form.is_bundle.label %}
+                        </div>
+                        {% else %}
+                        {% with bf=form|get_form_field:field_name %}
+                        {% include "partials/form_field.html" with field=bf label=bf.label %}
+                        {% endwith %}
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </section>
+            {% endfor %}
+
+            <button type="submit" class="btn-primary">Зберегти</button>
+        </form>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+        <h3 class="text-sm font-semibold text-slate-900">Матеріали моделі</h3>
+        <a href="{{ product_material_add_url }}" class="text-sm font-medium text-teal-600 hover:text-teal-700">
+            + Додати
+        </a>
+    </div>
+
+    {% if product_materials %}
+    <ul class="divide-y divide-slate-100">
+        {% for pm in product_materials %}
+        <a href="{% url 'product_material_edit' product.pk pm.pk %}"
+           class="flex items-start gap-3 px-4 py-3 hover:bg-slate-50/80 transition-colors group">
+            <div class="flex-1 min-w-0">
+                <div class="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                    <span class="text-sm font-medium text-slate-900 truncate">{{ pm.material.name }}</span>
+                    <span class="text-xs text-slate-500">{{ pm.get_role_display }}</span>
+                </div>
+                {% if pm.notes %}
+                <p class="mt-1 text-xs text-slate-500 truncate">{{ pm.notes }}</p>
+                {% endif %}
+            </div>
+            <svg class="mt-0.5 w-4 h-4 text-slate-300 group-hover:text-slate-400 transition-colors shrink-0"
+                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+        </a>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <div class="px-4 py-8 text-center">
+        <p class="text-sm text-slate-500">Матеріалів ще немає.</p>
+    </div>
+    {% endif %}
+</div>
+
+<div class="card mt-4">
+    <div class="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+        <h3 class="text-sm font-semibold text-slate-900">Норми матеріалів</h3>
+        <a href="{{ bom_add_url }}" class="text-sm font-medium text-teal-600 hover:text-teal-700">
+            + Додати
+        </a>
+    </div>
+
+    {% if material_norms %}
+    <ul class="divide-y divide-slate-100">
+        {% for norm in material_norms %}
+        <a href="{% url 'product_bom_edit' product.pk norm.pk %}"
+           class="flex items-start gap-3 px-4 py-3 hover:bg-slate-50/80 transition-colors group">
+            <div class="flex-1 min-w-0">
+                <div class="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                    <span class="text-sm font-medium text-slate-900 truncate">{{ norm.material.name }}</span>
+                    <span class="text-xs text-slate-500">{{ norm.quantity_per_unit }} {{ norm.get_unit_display }}</span>
+                </div>
+                {% if norm.notes %}
+                <p class="mt-1 text-xs text-slate-500 truncate">{{ norm.notes }}</p>
+                {% endif %}
+            </div>
+            <svg class="mt-0.5 w-4 h-4 text-slate-300 group-hover:text-slate-400 transition-colors shrink-0"
+                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+        </a>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <div class="px-4 py-8 text-center">
+        <p class="text-sm text-slate-500">Поки що норм матеріалів немає.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block detail_sidebar %}{% endblock %}{# No sidebar #}

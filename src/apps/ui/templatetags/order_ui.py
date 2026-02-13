@@ -63,3 +63,9 @@ def message_alert_class(message_tags: str) -> str:
         if tag in tag_to_class:
             return tag_to_class[tag]
     return "alert alert-info"
+
+
+@register.filter
+def get_form_field(form, field_name: str):
+    """Template helper to render grouped/dynamic form fields by name."""
+    return form[field_name]

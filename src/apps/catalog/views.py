@@ -1,16 +1,62 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
-from django.db import models
+from django.db import models, transaction
+from django.db.models.functions import Lower
 from django.shortcuts import get_object_or_404, render, redirect
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.views import View
-from django.views.generic import ListView, UpdateView
+from django.views.generic import CreateView, ListView, UpdateView
 from django.views.decorators.http import require_POST
 from django.utils import timezone
 
-from .forms import ColorForm, ProductForm
-from .models import Color, Product
+from apps.materials.models import BOM
+
+from .forms import (
+    ColorForm,
+    ProductBOMForm,
+    ProductCreateForm,
+    ProductDetailForm,
+    ProductMaterialForm,
+)
+from .models import Color, Product, ProductMaterial
+
+
+def _apply_product_material_role_change(*, product_id: int, product_material: ProductMaterial) -> None:
+    product = Product.objects.select_for_update().get(pk=product_id)
+
+    if product_material.role == ProductMaterial.Role.PRIMARY:
+        fields: list[str] = []
+        if product.primary_material_id != product_material.material_id:
+            product.primary_material_id = product_material.material_id
+            fields.append("primary_material")
+        if product.secondary_material_id == product_material.material_id:
+            product.secondary_material_id = None
+            fields.append("secondary_material")
+        if fields:
+            product.save(update_fields=fields)
+
+    elif product_material.role == ProductMaterial.Role.SECONDARY:
+        if product.secondary_material_id != product_material.material_id:
+            product.secondary_material_id = product_material.material_id
+            product.save(update_fields=["secondary_material"])
+
+    else:
+        fields = []
+        if product.primary_material_id == product_material.material_id:
+            product.primary_material_id = None
+            fields.append("primary_material")
+            if product.secondary_material_id is not None:
+                product.secondary_material_id = None
+                fields.append("secondary_material")
+        elif product.secondary_material_id == product_material.material_id:
+            product.secondary_material_id = None
+            fields.append("secondary_material")
+        if fields:
+            product.save(update_fields=fields)
+
+    # Normalize roles to match product primary/secondary (and enforce uniqueness).
+    ProductDetailUpdateView._sync_product_material_roles(product=product)
 
 
 class ProductListCreateView(LoginRequiredMixin, View):
@@ -19,7 +65,7 @@ class ProductListCreateView(LoginRequiredMixin, View):
 
     def get(self, request, *args, **kwargs):
         products = Product.objects.filter(archived_at__isnull=True).order_by("name")
-        form = ProductForm()
+        form = ProductCreateForm()
         return render(
             request,
             self.template_name,
@@ -27,7 +73,7 @@ class ProductListCreateView(LoginRequiredMixin, View):
         )
 
     def post(self, request, *args, **kwargs):
-        form = ProductForm(request.POST)
+        form = ProductCreateForm(request.POST)
         if form.is_valid():
             form.save()
             return redirect(reverse_lazy("products"))
@@ -146,29 +192,261 @@ def colors_archive(request):
 class ProductDetailUpdateView(LoginRequiredMixin, UpdateView):
     login_url = reverse_lazy("auth_login")
     model = Product
-    form_class = ProductForm
-    template_name = "catalog/product_edit.html"
+    form_class = ProductDetailForm
+    template_name = "catalog/product_detail.html"
     context_object_name = "product"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["page_title"] = "Підправити модель"
-        context["object"] = self.object
-        context["form_id"] = "product-edit-form"
-        context["cancel_url"] = reverse_lazy("products")
-        context["archive_url"] = reverse_lazy("product_archive", kwargs={"pk": self.object.pk})
-        context["unarchive_url"] = reverse_lazy("product_unarchive", kwargs={"pk": self.object.pk})
+        context["page_title"] = self.object.name
         context["back_url"] = reverse_lazy("products")
-        context["back_label"] = "Назад до моделей"
-        context["archived_message"] = "Ця модель в архіві."
+        context["back_label"] = "Моделі"
+
+        actions = []
+        if self.object.archived_at:
+            actions.append(
+                {
+                    "label": "Відновити",
+                    "url": reverse("product_unarchive", kwargs={"pk": self.object.pk}),
+                    "method": "post",
+                    "icon": "restore",
+                }
+            )
+        else:
+            actions.append(
+                {
+                    "label": "В архів",
+                    "url": reverse("product_archive", kwargs={"pk": self.object.pk}),
+                    "method": "post",
+                    "icon": "archive",
+                }
+            )
+        context["actions"] = actions
+
+        context["field_groups"] = [
+            {"title": "Основне", "fields": ["name", "section"]},
+            {"title": "Ціни", "fields": ["price_retail_uah", "cost_price"]},
+            {"title": "Інше", "fields": ["is_bundle"]},
+        ]
+
+        context["material_norms"] = (
+            BOM.objects.filter(product=self.object)
+            .select_related("material")
+            .order_by(Lower("material__name"), "material__name", "id")
+        )
+        context["bom_add_url"] = reverse("product_bom_add", kwargs={"pk": self.object.pk})
+
+        context["product_materials"] = (
+            ProductMaterial.objects.filter(product=self.object)
+            .select_related("material")
+            .order_by("sort_order", "id")
+        )
+        context["product_material_add_url"] = reverse(
+            "product_material_add", kwargs={"pk": self.object.pk}
+        )
         return context
 
     def form_valid(self, form):
+        with transaction.atomic():
+            response = super().form_valid(form)
+            self._sync_product_material_roles(product=self.object)
         messages.success(self.request, "Готово! Модель оновлено.")
+        return response
+
+    def get_success_url(self):
+        return reverse("product_edit", kwargs={"pk": self.object.pk})
+
+    @staticmethod
+    def _sync_product_material_roles(*, product: Product) -> None:
+        # Keep ProductMaterial in sync with primary/secondary picks, but never delete
+        # user-added materials automatically.
+        if product.primary_material_id:
+            ProductMaterial.objects.filter(
+                product=product, role=ProductMaterial.Role.PRIMARY
+            ).exclude(material_id=product.primary_material_id).update(
+                role=ProductMaterial.Role.OTHER
+            )
+            ProductMaterial.objects.update_or_create(
+                product=product,
+                material_id=product.primary_material_id,
+                defaults={"role": ProductMaterial.Role.PRIMARY},
+            )
+        else:
+            ProductMaterial.objects.filter(product=product, role=ProductMaterial.Role.PRIMARY).update(
+                role=ProductMaterial.Role.OTHER
+            )
+
+        if product.secondary_material_id:
+            ProductMaterial.objects.filter(
+                product=product, role=ProductMaterial.Role.SECONDARY
+            ).exclude(material_id=product.secondary_material_id).update(
+                role=ProductMaterial.Role.OTHER
+            )
+            ProductMaterial.objects.update_or_create(
+                product=product,
+                material_id=product.secondary_material_id,
+                defaults={"role": ProductMaterial.Role.SECONDARY},
+            )
+        else:
+            ProductMaterial.objects.filter(product=product, role=ProductMaterial.Role.SECONDARY).update(
+                role=ProductMaterial.Role.OTHER
+            )
+
+
+class ProductMaterialCreateView(LoginRequiredMixin, CreateView):
+    login_url = reverse_lazy("auth_login")
+    model = ProductMaterial
+    form_class = ProductMaterialForm
+    template_name = "catalog/product_material_drawer.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        self.product = get_object_or_404(Product, pk=kwargs["pk"])
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["product"] = self.product
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["drawer_title"] = "Новий матеріал"
+        context["back_url"] = reverse("product_edit", kwargs={"pk": self.product.pk})
+        context["product"] = self.product
+        context["product_material"] = None
+        return context
+
+    def form_valid(self, form):
+        with transaction.atomic():
+            obj: ProductMaterial = form.save(commit=False)
+            obj.product = self.product
+            if obj.role in (ProductMaterial.Role.PRIMARY, ProductMaterial.Role.SECONDARY):
+                ProductMaterial.objects.filter(product=self.product, role=obj.role).update(
+                    role=ProductMaterial.Role.OTHER
+                )
+            obj.save()
+            self.object = obj
+            _apply_product_material_role_change(product_id=self.product.pk, product_material=obj)
+        messages.success(self.request, "Готово! Матеріал додано.")
+        return redirect(self.get_success_url())
+
+    def get_success_url(self):
+        return reverse("product_edit", kwargs={"pk": self.product.pk})
+
+
+class ProductMaterialUpdateView(LoginRequiredMixin, UpdateView):
+    login_url = reverse_lazy("auth_login")
+    model = ProductMaterial
+    form_class = ProductMaterialForm
+    template_name = "catalog/product_material_drawer.html"
+    pk_url_kwarg = "pm_pk"
+
+    def dispatch(self, request, *args, **kwargs):
+        self.product = get_object_or_404(Product, pk=kwargs["pk"])
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_queryset(self):
+        return ProductMaterial.objects.filter(product=self.product).select_related("material")
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["product"] = self.product
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["drawer_title"] = "Редагувати матеріал"
+        context["back_url"] = reverse("product_edit", kwargs={"pk": self.product.pk})
+        context["product"] = self.product
+        context["product_material"] = self.object
+        return context
+
+    def form_valid(self, form):
+        with transaction.atomic():
+            obj: ProductMaterial = form.save(commit=False)
+            if obj.role in (ProductMaterial.Role.PRIMARY, ProductMaterial.Role.SECONDARY):
+                ProductMaterial.objects.filter(product=self.product, role=obj.role).exclude(
+                    pk=obj.pk
+                ).update(role=ProductMaterial.Role.OTHER)
+            obj.save()
+            self.object = obj
+            _apply_product_material_role_change(product_id=self.product.pk, product_material=obj)
+        messages.success(self.request, "Готово! Матеріал оновлено.")
+        return redirect(self.get_success_url())
+
+    def get_success_url(self):
+        return reverse("product_edit", kwargs={"pk": self.product.pk})
+
+
+class ProductBOMCreateView(LoginRequiredMixin, CreateView):
+    """Drawer form for adding a new BOM/material norm to a product."""
+
+    login_url = reverse_lazy("auth_login")
+    model = BOM
+    form_class = ProductBOMForm
+    template_name = "catalog/bom_drawer.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        self.product = get_object_or_404(Product, pk=kwargs["pk"])
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["product"] = self.product
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["drawer_title"] = "Новий матеріал"
+        context["back_url"] = reverse("product_edit", kwargs={"pk": self.product.pk})
+        context["product"] = self.product
+        context["norm"] = None
+        return context
+
+    def form_valid(self, form):
+        form.instance.product = self.product
+        messages.success(self.request, "Готово! Матеріал додано.")
         return super().form_valid(form)
 
     def get_success_url(self):
-        return reverse_lazy("products")
+        return reverse("product_edit", kwargs={"pk": self.product.pk})
+
+
+class ProductBOMUpdateView(LoginRequiredMixin, UpdateView):
+    """Drawer form for editing an existing BOM/material norm."""
+
+    login_url = reverse_lazy("auth_login")
+    model = BOM
+    form_class = ProductBOMForm
+    template_name = "catalog/bom_drawer.html"
+    pk_url_kwarg = "bom_pk"
+
+    def dispatch(self, request, *args, **kwargs):
+        self.product = get_object_or_404(Product, pk=kwargs["pk"])
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_queryset(self):
+        return BOM.objects.filter(product=self.product).select_related("material")
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["product"] = self.product
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["drawer_title"] = "Редагувати матеріал"
+        context["back_url"] = reverse("product_edit", kwargs={"pk": self.product.pk})
+        context["product"] = self.product
+        context["norm"] = self.object
+        return context
+
+    def form_valid(self, form):
+        messages.success(self.request, "Готово! Матеріал оновлено.")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse("product_edit", kwargs={"pk": self.product.pk})
 
 
 @login_required(login_url=reverse_lazy("auth_login"))
@@ -213,3 +491,29 @@ def color_unarchive(request, pk: int):
         color.save(update_fields=["archived_at"])
         messages.success(request, "Готово! Колір відновлено з архіву.")
     return redirect("color_edit", pk=pk)
+
+
+@login_required(login_url=reverse_lazy("auth_login"))
+@require_POST
+def product_material_delete(request, pk: int, pm_pk: int):
+    product = get_object_or_404(Product, pk=pk)
+    pm = get_object_or_404(ProductMaterial, pk=pm_pk, product=product)
+
+    # Prevent deleting the effective primary/secondary. User must demote first.
+    if pm.role in (ProductMaterial.Role.PRIMARY, ProductMaterial.Role.SECONDARY):
+        messages.error(
+            request,
+            "Не можна видалити основний/другорядний матеріал. Спочатку зміни роль на 'Інший'.",
+        )
+        return redirect("product_material_edit", pk=pk, pm_pk=pm_pk)
+    if pm.material_id in {product.primary_material_id, product.secondary_material_id}:
+        messages.error(
+            request,
+            "Не можна видалити матеріал, який встановлено як основний/другорядний. "
+            "Спочатку зміни статус.",
+        )
+        return redirect("product_material_edit", pk=pk, pm_pk=pm_pk)
+
+    pm.delete()
+    messages.success(request, "Готово! Матеріал видалено з моделі.")
+    return redirect("product_edit", pk=pk)

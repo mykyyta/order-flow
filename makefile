@@ -4,13 +4,18 @@ APP_NAME ?= my-app
 SERVICE_NAME ?= pult-app
 REGION ?= us-central1
 IMAGE ?= us-central1-docker.pkg.dev/$(PROJECT_ID)/$(REPO)/$(APP_NAME)
+GH_REPO ?= mykyyta/pult
+GH_REF_STAGING ?= staging
 PYTHON ?= ./.venv/bin/python
 MANAGE ?= $(PYTHON) src/manage.py
 
 TAILWIND ?= bin/tailwindcss
 TAILWIND_VERSION ?= v4.1.18
 
-.PHONY: help dev dev-detached down down-clean down-reset ps logs logs-db shell manage migrate createsuperuser bootstrap-local init-local dev-bootstrap dev-refresh dev-refresh-ui test check lint format ruff-check ruff-format build push deploy tw-install tw-watch tw-build
+.PHONY: help dev dev-detached down down-clean down-reset ps logs logs-db shell manage \
+	migrate createsuperuser bootstrap-local init-local dev-bootstrap dev-refresh dev-refresh-ui \
+	test check lint format ruff-check ruff-format build push deploy tw-install tw-watch tw-build \
+	gha-infra-staging gha-deploy-staging
 
 help: ## Show available commands
 	@awk 'BEGIN {FS = ":.*##"; printf "\nAvailable commands:\n\n"} /^[a-zA-Z0-9_.-]+:.*##/ { printf "  %-18s %s\n", $$1, $$2 } END { print "" }' $(MAKEFILE_LIST)
@@ -96,6 +101,12 @@ deploy: push ## Deploy to Cloud Run
 		--image=$(IMAGE) \
 		--region=$(REGION) \
 		--allow-unauthenticated
+
+gha-infra-staging: ## Run GitHub Actions "Infra Staging" (Terraform apply for staging)
+	gh workflow run "Infra Staging" --repo "$(GH_REPO)" --ref "$(GH_REF_STAGING)"
+
+gha-deploy-staging: ## Run GitHub Actions "Deploy Staging" (build + deploy staging branch)
+	gh workflow run "Deploy Staging" --repo "$(GH_REPO)" --ref "$(GH_REF_STAGING)"
 
 # Tailwind CSS (standalone CLI). Run make tw-install once to download the binary.
 tw-install: ## Download Tailwind standalone binary

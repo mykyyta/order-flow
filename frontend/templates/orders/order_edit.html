@@ -10,6 +10,11 @@
     <div class="space-y-4">
         {% include "partials/form_field.html" with field=form.product label="Модель" %}
         {% include "partials/form_field.html" with field=form.primary_material_color label="Основний колір" %}
+        {% if form.primary_material_color.field.disabled %}
+        <p class="text-xs text-slate-500">
+            Колір заблоковано, бо у моделі змінився основний матеріал. Можна редагувати інші поля.
+        </p>
+        {% endif %}
 
         <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
             {% include "partials/form_checkbox_option.html" with field=form.is_etsy label="Etsy" %}

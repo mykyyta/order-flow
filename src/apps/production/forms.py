@@ -58,6 +58,7 @@ class OrderForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self._locked_primary_color = False
         self.fields["product"].empty_label = "—"
         self.fields["primary_material_color"].empty_label = "—"
 
@@ -89,11 +90,37 @@ class OrderForm(forms.ModelForm):
                     "primary_material_color"
                 ].queryset.order_by("name")
 
+        # If the model's primary material was changed after the order was created, keep the
+        # existing order color but prevent editing it (legacy/grandfathered behavior).
+        if (
+            self.instance
+            and self.instance.pk
+            and self.instance.variant_id
+            and self.instance.variant.primary_material_color_id
+        ):
+            instance_color = self.instance.variant.primary_material_color
+            raw_product_id = None
+            if self.is_bound:
+                raw_product_id = self.data.get(self.add_prefix("product"))
+            should_lock_for_product = (not self.is_bound) or (
+                raw_product_id and str(self.instance.product_id) == str(raw_product_id)
+            )
+            if (
+                should_lock_for_product
+                and selected_product
+                and selected_product.primary_material_id != instance_color.material_id
+            ):
+                self._locked_primary_color = True
+                self.fields["primary_material_color"].disabled = True
+
     def clean(self):
         cleaned_data = super().clean()
         product = cleaned_data.get("product")
         primary_material_color = cleaned_data.get("primary_material_color")
         if not product:
+            return cleaned_data
+
+        if self._locked_primary_color:
             return cleaned_data
 
         available_colors = self._primary_color_queryset(product=product)

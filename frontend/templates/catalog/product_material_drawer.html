@@ -1,0 +1,29 @@
+{% extends "base_drawer_page.html" %}
+
+{% block drawer_title_text %}{{ drawer_title }}{% endblock %}
+
+{% block drawer_content %}
+    <form method="post" class="space-y-4">
+        {% csrf_token %}
+        {% include "partials/form_field.html" with field=form.material label=form.material.label %}
+        {% include "partials/form_field.html" with field=form.role label=form.role.label %}
+        {% include "partials/form_field.html" with field=form.sort_order label=form.sort_order.label %}
+        {% include "partials/form_field.html" with field=form.notes label=form.notes.label %}
+        <button type="submit" class="btn-primary w-full">Зберегти</button>
+    </form>
+{% endblock %}
+
+{% block drawer_footer %}
+{% if product_material %}
+<div class="border-t border-slate-100 px-4 py-3 sm:px-5">
+    <form method="post" action="{% url 'product_material_delete' product.pk product_material.pk %}">
+        {% csrf_token %}
+        <button type="submit"
+                class="text-sm text-slate-500 hover:text-red-600 transition-colors"
+                onclick="return confirm('Видалити матеріал з моделі?')">
+            Видалити
+        </button>
+    </form>
+</div>
+{% endif %}
+{% endblock %}

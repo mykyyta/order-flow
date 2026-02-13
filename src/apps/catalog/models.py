@@ -35,6 +35,51 @@ class Product(models.Model):
         return f"{self.name}"
 
 
+class ProductMaterial(models.Model):
+    class Role(models.TextChoices):
+        PRIMARY = "primary", "Основний"
+        SECONDARY = "secondary", "Другорядний"
+        OTHER = "other", "Інший"
+
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name="materials",
+    )
+    material = models.ForeignKey(
+        "materials.Material",
+        on_delete=models.PROTECT,
+        related_name="product_material_links",
+    )
+    role = models.CharField(max_length=16, choices=Role.choices, default=Role.OTHER)
+    notes = models.CharField(max_length=255, blank=True)
+    sort_order = models.PositiveSmallIntegerField(default=0)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["product", "material"],
+                name="catalog_productmaterial_product_material_uniq",
+            ),
+            models.UniqueConstraint(
+                fields=["product"],
+                condition=models.Q(role="primary"),
+                name="catalog_productmaterial_primary_uniq_per_product",
+            ),
+            models.UniqueConstraint(
+                fields=["product"],
+                condition=models.Q(role="secondary"),
+                name="catalog_productmaterial_secondary_uniq_per_product",
+            ),
+        ]
+        ordering = ("sort_order", "id")
+
+    def __str__(self) -> str:
+        return f"{self.product.name}: {self.material.name} ({self.get_role_display()})"
+
+
 class Color(models.Model):
     AVAILABILITY_CHOICES = [
         ("in_stock", "В наявності"),
