@@ -403,3 +403,46 @@ def test_orders_create_post_without_primary_color_is_allowed_for_model_without_p
     )
 
     assert response.status_code == 302
+
+
+@pytest.mark.django_db(transaction=True)
+def test_orders_create_post_for_bundle_creates_component_orders(client):
+    user = UserFactory()
+    client.force_login(user, backend=AUTH_BACKEND)
+
+    from apps.catalog.models import BundleComponent
+    from apps.materials.models import Material
+
+    bag_material = Material.objects.create(name="Bag material")
+    strap_material = Material.objects.create(name="Strap material")
+    bag_color = ColorFactory(material=bag_material, name="Bag color", code=1111)
+    strap_color = ColorFactory(material=strap_material, name="Strap color", code=2222)
+
+    bag = ProductFactory(name="Bag", primary_material=bag_material, kind="standard")
+    strap = ProductFactory(name="Strap", primary_material=strap_material, kind="component")
+    bundle = ProductFactory(name="Bag + Strap", kind="bundle", primary_material=None)
+
+    bc_bag = BundleComponent.objects.create(bundle=bundle, component=bag, quantity=1, is_primary=True)
+    bc_strap = BundleComponent.objects.create(bundle=bundle, component=strap, quantity=2, is_primary=False)
+
+    response = client.post(
+        reverse("orders_create"),
+        data={
+            "product": bundle.id,
+            f"bundle_component_{bc_bag.pk}_primary_material_color": bag_color.id,
+            f"bundle_component_{bc_strap.pk}_primary_material_color": strap_color.id,
+            "is_etsy": False,
+            "is_embroidery": False,
+            "is_urgent": False,
+            "comment": "Bundle order",
+        },
+    )
+    assert response.status_code == 302
+
+    from apps.production.models import ProductionOrder
+
+    orders = list(ProductionOrder.objects.filter(comment="Bundle order").select_related("product", "variant"))
+    assert len(orders) == 3
+    assert {o.product_id for o in orders} == {bag.id, strap.id}
+    assert any(o.product_id == bag.id and o.variant.primary_material_color_id == bag_color.id for o in orders)
+    assert sum(1 for o in orders if o.product_id == strap.id and o.variant.primary_material_color_id == strap_color.id) == 2

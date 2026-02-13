@@ -1,5 +1,6 @@
 {% extends "base_form_page.html" %}
 {% load static %}
+{% load order_ui %}
 
 {% block title %}Нове замовлення{% endblock %}
 
@@ -9,7 +10,37 @@
 
     <div class="space-y-4">
         {% include "partials/form_field.html" with field=form.product label="Модель" %}
+
+        {% if form.is_bundle_mode %}
+        <div class="rounded-lg border border-slate-100 p-4 space-y-4">
+            <h2 class="text-sm font-semibold text-slate-900">Кольори компонентів</h2>
+            {% if form.bundle_component_rows %}
+            <div class="space-y-4">
+                {% for row in form.bundle_component_rows %}
+                <section class="rounded-lg border border-slate-100 p-4">
+                    <div class="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                        <h3 class="text-sm font-semibold text-slate-900">{{ row.component.name }}</h3>
+                        <span class="text-xs text-slate-500">x{{ row.quantity }}</span>
+                    </div>
+                    <div class="mt-4 space-y-4">
+                        {% with bf=form|get_form_field:row.primary_field_name %}
+                        {% include "partials/form_field.html" with field=bf label="Основний колір" %}
+                        {% endwith %}
+                        {% with bf=form|get_form_field:row.secondary_field_name %}
+                        {% include "partials/form_field.html" with field=bf label="Другорядний колір" %}
+                        {% endwith %}
+                    </div>
+                </section>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-sm text-slate-500">Спочатку додай компоненти в бандл.</p>
+            {% endif %}
+        </div>
+        {% else %}
         {% include "partials/form_field.html" with field=form.primary_material_color label="Основний колір" %}
+        {% include "partials/form_field.html" with field=form.secondary_material_color label="Другорядний колір" %}
+        {% endif %}
 
         <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
             {% include "partials/form_checkbox_option.html" with field=form.is_etsy label="Etsy" %}

@@ -7,7 +7,7 @@ from django.urls import reverse, reverse_lazy
 from django.utils.timezone import localtime
 from django.views.decorators.http import require_POST
 
-from apps.catalog.models import Product
+from apps.catalog.models import BundleComponent, Product
 from apps.production.exceptions import InvalidStatusTransition
 from apps.production.forms import OrderForm, OrderStatusUpdateForm
 from apps.production.domain.order_statuses import (
@@ -227,14 +227,20 @@ def orders_create(request):
     template_name = "orders/create.html"
     context = {"page_title": "Нове замовлення", "page_title_center": True}
 
-    if request.method == "POST":
-        form = OrderForm(request.POST)
-        if form.is_valid():
-            orders_url = request.build_absolute_uri(reverse_lazy("orders_active"))
-            try:
+    def _create_orders_for_bundle(*, form: OrderForm, orders_url: str) -> int:
+        created = 0
+        for row in form.bundle_component_rows:
+            bc: BundleComponent = row["bundle_component"]  # type: ignore[assignment]
+            component: Product = row["component"]  # type: ignore[assignment]
+            primary_field_name = str(row["primary_field_name"])
+            secondary_field_name = str(row["secondary_field_name"])
+            primary_color = form.cleaned_data.get(primary_field_name)
+            secondary_color = form.cleaned_data.get(secondary_field_name)
+            for _ in range(int(bc.quantity)):
                 create_production_order(
-                    product=form.cleaned_data["product"],
-                    primary_material_color=form.cleaned_data["primary_material_color"],
+                    product=component,
+                    primary_material_color=primary_color,
+                    secondary_material_color=secondary_color,
                     is_etsy=form.cleaned_data["is_etsy"],
                     is_embroidery=form.cleaned_data["is_embroidery"],
                     is_urgent=form.cleaned_data["is_urgent"],
@@ -242,16 +248,48 @@ def orders_create(request):
                     created_by=request.user,
                     orders_url=orders_url,
                 )
+                created += 1
+        return created
+
+    if request.method == "POST":
+        form = OrderForm(request.POST)
+        if form.is_valid():
+            orders_url = request.build_absolute_uri(reverse_lazy("orders_active"))
+            try:
+                product: Product = form.cleaned_data["product"]
+                if product.kind == Product.Kind.BUNDLE:
+                    created = _create_orders_for_bundle(form=form, orders_url=orders_url)
+                else:
+                    create_production_order(
+                        product=product,
+                        primary_material_color=form.cleaned_data["primary_material_color"],
+                        secondary_material_color=form.cleaned_data.get("secondary_material_color"),
+                        is_etsy=form.cleaned_data["is_etsy"],
+                        is_embroidery=form.cleaned_data["is_embroidery"],
+                        is_urgent=form.cleaned_data["is_urgent"],
+                        comment=form.cleaned_data.get("comment"),
+                        created_by=request.user,
+                        orders_url=orders_url,
+                    )
+                    created = 1
             except ValueError:
                 form.add_error("primary_material_color", "Обери основний колір для цієї моделі.")
                 context["form"] = form
                 return render(request, template_name, context)
-            messages.success(request, "Готово! Замовлення створено.")
+            if created == 1:
+                messages.success(request, "Готово! Замовлення створено.")
+            else:
+                messages.success(request, f"Готово! Створено замовлень: {created}.")
             return redirect("orders_active")
         context["form"] = form
         return render(request, template_name, context)
 
-    form = OrderForm()
+    initial = {}
+    raw_product_id = (request.GET.get("product") or "").strip()
+    if raw_product_id:
+        initial["product"] = raw_product_id
+
+    form = OrderForm(initial=initial)
     context["form"] = form
     return render(request, template_name, context)
 
