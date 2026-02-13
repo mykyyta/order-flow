@@ -163,6 +163,8 @@ def test_material_colors_archive_page_shows_archived_only(client):
     assert response.status_code == 200
     assert b"Archived Black" in response.content
     assert b"Active White" not in response.content
+    assert b"divide-y divide-slate-100" in response.content
+    assert b'text-xs font-mono text-slate-400 w-8' in response.content
     assert reverse(
         "material_color_unarchive", kwargs={"pk": material.pk, "color_pk": archived.pk}
     ).encode() in response.content
