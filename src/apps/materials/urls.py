@@ -7,7 +7,9 @@ from apps.materials.views import (
     MaterialListCreateView,
     material_archive,
     material_color_archive,
+    material_color_unarchive,
     material_unarchive,
+    material_colors_archive,
     materials_archive,
 )
 
@@ -32,5 +34,15 @@ urlpatterns = [
         "materials/<int:pk>/colors/<int:color_pk>/archive/",
         material_color_archive,
         name="material_color_archive",
+    ),
+    path(
+        "materials/<int:pk>/colors/<int:color_pk>/unarchive/",
+        material_color_unarchive,
+        name="material_color_unarchive",
+    ),
+    path(
+        "materials/<int:pk>/colors/archive/",
+        material_colors_archive,
+        name="material_colors_archive",
     ),
 ]

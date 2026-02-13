@@ -96,6 +96,7 @@ def test_material_detail_shows_colors(client):
     assert b"Black" in response.content
     assert b"Brown" in response.content
     assert b"Archived color" not in response.content
+    assert reverse("material_colors_archive", kwargs={"pk": material.pk}).encode() in response.content
 
 
 @pytest.mark.django_db(transaction=True)
@@ -142,3 +143,50 @@ def test_material_color_archive(client):
     assert response.status_code == 302
     color.refresh_from_db()
     assert color.archived_at is not None
+
+
+@pytest.mark.django_db(transaction=True)
+def test_material_colors_archive_page_shows_archived_only(client):
+    from apps.materials.models import Material, MaterialColor
+    from apps.accounts.models import User
+
+    user = User.objects.create_user(username="color_archive_viewer", password="pass12345")
+    client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
+
+    material = Material.objects.create(name="Canvas")
+    MaterialColor.objects.create(material=material, code=1, name="Active White")
+    archived = MaterialColor.objects.create(
+        material=material, code=2, name="Archived Black", archived_at=timezone.now()
+    )
+
+    response = client.get(reverse("material_colors_archive", kwargs={"pk": material.pk}))
+    assert response.status_code == 200
+    assert b"Archived Black" in response.content
+    assert b"Active White" not in response.content
+    assert reverse(
+        "material_color_unarchive", kwargs={"pk": material.pk, "color_pk": archived.pk}
+    ).encode() in response.content
+
+
+@pytest.mark.django_db(transaction=True)
+def test_material_color_unarchive(client):
+    from apps.materials.models import Material, MaterialColor
+    from apps.accounts.models import User
+
+    user = User.objects.create_user(username="color_unarchiver", password="pass12345")
+    client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
+
+    material = Material.objects.create(name="Wool")
+    color = MaterialColor.objects.create(
+        material=material, code=7, name="Grey", archived_at=timezone.now()
+    )
+
+    unarchive_url = reverse(
+        "material_color_unarchive", kwargs={"pk": material.pk, "color_pk": color.pk}
+    )
+    response = client.post(unarchive_url)
+    assert response.status_code == 302
+    assert response.url == reverse("material_colors_archive", kwargs={"pk": material.pk})
+
+    color.refresh_from_db()
+    assert color.archived_at is None

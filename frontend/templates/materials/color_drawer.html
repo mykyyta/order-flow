@@ -21,5 +21,14 @@
         </button>
     </form>
 </div>
+{% elif color and color.archived_at %}
+<div class="border-t border-slate-100 px-4 py-3 sm:px-5">
+    <form method="post" action="{% url 'material_color_unarchive' material.pk color.pk %}">
+        {% csrf_token %}
+        <button type="submit" class="text-sm text-slate-500 hover:text-teal-600 transition-colors">
+            Відновити
+        </button>
+    </form>
+</div>
 {% endif %}
 {% endblock %}

@@ -1,0 +1,14 @@
+{% extends "base_archive_page.html" %}
+
+{% block title %}Архів кольорів{% endblock %}
+
+{% block archive_items %}
+    {% for color in items %}
+    <form method="post" action="{% url 'material_color_unarchive' material.pk color.pk %}">
+        {% csrf_token %}
+        <button type="submit" class="catalog-chip-link catalog-chip-availability-out">
+            {{ color.name }} ({{ color.code }}) · Відновити
+        </button>
+    </form>
+    {% endfor %}
+{% endblock %}

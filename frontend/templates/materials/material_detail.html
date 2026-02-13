@@ -28,9 +28,14 @@
 <div class="card mt-4">
     <div class="flex items-center justify-between px-4 py-3 border-b border-slate-100">
         <h3 class="text-sm font-semibold text-slate-900">Кольори</h3>
-        <a href="{% url 'material_color_add' material.pk %}" class="text-sm font-medium text-teal-600 hover:text-teal-700">
-            + Додати
-        </a>
+        <div class="flex items-center gap-4">
+            <a href="{{ colors_archive_url }}" class="text-sm font-medium text-slate-500 hover:text-slate-700">
+                Архів
+            </a>
+            <a href="{% url 'material_color_add' material.pk %}" class="text-sm font-medium text-teal-600 hover:text-teal-700">
+                + Додати
+            </a>
+        </div>
     </div>
 
     {% if colors %}

@@ -75,6 +75,10 @@ class MaterialDetailView(LoginRequiredMixin, UpdateView):
         context["colors"] = self.object.colors.filter(
             archived_at__isnull=True
         ).order_by("code", "name")
+        context["colors_archive_url"] = reverse(
+            "material_colors_archive",
+            kwargs={"pk": self.object.pk},
+        )
 
         return context
 
@@ -197,3 +201,32 @@ def material_color_archive(request, pk: int, color_pk: int):
         color.save(update_fields=["archived_at"])
         messages.success(request, "Готово! Колір відправлено в архів.")
     return redirect("material_detail", pk=pk)
+
+
+@login_required(login_url=reverse_lazy("auth_login"))
+def material_colors_archive(request, pk: int):
+    material = get_object_or_404(Material, pk=pk)
+    colors = material.colors.filter(archived_at__isnull=False).order_by("code", "name")
+    return render(
+        request,
+        "materials/colors_archive.html",
+        {
+            "page_title": f"Архів кольорів · {material.name}",
+            "material": material,
+            "items": colors,
+            "back_url": reverse("material_detail", kwargs={"pk": material.pk}),
+            "empty_message": "Архів порожній.",
+        },
+    )
+
+
+@login_required(login_url=reverse_lazy("auth_login"))
+@require_POST
+def material_color_unarchive(request, pk: int, color_pk: int):
+    material = get_object_or_404(Material, pk=pk)
+    color = get_object_or_404(MaterialColor, pk=color_pk, material=material)
+    if color.archived_at is not None:
+        color.archived_at = None
+        color.save(update_fields=["archived_at"])
+        messages.success(request, "Готово! Колір відновлено з архіву.")
+    return redirect("material_colors_archive", pk=pk)
