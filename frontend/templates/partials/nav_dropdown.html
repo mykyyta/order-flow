@@ -1,0 +1,41 @@
+{% comment %}
+Desktop nav dropdown for a section.
+Pass: section (with key, label, emoji, items, is_active)
+{% endcomment %}
+<div class="nav-dropdown relative" x-data="{ open: false }">
+    <button
+        type="button"
+        class="nav-dropdown-trigger rounded-md px-3 py-1.5 text-sm font-medium transition-colors {% if section.is_active %}bg-teal-50 text-teal-700{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}"
+        @click="open = !open"
+        @keydown.escape.window="open = false"
+        :aria-expanded="open"
+        aria-haspopup="true"
+    >
+        <span class="nav-dropdown-emoji mr-1" aria-hidden="true">{{ section.emoji }}</span>
+        <span>{{ section.label }}</span>
+        <svg class="nav-dropdown-chevron ml-1 h-4 w-4 inline-block transition-transform" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+        </svg>
+    </button>
+
+    <div
+        class="nav-dropdown-panel absolute left-0 top-full z-[60] mt-1 min-w-[160px] rounded-md border border-slate-200 bg-white py-1 shadow-lg"
+        x-show="open"
+        x-transition:enter="transition ease-out duration-100"
+        x-transition:enter-start="opacity-0 scale-95"
+        x-transition:enter-end="opacity-100 scale-100"
+        x-transition:leave="transition ease-in duration-75"
+        x-transition:leave-start="opacity-100 scale-100"
+        x-transition:leave-end="opacity-0 scale-95"
+        @click.outside="open = false"
+        x-cloak
+    >
+        {% for item in section.items %}
+        <a
+            href="{% url item.url_name %}"
+            class="nav-dropdown-item block px-4 py-2 text-sm transition-colors {% if item.is_active %}bg-teal-50 text-teal-700{% else %}text-slate-700 hover:bg-slate-50{% endif %}"
+            {% if item.is_active %}aria-current="page"{% endif %}
+        >{{ item.label }}</a>
+        {% endfor %}
+    </div>
+</div>

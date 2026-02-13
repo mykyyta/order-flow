@@ -11,6 +11,8 @@ from apps.materials.views import (
     material_unarchive,
     material_colors_archive,
     materials_archive,
+    purchases_list,
+    suppliers_list,
 )
 
 urlpatterns = [
@@ -45,4 +47,8 @@ urlpatterns = [
         material_colors_archive,
         name="material_colors_archive",
     ),
+    # Suppliers
+    path("suppliers/", suppliers_list, name="suppliers"),
+    # Purchase orders
+    path("purchases/", purchases_list, name="purchases"),
 ]

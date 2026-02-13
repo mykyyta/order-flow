@@ -31,9 +31,17 @@
                 background-color: #0a0a0d;
                 color: #e8e9ee;
               }
-              [data-theme="lumen_night"] nav {
+              [data-theme="lumen_night"] nav,
+              [data-theme="lumen_night"] .top-nav {
                 background-color: rgba(18, 20, 26, 0.78);
                 border-bottom-color: rgba(148, 163, 184, 0.16);
+              }
+              [data-theme="lumen_night"] .bottom-nav {
+                background-color: rgba(18, 20, 26, 0.92);
+                border-top-color: rgba(148, 163, 184, 0.16);
+              }
+              [data-theme="lumen_night"] .bottom-sheet-panel {
+                background-color: rgba(18, 20, 26, 0.98);
               }
               [data-theme="lumen_night"] .bg-white,
               [data-theme="lumen_night"] .card {
@@ -48,71 +56,114 @@
     </div>
     {% if request.user.is_authenticated %}
     {% with current_url=request.resolver_match.url_name %}
-    {% get_nav_items as nav_items %}
-    <nav class="bg-white border-b border-slate-200">
-	        <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-	            <div class="flex h-14 items-center justify-between gap-2">
-			                <a href="{% url 'index' %}" class="brand-logo nav-logo shrink-0 rounded-md px-1.5 py-1 text-slate-900 hover:bg-slate-50 hover:text-slate-900 transition-colors" data-size="sm">
-			                    <div class="brand-logo-wrap">
-			                        <div class="brand-logo-inner">
-			                            <span class="brand-wordmark">{{ site_wordmark }}</span>
-			                            <span class="brand-emoji-wrap brand-emoji-char" aria-hidden="true">{{ site_emoji }}</span>
-			                        </div>
-			                    </div>
-			                </a>
+    {% get_nav_sections as nav_sections %}
+    {% get_nav_cta as nav_cta %}
 
-	                <!-- Page title: between logo and nav (desktop) or hamburger (mobile) -->
-	                <div class="min-w-0 flex-1 px-2">
+    {# Desktop top navigation (visible ≥768px) #}
+    <nav class="top-nav hidden md:block bg-white border-b border-slate-200 sticky top-0 z-50">
+        <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+            <div class="flex h-14 items-center justify-between gap-2">
+                <a href="{% url 'index' %}" class="brand-logo nav-logo shrink-0 rounded-md px-1.5 py-1 text-slate-900 hover:bg-slate-50 hover:text-slate-900 transition-colors" data-size="sm">
+                    <div class="brand-logo-wrap">
+                        <div class="brand-logo-inner">
+                            <span class="brand-wordmark">{{ site_wordmark }}</span>
+                            <span class="brand-emoji-wrap brand-emoji-char" aria-hidden="true">{{ site_emoji }}</span>
+                        </div>
+                    </div>
+                </a>
+
+                {# Page title #}
+                <div class="min-w-0 flex-1 px-2">
                     {% if page_title %}<h1 class="nav-page-title">{{ page_title }}</h1>{% endif %}
                 </div>
 
-                <!-- Desktop navigation -->
-                <div class="hidden md:flex md:items-center md:gap-0.5">
-                    {% for item in nav_items %}
-                    {% include "partials/nav_item.html" with url_name=item.url_name label=item.label is_active=item.is_active variant="desktop" %}
-                    {% if item.url_name == "products" %}
-                    <span class="mx-1.5 h-5 w-px bg-slate-200" aria-hidden="true"></span>
-                    <a href="{% url 'orders_create' %}" class="btn-primary px-3 py-1.5">+ Нове замовлення</a>
-                    <span class="mx-1.5 h-5 w-px bg-slate-200" aria-hidden="true"></span>
+                {# Desktop nav dropdowns #}
+                <div class="flex items-center gap-1">
+                    {% for section in nav_sections %}
+                    {% if section.key != "more" %}
+                    {% include "partials/nav_dropdown.html" with section=section %}
                     {% endif %}
                     {% endfor %}
+
+                    <span class="mx-1.5 h-5 w-px bg-slate-200" aria-hidden="true"></span>
+
+                    {# CTA button #}
+                    <a href="{% url nav_cta.url_name %}" class="btn-primary px-3 py-1.5 whitespace-nowrap">{{ nav_cta.label }}</a>
+
+                    <span class="mx-1.5 h-5 w-px bg-slate-200" aria-hidden="true"></span>
+
+                    {# More dropdown (icon only) #}
+                    {% for section in nav_sections %}
+                    {% if section.key == "more" %}
+                    <div class="nav-dropdown relative" x-data="{ open: false }">
+                        <button
+                            type="button"
+                            class="nav-dropdown-trigger rounded-md p-2 text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors {% if section.is_active %}bg-teal-50 text-teal-700{% endif %}"
+                            @click="open = !open"
+                            @keydown.escape.window="open = false"
+                            :aria-expanded="open"
+                            aria-haspopup="true"
+                            aria-label="Більше"
+                        >
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z"/>
+                            </svg>
+                        </button>
+                        <div
+                            class="nav-dropdown-panel absolute right-0 top-full z-[60] mt-1 min-w-[160px] rounded-md border border-slate-200 bg-white py-1 shadow-lg"
+                            x-show="open"
+                            x-transition:enter="transition ease-out duration-100"
+                            x-transition:enter-start="opacity-0 scale-95"
+                            x-transition:enter-end="opacity-100 scale-100"
+                            x-transition:leave="transition ease-in duration-75"
+                            x-transition:leave-start="opacity-100 scale-100"
+                            x-transition:leave-end="opacity-0 scale-95"
+                            @click.outside="open = false"
+                            x-cloak
+                        >
+                            {% for item in section.items %}
+                            <a href="{% url item.url_name %}" class="nav-dropdown-item block px-4 py-2 text-sm transition-colors {% if item.is_active %}bg-teal-50 text-teal-700{% else %}text-slate-700 hover:bg-slate-50{% endif %}" {% if item.is_active %}aria-current="page"{% endif %}>{{ item.label }}</a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+
                     <form method="post" action="{% url 'auth_logout' %}" class="m-0 inline-flex">
                         {% csrf_token %}
                         <button type="submit" class="rounded-md px-3 py-1.5 text-sm font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors">Вийти</button>
                     </form>
                 </div>
-
-                <!-- Mobile hamburger -->
-                <button type="button" id="nav-toggle" class="shrink-0 inline-flex items-center justify-center rounded-md p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 md:hidden" aria-expanded="false" aria-controls="nav-menu">
-                    <span class="sr-only">Меню</span>
-                    <svg id="icon-menu" class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
-                    <svg id="icon-close" class="hidden h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                </button>
-            </div>
-        </div>
-
-        <!-- Mobile navigation panel (OUTSIDE the h-14 flex — no layout shift) -->
-        <div id="nav-menu" class="hidden border-t border-slate-100 md:hidden">
-            <div class="space-y-1 px-4 pb-3 pt-2 sm:px-6">
-                {% for item in nav_items %}
-                {% include "partials/nav_item.html" with url_name=item.url_name label=item.label is_active=item.is_active variant="mobile" %}
-                {% if item.url_name == "products" %}
-                <div class="my-2 border-t border-slate-100"></div>
-                <a href="{% url 'orders_create' %}" class="btn-primary block px-3 py-2 {% if current_url == 'orders_create' %}ring-2 ring-slate-500/30{% endif %}">+ Нове замовлення</a>
-                <div class="my-2 border-t border-slate-100"></div>
-                {% endif %}
-                {% endfor %}
-                <form method="post" action="{% url 'auth_logout' %}" class="m-0">
-                    {% csrf_token %}
-                    <button type="submit" class="block w-full rounded-md px-3 py-2 text-left text-sm font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors">Вийти</button>
-                </form>
             </div>
         </div>
     </nav>
+
+    {# Mobile title bar #}
+    <header class="mobile-title-bar md:hidden bg-white border-b border-slate-200">
+        <div class="flex h-14 items-center justify-between px-4">
+            <a href="{% url 'index' %}" class="brand-logo nav-logo shrink-0 rounded-md px-1.5 py-1 text-slate-900 hover:bg-slate-50 hover:text-slate-900 transition-colors" data-size="sm">
+                <div class="brand-logo-wrap">
+                    <div class="brand-logo-inner">
+                        <span class="brand-wordmark">{{ site_wordmark }}</span>
+                        <span class="brand-emoji-wrap brand-emoji-char" aria-hidden="true">{{ site_emoji }}</span>
+                    </div>
+                </div>
+            </a>
+            <div class="min-w-0 flex-1 px-2 text-right">
+                {% if page_title %}<h1 class="nav-page-title">{{ page_title }}</h1>{% endif %}
+            </div>
+        </div>
+    </header>
+
+    {# Mobile bottom navigation #}
+    <div class="md:hidden">
+        {% include "partials/bottom_nav.html" with nav_sections=nav_sections nav_cta=nav_cta %}
+    </div>
+
     {% endwith %}
     {% endif %}
     {% comment %}Layout: default = .main-content (max-w-2xl). Centered pages (login, create order) = .main-centered + inner max-w-2xl. See docs/design/design_components.md. {% endcomment %}
-    <main class="{% if page_title_center or not request.user.is_authenticated %}main-centered px-4 py-10 sm:px-6 lg:px-8{% else %}main-content mx-auto px-4 py-6 sm:px-6 lg:px-8{% endif %}">
+    <main class="{% if page_title_center or not request.user.is_authenticated %}main-centered px-4 py-10 sm:px-6 lg:px-8{% else %}main-content mx-auto px-4 py-6 pb-24 md:pb-6 sm:px-6 lg:px-8{% endif %}">
         <div class="{% if page_title_center or not request.user.is_authenticated %}w-full max-w-2xl mx-auto{% endif %}">
             {% block content %}{% endblock %}
         </div>

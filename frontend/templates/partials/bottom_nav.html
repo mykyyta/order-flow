@@ -1,0 +1,92 @@
+{% comment %}
+Mobile bottom navigation bar with 5 slots:
+[Виробництво] [Склад] [+] [Каталог] [Ще]
+
+Requires: nav_sections, nav_cta from template tags
+{% endcomment %}
+<nav class="bottom-nav" aria-label="Основна навігація">
+    {# Slot 1: Виробництво #}
+    {% for section in nav_sections %}
+    {% if section.key == "work" %}
+    <div class="bottom-nav-slot" x-data="{ open: false }">
+        <button type="button" class="bottom-nav-btn {% if section.is_active %}bottom-nav-btn-active{% endif %}" @click="open = !open" :aria-expanded="open">
+            <span class="bottom-nav-emoji" aria-hidden="true">{{ section.emoji }}</span>
+            <span class="bottom-nav-label">{{ section.label }}</span>
+        </button>
+        <div class="bottom-nav-dropdown bottom-nav-dropdown-left" x-show="open" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-100" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-2" @click.outside="open = false" @keydown.escape.window="open = false" x-cloak>
+            {% for item in section.items %}
+            <a href="{% url item.url_name %}" class="bottom-nav-dropdown-item {% if item.is_active %}bottom-nav-dropdown-item-active{% endif %}" {% if item.is_active %}aria-current="page"{% endif %}>{{ item.label }}</a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+
+    {# Slot 2: Склад #}
+    {% for section in nav_sections %}
+    {% if section.key == "inventory" %}
+    <div class="bottom-nav-slot" x-data="{ open: false }">
+        <button type="button" class="bottom-nav-btn {% if section.is_active %}bottom-nav-btn-active{% endif %}" @click="open = !open" :aria-expanded="open">
+            <span class="bottom-nav-emoji" aria-hidden="true">{{ section.emoji }}</span>
+            <span class="bottom-nav-label">{{ section.label }}</span>
+        </button>
+        <div class="bottom-nav-dropdown" x-show="open" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-100" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-2" @click.outside="open = false" @keydown.escape.window="open = false" x-cloak>
+            {% for item in section.items %}
+            <a href="{% url item.url_name %}" class="bottom-nav-dropdown-item {% if item.is_active %}bottom-nav-dropdown-item-active{% endif %}" {% if item.is_active %}aria-current="page"{% endif %}>{{ item.label }}</a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+
+    {# Slot 3: CTA (+) #}
+    <div class="bottom-nav-slot">
+        <a href="{% url nav_cta.url_name %}" class="bottom-nav-cta {% if nav_cta.is_active %}bottom-nav-cta-active{% endif %}">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
+            </svg>
+        </a>
+    </div>
+
+    {# Slot 4: Каталог #}
+    {% for section in nav_sections %}
+    {% if section.key == "catalog" %}
+    <div class="bottom-nav-slot" x-data="{ open: false }">
+        <button type="button" class="bottom-nav-btn {% if section.is_active %}bottom-nav-btn-active{% endif %}" @click="open = !open" :aria-expanded="open">
+            <span class="bottom-nav-emoji" aria-hidden="true">{{ section.emoji }}</span>
+            <span class="bottom-nav-label">{{ section.label }}</span>
+        </button>
+        <div class="bottom-nav-dropdown bottom-nav-dropdown-right" x-show="open" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-100" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-2" @click.outside="open = false" @keydown.escape.window="open = false" x-cloak>
+            {% for item in section.items %}
+            <a href="{% url item.url_name %}" class="bottom-nav-dropdown-item {% if item.is_active %}bottom-nav-dropdown-item-active{% endif %}" {% if item.is_active %}aria-current="page"{% endif %}>{{ item.label }}</a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+
+    {# Slot 5: More (three dots only) #}
+    {% for section in nav_sections %}
+    {% if section.key == "more" %}
+    <div class="bottom-nav-slot" x-data="{ open: false }">
+        <button type="button" class="bottom-nav-btn {% if section.is_active %}bottom-nav-btn-active{% endif %}" @click="open = !open" :aria-expanded="open" aria-label="Більше">
+            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="5" r="2"/>
+                <circle cx="12" cy="12" r="2"/>
+                <circle cx="12" cy="19" r="2"/>
+            </svg>
+        </button>
+        <div class="bottom-nav-dropdown bottom-nav-dropdown-last" x-show="open" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-100" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-2" @click.outside="open = false" @keydown.escape.window="open = false" x-cloak>
+            {% for item in section.items %}
+            <a href="{% url item.url_name %}" class="bottom-nav-dropdown-item {% if item.is_active %}bottom-nav-dropdown-item-active{% endif %}" {% if item.is_active %}aria-current="page"{% endif %}>{{ item.label }}</a>
+            {% endfor %}
+            <div class="border-t border-slate-100 my-1"></div>
+            <form method="post" action="{% url 'auth_logout' %}" class="m-0">
+                {% csrf_token %}
+                <button type="submit" class="bottom-nav-dropdown-item text-slate-500 w-full text-left">Вийти</button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+</nav>

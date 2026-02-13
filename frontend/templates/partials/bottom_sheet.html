@@ -1,0 +1,67 @@
+{% comment %}
+Mobile bottom sheet for "More" menu.
+Contains: Клієнти, Постачальники, Закупівлі, Профіль, Вийти
+
+Requires: more_section from template context (the "more" section from nav_sections)
+{% endcomment %}
+<div
+    class="bottom-sheet"
+    x-data="{ open: false }"
+    @open-bottom-sheet.window="open = true"
+    @keydown.escape.window="open = false"
+    :class="{ 'bottom-sheet-open': open }"
+>
+    {# Backdrop #}
+    <div
+        class="bottom-sheet-backdrop"
+        x-show="open"
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0"
+        @click="open = false"
+        x-cloak
+        aria-hidden="true"
+    ></div>
+
+    {# Panel #}
+    <div
+        class="bottom-sheet-panel"
+        x-show="open"
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="translate-y-full"
+        x-transition:enter-end="translate-y-0"
+        x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="translate-y-0"
+        x-transition:leave-end="translate-y-full"
+        x-cloak
+        role="dialog"
+        aria-modal="true"
+        aria-label="Додаткове меню"
+    >
+        {# Handle #}
+        <div class="bottom-sheet-handle" aria-hidden="true">
+            <div class="bottom-sheet-handle-bar"></div>
+        </div>
+
+        {# Content #}
+        <div class="bottom-sheet-content">
+            {% for item in more_section.items %}
+            <a
+                href="{% url item.url_name %}"
+                class="bottom-sheet-item {% if item.is_active %}bottom-sheet-item-active{% endif %}"
+                {% if item.is_active %}aria-current="page"{% endif %}
+            >{{ item.label }}</a>
+            {% endfor %}
+
+            <div class="bottom-sheet-divider"></div>
+
+            <form method="post" action="{% url 'auth_logout' %}" class="m-0">
+                {% csrf_token %}
+                <button type="submit" class="bottom-sheet-item bottom-sheet-item-logout">Вийти</button>
+            </form>
+        </div>
+    </div>
+</div>

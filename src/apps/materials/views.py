@@ -235,3 +235,26 @@ def material_color_unarchive(request, pk: int, color_pk: int):
         color.save(update_fields=["archived_at"])
         messages.success(request, "Готово! Колір відновлено з архіву.")
     return redirect("material_colors_archive", pk=pk)
+
+
+# Supplier and Purchase Order views
+
+
+@login_required(login_url=reverse_lazy("auth_login"))
+def suppliers_list(request):
+    """Placeholder view for suppliers list."""
+    return render(
+        request,
+        "materials/suppliers.html",
+        {"page_title": "Постачальники"},
+    )
+
+
+@login_required(login_url=reverse_lazy("auth_login"))
+def purchases_list(request):
+    """Placeholder view for purchase orders list."""
+    return render(
+        request,
+        "materials/purchases.html",
+        {"page_title": "Закупівлі"},
+    )
