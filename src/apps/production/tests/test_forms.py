@@ -24,8 +24,8 @@ def test_order_form_product_and_primary_color_have_named_placeholders_and_sorted
     color_choice_labels = [label for _, label in list(form.fields["primary_material_color"].choices)]
     assert color_choice_labels[0] == "—"
     assert color_choice_labels[1:] == [
-        f"{material.name}: Amber",
-        f"{material.name}: Blue",
+        "Amber",
+        "Blue",
     ]
 
     product_html = str(form["product"])

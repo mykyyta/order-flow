@@ -22,13 +22,18 @@ class HiddenEmptyOptionSelect(forms.Select):
         return option
 
 
+class PrimaryMaterialColorChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, obj: MaterialColor) -> str:
+        return obj.name
+
+
 class OrderForm(forms.ModelForm):
     product = forms.ModelChoiceField(
         queryset=Product.objects.none(),
         required=True,
         widget=HiddenEmptyOptionSelect(attrs={"class": FORM_SELECT}),
     )
-    primary_material_color = forms.ModelChoiceField(
+    primary_material_color = PrimaryMaterialColorChoiceField(
         queryset=MaterialColor.objects.none(),
         required=False,
         widget=HiddenEmptyOptionSelect(attrs={"class": FORM_SELECT}),
