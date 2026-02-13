@@ -7,6 +7,7 @@ from django.utils import timezone
 from django.views import View
 from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, UpdateView
+from django.db.models.functions import Lower
 
 from apps.materials.forms import MaterialColorForm, MaterialForm
 from apps.materials.models import Material, MaterialColor
@@ -74,7 +75,7 @@ class MaterialDetailView(LoginRequiredMixin, UpdateView):
         # Colors list
         context["colors"] = self.object.colors.filter(
             archived_at__isnull=True
-        ).order_by("code", "name")
+        ).order_by(Lower("name"), "name", "code")
         context["colors_archive_url"] = reverse(
             "material_colors_archive",
             kwargs={"pk": self.object.pk},
@@ -206,7 +207,11 @@ def material_color_archive(request, pk: int, color_pk: int):
 @login_required(login_url=reverse_lazy("auth_login"))
 def material_colors_archive(request, pk: int):
     material = get_object_or_404(Material, pk=pk)
-    colors = material.colors.filter(archived_at__isnull=False).order_by("code", "name")
+    colors = material.colors.filter(archived_at__isnull=False).order_by(
+        Lower("name"),
+        "name",
+        "code",
+    )
     return render(
         request,
         "materials/colors_archive.html",

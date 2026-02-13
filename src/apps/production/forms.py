@@ -1,5 +1,6 @@
 from django import forms
 from django.db.models import Q
+from django.db.models.functions import Lower
 
 from apps.catalog.models import Product
 from apps.catalog.variants import resolve_or_create_variant
@@ -122,13 +123,16 @@ class OrderForm(forms.ModelForm):
     @staticmethod
     def _primary_color_queryset(*, product: Product | None):
         if product is None:
-            return MaterialColor.objects.filter(archived_at__isnull=True).order_by("name")
+            return MaterialColor.objects.filter(archived_at__isnull=True).order_by(
+                Lower("name"),
+                "name",
+            )
         if not product.primary_material_id:
             return MaterialColor.objects.none()
         return MaterialColor.objects.filter(
             material_id=product.primary_material_id,
             archived_at__isnull=True,
-        ).order_by("name")
+        ).order_by(Lower("name"), "name")
 
     def save(self, commit: bool = True):
         instance: ProductionOrder = super().save(commit=False)

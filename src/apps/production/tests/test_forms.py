@@ -9,9 +9,9 @@ from .conftest import ColorFactory, ProductFactory
 
 @pytest.mark.django_db
 def test_order_form_product_and_primary_color_have_named_placeholders_and_sorted_choices():
-    material_color_1 = ColorFactory(name="Blue", code=101)
+    material_color_1 = ColorFactory(name="Banana", code=101)
     material = material_color_1.material
-    ColorFactory(material=material, name="Amber", code=102)
+    ColorFactory(material=material, name="apple", code=102)
     ProductFactory(name="Zeta", primary_material=material)
     alpha = ProductFactory(name="Alpha", primary_material=material)
 
@@ -24,8 +24,8 @@ def test_order_form_product_and_primary_color_have_named_placeholders_and_sorted
     color_choice_labels = [label for _, label in list(form.fields["primary_material_color"].choices)]
     assert color_choice_labels[0] == "—"
     assert color_choice_labels[1:] == [
-        "Amber",
-        "Blue",
+        "apple",
+        "Banana",
     ]
 
     product_html = str(form["product"])

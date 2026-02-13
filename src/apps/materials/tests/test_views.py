@@ -85,10 +85,10 @@ def test_material_detail_shows_colors(client):
     client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
 
     material = Material.objects.create(name="Leather")
-    MaterialColor.objects.create(material=material, code=1, name="Black")
-    MaterialColor.objects.create(material=material, code=2, name="Brown")
+    MaterialColor.objects.create(material=material, code=1, name="Brown")
+    MaterialColor.objects.create(material=material, code=99, name="Black")
     MaterialColor.objects.create(
-        material=material, code=99, name="Archived color", archived_at=timezone.now()
+        material=material, code=100, name="Archived color", archived_at=timezone.now()
     )
 
     response = client.get(reverse("material_detail", kwargs={"pk": material.pk}))
@@ -96,6 +96,7 @@ def test_material_detail_shows_colors(client):
     assert b"Black" in response.content
     assert b"Brown" in response.content
     assert b"Archived color" not in response.content
+    assert response.content.index(b"Black") < response.content.index(b"Brown")
     assert reverse("material_colors_archive", kwargs={"pk": material.pk}).encode() in response.content
 
 
@@ -154,19 +155,27 @@ def test_material_colors_archive_page_shows_archived_only(client):
     client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
 
     material = Material.objects.create(name="Canvas")
-    MaterialColor.objects.create(material=material, code=1, name="Active White")
+    MaterialColor.objects.create(material=material, code=50, name="Active White")
     archived = MaterialColor.objects.create(
-        material=material, code=2, name="Archived Black", archived_at=timezone.now()
+        material=material, code=1, name="Zeta", archived_at=timezone.now()
+    )
+    archived_alpha = MaterialColor.objects.create(
+        material=material, code=99, name="Alpha", archived_at=timezone.now()
     )
 
     response = client.get(reverse("material_colors_archive", kwargs={"pk": material.pk}))
     assert response.status_code == 200
-    assert b"Archived Black" in response.content
+    assert b"Zeta" in response.content
+    assert b"Alpha" in response.content
     assert b"Active White" not in response.content
+    assert response.content.index(b"Alpha") < response.content.index(b"Zeta")
     assert b"divide-y divide-slate-100" in response.content
     assert b'text-xs font-mono text-slate-400 w-8' in response.content
     assert reverse(
         "material_color_unarchive", kwargs={"pk": material.pk, "color_pk": archived.pk}
+    ).encode() in response.content
+    assert reverse(
+        "material_color_unarchive", kwargs={"pk": material.pk, "color_pk": archived_alpha.pk}
     ).encode() in response.content
 
 
