@@ -109,6 +109,49 @@ def test_product_detail_shows_material_fields_and_bom_section(client):
 
 
 @pytest.mark.django_db(transaction=True)
+def test_bundle_product_detail_shows_components_section(client):
+    from apps.accounts.models import User
+    from apps.catalog.models import Product
+    from django.urls import reverse
+
+    user = User.objects.create_user(username="bundle_detail_viewer", password="pass12345")
+    client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
+
+    bundle = Product.objects.create(name="Set", kind=Product.Kind.BUNDLE)
+
+    response = client.get(reverse("product_edit", kwargs={"pk": bundle.pk}))
+    assert response.status_code == 200
+    assert "Компоненти бандла".encode() in response.content
+    assert reverse("bundle_component_add", kwargs={"pk": bundle.pk}).encode() in response.content
+
+
+@pytest.mark.django_db(transaction=True)
+def test_bundle_component_add_creates_link(client):
+    from apps.accounts.models import User
+    from apps.catalog.models import BundleComponent, Product
+    from django.urls import reverse
+
+    user = User.objects.create_user(username="bundle_component_editor", password="pass12345")
+    client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
+
+    bundle = Product.objects.create(name="Set", kind=Product.Kind.BUNDLE)
+    component = Product.objects.create(name="Strap", kind=Product.Kind.COMPONENT)
+
+    response = client.post(
+        reverse("bundle_component_add", kwargs={"pk": bundle.pk}),
+        data={
+            "component": str(component.pk),
+            "quantity": "2",
+            "is_primary": "on",
+            "is_required": "on",
+            "group": "",
+        },
+    )
+    assert response.status_code == 302
+    assert BundleComponent.objects.filter(bundle=bundle, component=component, quantity=2).exists()
+
+
+@pytest.mark.django_db(transaction=True)
 def test_product_detail_primary_secondary_set_via_product_material_roles(client):
     from apps.accounts.models import User
     from apps.materials.models import Material

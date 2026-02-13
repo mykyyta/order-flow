@@ -1,0 +1,35 @@
+{% extends "base_drawer_page.html" %}
+
+{% block drawer_title_text %}{{ drawer_title }}{% endblock %}
+
+{% block drawer_content %}
+<form method="post" class="space-y-4">
+    {% csrf_token %}
+    {% include "partials/form_field.html" with field=form.component label=form.component.label %}
+    {% include "partials/form_field.html" with field=form.quantity label=form.quantity.label %}
+
+    <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
+        {% include "partials/form_checkbox_option.html" with field=form.is_primary label=form.is_primary.label %}
+        {% include "partials/form_checkbox_option.html" with field=form.is_required label=form.is_required.label %}
+    </div>
+
+    {% include "partials/form_field.html" with field=form.group label=form.group.label %}
+    <button type="submit" class="btn-primary w-full">Зберегти</button>
+</form>
+{% endblock %}
+
+{% block drawer_footer %}
+{% if bundle_component %}
+<div class="border-t border-slate-100 px-4 py-3 sm:px-5">
+    <form method="post" action="{% url 'bundle_component_delete' product.pk bundle_component.pk %}">
+        {% csrf_token %}
+        <button type="submit"
+                class="text-sm text-slate-500 hover:text-red-600 transition-colors"
+                onclick="return confirm('Видалити компонент з бандла?')">
+            Видалити
+        </button>
+    </form>
+</div>
+{% endif %}
+{% endblock %}
+

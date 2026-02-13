@@ -5,7 +5,7 @@ from django.db.models import Q
 
 from apps.materials.models import Material, MaterialUnit
 
-from .models import Color, Product, ProductMaterial
+from .models import BundleComponent, Color, Product, ProductMaterial
 
 # Design system: one class set for all form controls (see assets/tailwind/input.css)
 FORM_INPUT = "form-input"
@@ -169,6 +169,64 @@ class ProductMaterialForm(forms.ModelForm):
 
         if unit and unit not in {choice[0] for choice in MaterialUnit.choices}:
             self.add_error("unit", "Невірна одиниця.")
+            return cleaned
+
+        return cleaned
+
+
+class BundleComponentForm(forms.ModelForm):
+    def __init__(self, *args, bundle: Product | None = None, **kwargs):
+        self.bundle = bundle
+        super().__init__(*args, **kwargs)
+
+        component_q = Q(archived_at__isnull=True) & (
+            Q(kind=Product.Kind.STANDARD) | Q(kind=Product.Kind.COMPONENT)
+        )
+        if self.instance and self.instance.pk:
+            component_q |= Q(pk=self.instance.component_id)
+        self.fields["component"].queryset = Product.objects.filter(component_q).order_by("name")
+
+    class Meta:
+        model = BundleComponent
+        fields = ["component", "quantity", "is_primary", "is_required", "group"]
+        labels = {
+            "component": "Компонент",
+            "quantity": "Кількість",
+            "is_primary": "Основний",
+            "is_required": "Обов'язковий",
+            "group": "Група",
+        }
+        widgets = {
+            "component": forms.Select(attrs={"class": FORM_SELECT}),
+            "quantity": forms.NumberInput(attrs={"class": FORM_INPUT, "min": "1", "step": "1"}),
+            "is_primary": forms.CheckboxInput(attrs={"class": FORM_CHECKBOX}),
+            "is_required": forms.CheckboxInput(attrs={"class": FORM_CHECKBOX}),
+            "group": forms.TextInput(attrs={"class": FORM_INPUT, "placeholder": "Необов'язково"}),
+        }
+
+    def clean(self):
+        cleaned = super().clean()
+        component = cleaned.get("component")
+        if self.bundle is None:
+            return cleaned
+
+        if self.bundle.kind != Product.Kind.BUNDLE:
+            self.add_error("component", "Компоненти можна додавати лише до бандлів.")
+            return cleaned
+
+        if component and component.kind == Product.Kind.BUNDLE:
+            self.add_error("component", "Компонентом не може бути бандл.")
+            return cleaned
+        if component and component.pk == self.bundle.pk:
+            self.add_error("component", "Бандл не може містити сам себе.")
+            return cleaned
+
+        if (
+            component
+            and (not self.instance.pk)
+            and BundleComponent.objects.filter(bundle=self.bundle, component=component).exists()
+        ):
+            self.add_error("component", "Цей компонент вже додано.")
             return cleaned
 
         return cleaned

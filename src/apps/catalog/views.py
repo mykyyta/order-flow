@@ -15,7 +15,7 @@ from .forms import (
     ProductDetailForm,
     ProductMaterialForm,
 )
-from .models import Color, Product, ProductMaterial
+from .models import BundleComponent, Color, Product, ProductMaterial
 
 
 def _apply_product_material_role_change(*, product_id: int, product_material: ProductMaterial) -> None:
@@ -223,18 +223,31 @@ class ProductDetailUpdateView(LoginRequiredMixin, UpdateView):
             {"title": "Основне", "fields": ["name", "kind", "section"]},
         ]
 
-        if self.object.kind == Product.Kind.BUNDLE:
-            context["product_materials"] = []
-            context["product_material_add_url"] = None
-        else:
-            context["product_materials"] = (
-                ProductMaterial.objects.filter(product=self.object)
-                .select_related("material")
-                .order_by("sort_order", "id")
-            )
-            context["product_material_add_url"] = reverse(
-                "product_material_add", kwargs={"pk": self.object.pk}
-            )
+        # Materials are not allowed for bundles, but we still show existing records (if any)
+        # so they can be removed/cleaned up.
+        context["product_materials"] = (
+            ProductMaterial.objects.filter(product=self.object)
+            .select_related("material")
+            .order_by("sort_order", "id")
+        )
+        context["product_material_add_url"] = (
+            None
+            if self.object.kind == Product.Kind.BUNDLE
+            else reverse("product_material_add", kwargs={"pk": self.object.pk})
+        )
+
+        context["bundle_components"] = (
+            BundleComponent.objects.filter(bundle=self.object)
+            .select_related("component")
+            .order_by("-is_primary", "id")
+            if self.object.kind == Product.Kind.BUNDLE
+            else []
+        )
+        context["bundle_component_add_url"] = (
+            reverse("bundle_component_add", kwargs={"pk": self.object.pk})
+            if self.object.kind == Product.Kind.BUNDLE
+            else None
+        )
         return context
 
     def form_valid(self, form):
@@ -373,6 +386,120 @@ class ProductMaterialUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_success_url(self):
         return reverse("product_edit", kwargs={"pk": self.product.pk})
+
+
+class BundleComponentCreateView(LoginRequiredMixin, CreateView):
+    login_url = reverse_lazy("auth_login")
+    model = BundleComponent
+    form_class = None  # set below to avoid circular import in type checking
+    template_name = "catalog/bundle_component_drawer.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        self.product = get_object_or_404(Product, pk=kwargs["pk"])
+        if self.product.kind != Product.Kind.BUNDLE:
+            messages.error(request, "Компоненти можна додавати лише для бандлів.")
+            return redirect("product_edit", pk=self.product.pk)
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form_class(self):
+        from .forms import BundleComponentForm
+
+        return BundleComponentForm
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["bundle"] = self.product
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["drawer_title"] = "Додати компонент"
+        context["back_url"] = reverse("product_edit", kwargs={"pk": self.product.pk})
+        context["product"] = self.product
+        context["bundle_component"] = None
+        return context
+
+    def form_valid(self, form):
+        from .forms import BundleComponentForm
+
+        assert isinstance(form, BundleComponentForm)
+        with transaction.atomic():
+            obj: BundleComponent = form.save(commit=False)
+            obj.bundle = self.product
+            obj.save()
+            if obj.is_primary:
+                BundleComponent.objects.filter(bundle=self.product).exclude(pk=obj.pk).update(
+                    is_primary=False
+                )
+            self.object = obj
+        messages.success(self.request, "Готово! Компонент додано.")
+        return redirect(self.get_success_url())
+
+    def get_success_url(self):
+        return reverse("product_edit", kwargs={"pk": self.product.pk})
+
+
+class BundleComponentUpdateView(LoginRequiredMixin, UpdateView):
+    login_url = reverse_lazy("auth_login")
+    model = BundleComponent
+    form_class = None  # set below
+    template_name = "catalog/bundle_component_drawer.html"
+    pk_url_kwarg = "bc_pk"
+
+    def dispatch(self, request, *args, **kwargs):
+        self.product = get_object_or_404(Product, pk=kwargs["pk"])
+        if self.product.kind != Product.Kind.BUNDLE:
+            messages.error(request, "Компоненти можна редагувати лише для бандлів.")
+            return redirect("product_edit", pk=self.product.pk)
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form_class(self):
+        from .forms import BundleComponentForm
+
+        return BundleComponentForm
+
+    def get_queryset(self):
+        return BundleComponent.objects.filter(bundle=self.product).select_related("component")
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["bundle"] = self.product
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["drawer_title"] = "Редагувати компонент"
+        context["back_url"] = reverse("product_edit", kwargs={"pk": self.product.pk})
+        context["product"] = self.product
+        context["bundle_component"] = self.object
+        return context
+
+    def form_valid(self, form):
+        from .forms import BundleComponentForm
+
+        assert isinstance(form, BundleComponentForm)
+        with transaction.atomic():
+            obj: BundleComponent = form.save()
+            if obj.is_primary:
+                BundleComponent.objects.filter(bundle=self.product).exclude(pk=obj.pk).update(
+                    is_primary=False
+                )
+            self.object = obj
+        messages.success(self.request, "Готово! Компонент оновлено.")
+        return redirect(self.get_success_url())
+
+    def get_success_url(self):
+        return reverse("product_edit", kwargs={"pk": self.product.pk})
+
+
+@login_required(login_url=reverse_lazy("auth_login"))
+@require_POST
+def bundle_component_delete(request, pk: int, bc_pk: int):
+    product = get_object_or_404(Product, pk=pk)
+    component = get_object_or_404(BundleComponent, pk=bc_pk, bundle=product)
+    component.delete()
+    messages.success(request, "Готово! Компонент видалено з бандла.")
+    return redirect("product_edit", pk=pk)
 
 
 @login_required(login_url=reverse_lazy("auth_login"))
