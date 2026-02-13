@@ -173,6 +173,12 @@ resource "google_cloud_run_domain_mapping" "app" {
   spec {
     route_name = google_cloud_run_service.app.name
   }
+
+  lifecycle {
+    # Provider defaults certificate_mode to AUTOMATIC, but the API doesn't always
+    # return it on read/import. Ignoring avoids perpetual replacements.
+    ignore_changes = [spec[0].certificate_mode]
+  }
 }
 
 resource "google_secret_manager_secret" "app" {

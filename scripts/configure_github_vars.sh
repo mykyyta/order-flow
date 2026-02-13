@@ -27,5 +27,6 @@ set_var "ARTIFACT_REPOSITORY" "my-repo"
 set_var "GCP_WORKLOAD_IDENTITY_PROVIDER" "projects/841559594474/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-provider"
 set_var "GCP_DEPLOYER_SERVICE_ACCOUNT" "orderflow-tf-deployer@orderflow-451220.iam.gserviceaccount.com"
 set_var "CUSTOM_DOMAIN" "pult.woolberry.ua"
+set_var "CUSTOM_DOMAIN_STAGING" "app.woolberry.ua"
 
 echo "Done. Repository variables configured for $REPO"
