@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from django.db import transaction
 from django.utils import timezone
 
-from apps.catalog.models import BundleComponent
+from apps.catalog.models import BundleComponent, ProductMaterial
 from apps.materials.models import (
     GoodsReceipt,
     GoodsReceiptLine,
@@ -17,7 +17,6 @@ from apps.materials.models import (
     MaterialStock,
     MaterialStockTransfer,
     MaterialStockTransferLine,
-    BOM,
     PurchaseOrder,
     PurchaseOrderLine,
 )
@@ -43,9 +42,11 @@ def calculate_material_requirements_for_sales_order_line(
     labels: dict[int, str] = {}
 
     for product_id, produced_quantity in _iter_line_product_quantities(line=line):
-        for norm in BOM.objects.filter(product_id=product_id).select_related(
-            "material"
-        ):
+        for norm in ProductMaterial.objects.filter(
+            product_id=product_id,
+            quantity_per_unit__isnull=False,
+        ).select_related("material"):
+            # unit is required when quantity_per_unit is set (model constraint)
             key = (norm.material_id, norm.unit)
             quantity = norm.quantity_per_unit * produced_quantity
             totals[key] = totals.get(key, Decimal("0")) + quantity

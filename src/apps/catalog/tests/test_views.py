@@ -105,7 +105,7 @@ def test_product_detail_shows_material_fields_and_bom_section(client):
     assert b'name="primary_material"' not in response.content
     assert b'name="secondary_material"' not in response.content
     assert "Матеріали моделі".encode() in response.content
-    assert "Норми матеріалів".encode() in response.content
+    assert "Норми матеріалів".encode() not in response.content
 
 
 @pytest.mark.django_db(transaction=True)
@@ -260,27 +260,31 @@ def test_product_detail_primary_change_updates_product_material_roles(client):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_product_bom_add_creates_norm(client):
+def test_product_material_add_can_set_norm_fields(client):
     from apps.accounts.models import User
-    from apps.materials.models import BOM, Material
+    from apps.catalog.models import ProductMaterial
+    from apps.materials.models import Material, MaterialUnit
 
-    user = User.objects.create_user(username="model_bom_editor", password="pass12345")
+    user = User.objects.create_user(username="model_material_norm_editor", password="pass12345")
     client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
 
     product = Product.objects.create(name="Bag")
     material = Material.objects.create(name="Thread")
 
     response = client.post(
-        reverse("product_bom_add", kwargs={"pk": product.pk}),
+        reverse("product_material_add", kwargs={"pk": product.pk}),
         data={
             "material": str(material.pk),
             "quantity_per_unit": "1.000",
-            "unit": BOM.Unit.PIECE,
+            "unit": MaterialUnit.PIECE,
             "notes": "",
         },
     )
     assert response.status_code == 302
-    assert BOM.objects.filter(product=product, material=material).exists()
+    pm = ProductMaterial.objects.get(product=product, material=material)
+    assert pm.quantity_per_unit is not None
+    assert str(pm.quantity_per_unit) == "1.000"
+    assert pm.unit == MaterialUnit.PIECE
 
 
 @pytest.mark.django_db(transaction=True)

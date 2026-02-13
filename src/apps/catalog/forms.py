@@ -3,7 +3,7 @@ from __future__ import annotations
 from django import forms
 from django.db.models import Q
 
-from apps.materials.models import BOM, Material
+from apps.materials.models import Material, MaterialUnit
 
 from .models import Color, Product, ProductMaterial
 
@@ -74,47 +74,6 @@ class ProductDetailForm(forms.ModelForm):
         }
 
 
-class ProductBOMForm(forms.ModelForm):
-    def __init__(self, *args, product: Product | None = None, **kwargs):
-        self.product = product
-        super().__init__(*args, **kwargs)
-
-        material_q = Q(archived_at__isnull=True)
-        if self.instance and self.instance.pk:
-            material_q |= Q(pk=self.instance.material_id)
-        self.fields["material"].queryset = Material.objects.filter(material_q).order_by("name")
-
-    class Meta:
-        model = BOM
-        fields = ["material", "quantity_per_unit", "unit", "notes"]
-        labels = {
-            "material": "Матеріал",
-            "quantity_per_unit": "Кількість на одиницю",
-            "unit": "Одиниця",
-            "notes": "Нотатки",
-        }
-        widgets = {
-            "material": forms.Select(attrs={"class": FORM_SELECT}),
-            "quantity_per_unit": forms.NumberInput(
-                attrs={"class": FORM_INPUT, "step": "0.001", "min": "0"}
-            ),
-            "unit": forms.Select(attrs={"class": FORM_SELECT}),
-            "notes": forms.TextInput(attrs={"class": FORM_INPUT, "placeholder": "Необов'язково"}),
-        }
-
-    def clean(self):
-        cleaned = super().clean()
-        material = cleaned.get("material")
-        if (
-            self.product
-            and material
-            and not self.instance.pk
-            and BOM.objects.filter(product=self.product, material=material).exists()
-        ):
-            self.add_error("material", "Для цієї моделі цей матеріал вже додано.")
-        return cleaned
-
-
 # Backwards-compat import name used in older tests/callers.
 ProductForm = ProductCreateForm
 
@@ -133,15 +92,21 @@ class ProductMaterialForm(forms.ModelForm):
 
     class Meta:
         model = ProductMaterial
-        fields = ["material", "role", "notes"]
+        fields = ["material", "role", "quantity_per_unit", "unit", "notes"]
         labels = {
             "material": "Матеріал",
             "role": "Роль",
+            "quantity_per_unit": "Норма",
+            "unit": "Одиниця",
             "notes": "Нотатки",
         }
         widgets = {
             "material": forms.Select(attrs={"class": FORM_SELECT}),
             "role": forms.Select(attrs={"class": FORM_SELECT}),
+            "quantity_per_unit": forms.NumberInput(
+                attrs={"class": FORM_INPUT, "step": "0.001", "min": "0"}
+            ),
+            "unit": forms.Select(attrs={"class": FORM_SELECT}),
             "notes": forms.TextInput(attrs={"class": FORM_INPUT, "placeholder": "Необов'язково"}),
         }
 
@@ -149,6 +114,8 @@ class ProductMaterialForm(forms.ModelForm):
         cleaned = super().clean()
         material = cleaned.get("material")
         role = cleaned.get("role") or ProductMaterial.Role.OTHER
+        quantity_per_unit = cleaned.get("quantity_per_unit")
+        unit = cleaned.get("unit")
         cleaned["role"] = role
         if (
             self.product
@@ -157,6 +124,13 @@ class ProductMaterialForm(forms.ModelForm):
             and ProductMaterial.objects.filter(product=self.product, material=material).exists()
         ):
             self.add_error("material", "Для цієї моделі цей матеріал вже додано.")
+            return cleaned
+
+        if unit and not quantity_per_unit:
+            self.add_error("quantity_per_unit", "Вкажи норму або прибери одиницю.")
+            return cleaned
+        if quantity_per_unit and not unit:
+            self.add_error("unit", "Обери одиницю виміру.")
             return cleaned
 
         if not self.product or not material or not role:
@@ -169,5 +143,9 @@ class ProductMaterialForm(forms.ModelForm):
             if self.product.primary_material_id == material.pk:
                 self.add_error("role", "Другорядний матеріал має відрізнятись від основного.")
                 return cleaned
+
+        if unit and unit not in {choice[0] for choice in MaterialUnit.choices}:
+            self.add_error("unit", "Невірна одиниця.")
+            return cleaned
 
         return cleaned

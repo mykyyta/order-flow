@@ -1,6 +1,8 @@
 from django.db import models
 from django.utils import timezone
 
+from apps.materials.models import MaterialUnit
+
 
 class Product(models.Model):
     name = models.CharField(max_length=255, unique=True)
@@ -53,6 +55,18 @@ class ProductMaterial(models.Model):
     )
     role = models.CharField(max_length=16, choices=Role.choices, default=Role.OTHER)
     notes = models.CharField(max_length=255, blank=True)
+    quantity_per_unit = models.DecimalField(
+        max_digits=12,
+        decimal_places=3,
+        null=True,
+        blank=True,
+    )
+    unit = models.CharField(
+        max_length=8,
+        choices=MaterialUnit.choices,
+        null=True,
+        blank=True,
+    )
     sort_order = models.PositiveSmallIntegerField(default=0)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
@@ -72,6 +86,13 @@ class ProductMaterial(models.Model):
                 fields=["product"],
                 condition=models.Q(role="secondary"),
                 name="catalog_productmaterial_secondary_uniq_per_product",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    (models.Q(quantity_per_unit__isnull=True) & models.Q(unit__isnull=True))
+                    | (models.Q(quantity_per_unit__isnull=False) & models.Q(unit__isnull=False))
+                ),
+                name="catalog_productmaterial_norm_quantity_unit_nullability",
             ),
         ]
         ordering = ("sort_order", "id")

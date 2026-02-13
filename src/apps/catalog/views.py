@@ -2,7 +2,6 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from django.db import models, transaction
-from django.db.models.functions import Lower
 from django.shortcuts import get_object_or_404, render, redirect
 from django.urls import reverse, reverse_lazy
 from django.views import View
@@ -10,11 +9,8 @@ from django.views.generic import CreateView, ListView, UpdateView
 from django.views.decorators.http import require_POST
 from django.utils import timezone
 
-from apps.materials.models import BOM
-
 from .forms import (
     ColorForm,
-    ProductBOMForm,
     ProductCreateForm,
     ProductDetailForm,
     ProductMaterialForm,
@@ -228,13 +224,6 @@ class ProductDetailUpdateView(LoginRequiredMixin, UpdateView):
             {"title": "Інше", "fields": ["is_bundle"]},
         ]
 
-        context["material_norms"] = (
-            BOM.objects.filter(product=self.object)
-            .select_related("material")
-            .order_by(Lower("material__name"), "material__name", "id")
-        )
-        context["bom_add_url"] = reverse("product_bom_add", kwargs={"pk": self.object.pk})
-
         context["product_materials"] = (
             ProductMaterial.objects.filter(product=self.object)
             .select_related("material")
@@ -378,77 +367,6 @@ class ProductMaterialUpdateView(LoginRequiredMixin, UpdateView):
             _apply_product_material_role_change(product_id=self.product.pk, product_material=obj)
         messages.success(self.request, "Готово! Матеріал оновлено.")
         return redirect(self.get_success_url())
-
-    def get_success_url(self):
-        return reverse("product_edit", kwargs={"pk": self.product.pk})
-
-
-class ProductBOMCreateView(LoginRequiredMixin, CreateView):
-    """Drawer form for adding a new BOM/material norm to a product."""
-
-    login_url = reverse_lazy("auth_login")
-    model = BOM
-    form_class = ProductBOMForm
-    template_name = "catalog/bom_drawer.html"
-
-    def dispatch(self, request, *args, **kwargs):
-        self.product = get_object_or_404(Product, pk=kwargs["pk"])
-        return super().dispatch(request, *args, **kwargs)
-
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs["product"] = self.product
-        return kwargs
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["drawer_title"] = "Новий матеріал"
-        context["back_url"] = reverse("product_edit", kwargs={"pk": self.product.pk})
-        context["product"] = self.product
-        context["norm"] = None
-        return context
-
-    def form_valid(self, form):
-        form.instance.product = self.product
-        messages.success(self.request, "Готово! Матеріал додано.")
-        return super().form_valid(form)
-
-    def get_success_url(self):
-        return reverse("product_edit", kwargs={"pk": self.product.pk})
-
-
-class ProductBOMUpdateView(LoginRequiredMixin, UpdateView):
-    """Drawer form for editing an existing BOM/material norm."""
-
-    login_url = reverse_lazy("auth_login")
-    model = BOM
-    form_class = ProductBOMForm
-    template_name = "catalog/bom_drawer.html"
-    pk_url_kwarg = "bom_pk"
-
-    def dispatch(self, request, *args, **kwargs):
-        self.product = get_object_or_404(Product, pk=kwargs["pk"])
-        return super().dispatch(request, *args, **kwargs)
-
-    def get_queryset(self):
-        return BOM.objects.filter(product=self.product).select_related("material")
-
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs["product"] = self.product
-        return kwargs
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["drawer_title"] = "Редагувати матеріал"
-        context["back_url"] = reverse("product_edit", kwargs={"pk": self.product.pk})
-        context["product"] = self.product
-        context["norm"] = self.object
-        return context
-
-    def form_valid(self, form):
-        messages.success(self.request, "Готово! Матеріал оновлено.")
-        return super().form_valid(form)
 
     def get_success_url(self):
         return reverse("product_edit", kwargs={"pk": self.product.pk})

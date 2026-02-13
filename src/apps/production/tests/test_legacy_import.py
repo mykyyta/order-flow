@@ -4,7 +4,7 @@ from decimal import Decimal
 from apps.catalog.models import Variant
 from apps.catalog.tests.conftest import ColorFactory, ProductFactory
 from apps.inventory.models import ProductStockMovement, ProductStock
-from apps.materials.models import Material, MaterialStockMovement, MaterialStock, BOM
+from apps.materials.models import Material, MaterialStockMovement, MaterialStock, MaterialUnit
 from apps.production.legacy_import import run_final_import_and_verify, run_import_legacy
 from apps.production.legacy_import_mappings import (
     LEGACY_FINISHED_MOVEMENT_REASON_TO_V2,
@@ -115,7 +115,7 @@ def test_verify_mode_returns_material_balance_by_warehouse_and_unit():
     stock_record = MaterialStock.objects.create(
         warehouse=warehouse,
         material=material,
-        unit=BOM.Unit.PIECE,
+        unit=MaterialUnit.PIECE,
         quantity=Decimal("2.500"),
     )
     MaterialStockMovement.objects.create(
@@ -129,7 +129,7 @@ def test_verify_mode_returns_material_balance_by_warehouse_and_unit():
     row = next(
         item
         for item in rows
-        if item["warehouse_code"] == "VRF-MAT" and item["unit"] == BOM.Unit.PIECE
+        if item["warehouse_code"] == "VRF-MAT" and item["unit"] == MaterialUnit.PIECE
     )
     assert row["stock_total"] == "2.500"
     assert row["movement_net_total"] == "1.250"

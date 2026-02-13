@@ -3,7 +3,8 @@ import pytest
 from django.db import IntegrityError
 
 from apps.catalog.tests.conftest import ProductFactory
-from apps.materials.models import Material, MaterialColor, BOM
+from apps.catalog.models import ProductMaterial
+from apps.materials.models import Material, MaterialColor
 
 
 @pytest.mark.django_db
@@ -30,19 +31,15 @@ def test_product_material_unique_per_product_material():
     felt = Material.objects.create(name="Felt")
     product = ProductFactory(name="Mini bag")
 
-    BOM.objects.create(
+    ProductMaterial.objects.create(
         product=product,
         material=felt,
-        quantity_per_unit="0.35",
-        unit=BOM.Unit.SQUARE_METER,
     )
 
     with pytest.raises(IntegrityError):
-        BOM.objects.create(
+        ProductMaterial.objects.create(
             product=product,
             material=felt,
-            quantity_per_unit="0.40",
-            unit=BOM.Unit.SQUARE_METER,
         )
 
 
@@ -50,10 +47,8 @@ def test_product_material_unique_per_product_material():
 def test_product_material_str():
     felt = Material.objects.create(name="Felt")
     product = ProductFactory(name="Maxi bag")
-    item = BOM.objects.create(
+    item = ProductMaterial.objects.create(
         product=product,
         material=felt,
-        quantity_per_unit="0.50",
-        unit=BOM.Unit.SQUARE_METER,
     )
-    assert str(item) == "Maxi bag: Felt 0.50 m2"
+    assert str(item) == "Maxi bag: Felt (Інший)"

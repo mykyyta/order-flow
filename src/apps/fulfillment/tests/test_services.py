@@ -21,7 +21,7 @@ from apps.materials.models import (
     MaterialStockMovement,
     MaterialStock,
     MaterialStockTransfer,
-    BOM,
+    MaterialUnit,
 )
 from apps.materials.services import add_material_stock
 from apps.production.domain.status import STATUS_DONE
@@ -95,7 +95,7 @@ def test_receive_purchase_order_line_orchestrated_updates_received_quantity():
         purchase_order=purchase_order,
         material=material,
         quantity=Decimal("10.000"),
-        unit=BOM.Unit.PIECE,
+        unit=MaterialUnit.PIECE,
     )
     warehouse = get_default_warehouse()
 
@@ -222,7 +222,7 @@ def test_transfer_material_stock_orchestrated():
         warehouse_id=from_warehouse.id,
         material=material,
         quantity=Decimal("3.000"),
-        unit=BOM.Unit.PIECE,
+        unit=MaterialUnit.PIECE,
         reason=MaterialStockMovement.Reason.ADJUSTMENT_IN,
         created_by=user,
     )
@@ -232,7 +232,7 @@ def test_transfer_material_stock_orchestrated():
         to_warehouse_id=to_warehouse.id,
         material=material,
         quantity=Decimal("1.250"),
-        unit=BOM.Unit.PIECE,
+        unit=MaterialUnit.PIECE,
         user=user,
     )
 
@@ -259,7 +259,7 @@ def test_receive_purchase_order_line_orchestrated_rolls_back_when_quantity_excee
         purchase_order=purchase_order,
         material=material,
         quantity=Decimal("2.000"),
-        unit=BOM.Unit.PIECE,
+        unit=MaterialUnit.PIECE,
     )
     warehouse = get_default_warehouse()
 
@@ -301,7 +301,7 @@ def test_transfer_material_stock_orchestrated_rolls_back_when_not_enough_stock()
             to_warehouse_id=to_warehouse.id,
             material=material,
             quantity=Decimal("0.500"),
-            unit=BOM.Unit.PIECE,
+            unit=MaterialUnit.PIECE,
             user=user,
         )
 

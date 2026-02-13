@@ -9,7 +9,6 @@ from apps.materials.models import (
     MaterialStock,
     MaterialStockTransfer,
     MaterialStockTransferLine,
-    BOM,
     PurchaseOrder,
     PurchaseOrderLine,
     Supplier,
@@ -27,13 +26,6 @@ class MaterialColorAdmin(admin.ModelAdmin):
     list_display = ("id", "material", "name", "code", "archived_at")
     list_filter = ("material",)
     search_fields = ("name", "material__name")
-
-
-@admin.register(BOM)
-class ProductMaterialAdmin(admin.ModelAdmin):
-    list_display = ("id", "product", "material", "quantity_per_unit", "unit")
-    list_filter = ("unit", "material")
-    search_fields = ("product__name", "material__name")
 
 
 @admin.register(Supplier)

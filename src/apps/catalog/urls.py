@@ -1,8 +1,6 @@
 from django.urls import path
 
 from .views import (
-    ProductBOMCreateView,
-    ProductBOMUpdateView,
     ProductMaterialCreateView,
     ProductMaterialUpdateView,
     ProductDetailUpdateView,
@@ -31,12 +29,6 @@ urlpatterns = [
         "products/<int:pk>/materials/<int:pm_pk>/delete/",
         product_material_delete,
         name="product_material_delete",
-    ),
-    path("products/<int:pk>/bom/add/", ProductBOMCreateView.as_view(), name="product_bom_add"),
-    path(
-        "products/<int:pk>/bom/<int:bom_pk>/",
-        ProductBOMUpdateView.as_view(),
-        name="product_bom_edit",
     ),
     path("products/<int:pk>/archive/", product_archive, name="product_archive"),
     path("products/<int:pk>/unarchive/", product_unarchive, name="product_unarchive"),

@@ -7,7 +7,7 @@ from apps.materials.models import MaterialStockMovement, MaterialStock
 from apps.materials.services import add_material_stock, remove_material_stock, receive_purchase_order_line
 from apps.materials.models import (
     Material,
-    BOM,
+    MaterialUnit,
     PurchaseOrder,
     PurchaseOrderLine,
     Supplier,
@@ -27,7 +27,7 @@ def test_add_material_stock_creates_stock_and_movement():
         warehouse_id=warehouse.id,
         material=material,
         quantity=Decimal("2.500"),
-        unit=BOM.Unit.SQUARE_METER,
+        unit=MaterialUnit.SQUARE_METER,
         reason=MaterialStockMovement.Reason.ADJUSTMENT_IN,
         created_by=user,
     )
@@ -50,7 +50,7 @@ def test_remove_material_stock_fails_when_not_enough():
         warehouse_id=warehouse.id,
         material=material,
         quantity=Decimal("1.000"),
-        unit=BOM.Unit.PIECE,
+        unit=MaterialUnit.PIECE,
         reason=MaterialStockMovement.Reason.ADJUSTMENT_IN,
     )
 
@@ -59,7 +59,7 @@ def test_remove_material_stock_fails_when_not_enough():
             warehouse_id=warehouse.id,
             material=material,
             quantity=Decimal("2.000"),
-            unit=BOM.Unit.PIECE,
+            unit=MaterialUnit.PIECE,
             reason=MaterialStockMovement.Reason.PRODUCTION_OUT,
         )
 
@@ -78,7 +78,7 @@ def test_receive_purchase_order_line_updates_stock_and_po_status():
         purchase_order=purchase_order,
         material=material,
         quantity=Decimal("10.000"),
-        unit=BOM.Unit.PIECE,
+        unit=MaterialUnit.PIECE,
         unit_price=Decimal("1.00"),
     )
     warehouse = get_default_warehouse()
@@ -93,7 +93,7 @@ def test_receive_purchase_order_line_updates_stock_and_po_status():
     purchase_order.refresh_from_db()
     stock_record = MaterialStock.objects.get(
         material=material,
-        unit=BOM.Unit.PIECE,
+        unit=MaterialUnit.PIECE,
     )
     receipt_line.refresh_from_db()
 

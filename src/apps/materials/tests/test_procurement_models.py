@@ -9,7 +9,7 @@ from apps.materials.models import (
     GoodsReceipt,
     GoodsReceiptLine,
     Material,
-    BOM,
+    MaterialUnit,
     PurchaseOrder,
     PurchaseOrderLine,
     Supplier,
@@ -27,13 +27,13 @@ def test_supplier_material_offer_allows_multiple_offers_per_material():
     SupplierMaterialOffer.objects.create(
         supplier=supplier,
         material=material,
-        unit=BOM.Unit.SQUARE_METER,
+        unit=MaterialUnit.SQUARE_METER,
         price_per_unit=Decimal("12.50"),
     )
     SupplierMaterialOffer.objects.create(
         supplier=supplier,
         material=material,
-        unit=BOM.Unit.SQUARE_METER,
+        unit=MaterialUnit.SQUARE_METER,
         price_per_unit=Decimal("11.90"),
         min_order_quantity=Decimal("10.000"),
     )
@@ -55,7 +55,7 @@ def test_material_stock_record_unique_per_material_color_and_unit():
     MaterialStock.objects.create(
         warehouse=warehouse,
         material=material,
-        unit=BOM.Unit.SQUARE_METER,
+        unit=MaterialUnit.SQUARE_METER,
         quantity=Decimal("5.000"),
     )
 
@@ -63,7 +63,7 @@ def test_material_stock_record_unique_per_material_color_and_unit():
         MaterialStock.objects.create(
             warehouse=warehouse,
             material=material,
-            unit=BOM.Unit.SQUARE_METER,
+            unit=MaterialUnit.SQUARE_METER,
             quantity=Decimal("1.000"),
         )
 
@@ -75,7 +75,7 @@ def test_material_stock_record_requires_warehouse():
     with pytest.raises(IntegrityError):
         MaterialStock.objects.create(
             material=material,
-            unit=BOM.Unit.SQUARE_METER,
+            unit=MaterialUnit.SQUARE_METER,
             quantity=Decimal("1.000"),
         )
 
@@ -101,13 +101,13 @@ def test_material_stock_record_allows_same_material_in_different_warehouses():
     MaterialStock.objects.create(
         warehouse=wh_a,
         material=material,
-        unit=BOM.Unit.SQUARE_METER,
+        unit=MaterialUnit.SQUARE_METER,
         quantity=Decimal("5.000"),
     )
     MaterialStock.objects.create(
         warehouse=wh_b,
         material=material,
-        unit=BOM.Unit.SQUARE_METER,
+        unit=MaterialUnit.SQUARE_METER,
         quantity=Decimal("1.000"),
     )
 
@@ -125,7 +125,7 @@ def test_purchase_order_line_remaining_quantity_property():
         material=material,
         quantity=Decimal("100.000"),
         received_quantity=Decimal("40.000"),
-        unit=BOM.Unit.PIECE,
+        unit=MaterialUnit.PIECE,
         unit_price=Decimal("3.50"),
     )
 
@@ -142,7 +142,7 @@ def test_goods_receipt_line_links_purchase_line_and_stock_movement():
         purchase_order=purchase_order,
         material=material,
         quantity=Decimal("10.000"),
-        unit=BOM.Unit.MILLILITER,
+        unit=MaterialUnit.MILLILITER,
         unit_price=Decimal("0.20"),
     )
     warehouse = Warehouse.objects.create(
@@ -155,7 +155,7 @@ def test_goods_receipt_line_links_purchase_line_and_stock_movement():
     stock_record = MaterialStock.objects.create(
         warehouse=warehouse,
         material=material,
-        unit=BOM.Unit.MILLILITER,
+        unit=MaterialUnit.MILLILITER,
         quantity=Decimal("0.000"),
     )
     receipt = GoodsReceipt.objects.create(
@@ -169,7 +169,7 @@ def test_goods_receipt_line_links_purchase_line_and_stock_movement():
         purchase_order_line=po_line,
         material=material,
         quantity=Decimal("10.000"),
-        unit=BOM.Unit.MILLILITER,
+        unit=MaterialUnit.MILLILITER,
     )
     movement = MaterialStockMovement.objects.create(
         stock_record=stock_record,
