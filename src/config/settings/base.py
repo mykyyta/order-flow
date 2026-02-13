@@ -16,9 +16,9 @@ PROJECT_ROOT = BASE_DIR.parent
 # ---------------------------------------------------------------------------
 # Brand / site name — single source of truth for UI (titles, logo, etc.)
 # ---------------------------------------------------------------------------
-SITE_NAME = os.getenv("SITE_NAME", "Pult")
-SITE_WORDMARK = os.getenv("SITE_WORDMARK", "PULT")
-SITE_EMOJI = os.getenv("SITE_EMOJI", "🎛️")
+SITE_NAME = os.getenv("SITE_NAME", "Pult") or "Pult"
+SITE_WORDMARK = os.getenv("SITE_WORDMARK", "PULT") or "PULT"
+SITE_EMOJI = os.getenv("SITE_EMOJI", "🎛️") or "🎛️"
 
 
 def env_bool(name: str, default: bool = False) -> bool:

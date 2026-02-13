@@ -11,9 +11,9 @@ from apps.ui.themes import DEFAULT_THEME, normalize_theme
 def site_brand(request: HttpRequest) -> dict[str, str]:
     """Expose site name and wordmark to all templates. Single source of truth: settings."""
     return {
-        "site_name": getattr(settings, "SITE_NAME", "Pult"),
-        "site_wordmark": getattr(settings, "SITE_WORDMARK", "PULT"),
-        "site_emoji": getattr(settings, "SITE_EMOJI", "🎛️"),
+        "site_name": getattr(settings, "SITE_NAME", "Pult") or "Pult",
+        "site_wordmark": getattr(settings, "SITE_WORDMARK", "PULT") or "PULT",
+        "site_emoji": getattr(settings, "SITE_EMOJI", "🎛️") or "🎛️",
     }
 
 

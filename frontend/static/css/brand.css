@@ -38,7 +38,7 @@
 .brand-logo-inner{
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: 0.125rem;
 }
 
 .brand-wordmark{
