@@ -60,22 +60,16 @@ class ProductDetailForm(forms.ModelForm):
         fields = [
             "name",
             "section",
-            "price_retail_uah",
-            "cost_price",
             "is_bundle",
         ]
         labels = {
             "name": "Назва",
             "section": "Секція",
-            "price_retail_uah": "Роздріб (UAH)",
-            "cost_price": "Собівартість",
             "is_bundle": "Бандл",
         }
         widgets = {
             "name": forms.TextInput(attrs={"class": FORM_INPUT}),
             "section": forms.TextInput(attrs={"class": FORM_INPUT, "placeholder": "Напр. сумки"}),
-            "price_retail_uah": forms.NumberInput(attrs={"class": FORM_INPUT, "step": "0.01"}),
-            "cost_price": forms.NumberInput(attrs={"class": FORM_INPUT, "step": "0.01"}),
             "is_bundle": forms.CheckboxInput(attrs={"class": FORM_CHECKBOX}),
         }
 
@@ -136,22 +130,19 @@ class ProductMaterialForm(forms.ModelForm):
         self.fields["material"].queryset = Material.objects.filter(material_q).order_by("name")
         self.fields["role"].required = False
         self.fields["notes"].required = False
-        self.fields["sort_order"].required = False
 
     class Meta:
         model = ProductMaterial
-        fields = ["material", "role", "notes", "sort_order"]
+        fields = ["material", "role", "notes"]
         labels = {
             "material": "Матеріал",
             "role": "Роль",
             "notes": "Нотатки",
-            "sort_order": "Порядок",
         }
         widgets = {
             "material": forms.Select(attrs={"class": FORM_SELECT}),
             "role": forms.Select(attrs={"class": FORM_SELECT}),
             "notes": forms.TextInput(attrs={"class": FORM_INPUT, "placeholder": "Необов'язково"}),
-            "sort_order": forms.NumberInput(attrs={"class": FORM_INPUT, "min": "0"}),
         }
 
     def clean(self):
@@ -180,4 +171,3 @@ class ProductMaterialForm(forms.ModelForm):
                 return cleaned
 
         return cleaned
-

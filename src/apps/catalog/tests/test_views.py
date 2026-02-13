@@ -127,7 +127,6 @@ def test_product_detail_primary_secondary_set_via_product_material_roles(client)
             "material": str(primary.pk),
             "role": ProductMaterial.Role.PRIMARY,
             "notes": "",
-            "sort_order": "0",
         },
     )
     assert r1.status_code == 302
@@ -140,7 +139,6 @@ def test_product_detail_primary_secondary_set_via_product_material_roles(client)
             "material": str(secondary.pk),
             "role": ProductMaterial.Role.SECONDARY,
             "notes": "",
-            "sort_order": "0",
         },
     )
     assert r2.status_code == 302
@@ -174,7 +172,6 @@ def test_product_material_add_creates_link(client):
             "material": str(material.pk),
             "role": ProductMaterial.Role.OTHER,
             "notes": "",
-            "sort_order": "0",
         },
     )
     assert response.status_code == 302
@@ -196,7 +193,7 @@ def test_product_material_primary_role_is_unique_per_product(client):
 
     r1 = client.post(
         reverse("product_material_add", kwargs={"pk": product.pk}),
-        data={"material": str(m1.pk), "role": ProductMaterial.Role.PRIMARY, "notes": "", "sort_order": "0"},
+        data={"material": str(m1.pk), "role": ProductMaterial.Role.PRIMARY, "notes": ""},
     )
     assert r1.status_code == 302
     product.refresh_from_db()
@@ -204,7 +201,7 @@ def test_product_material_primary_role_is_unique_per_product(client):
 
     r2 = client.post(
         reverse("product_material_add", kwargs={"pk": product.pk}),
-        data={"material": str(m2.pk), "role": ProductMaterial.Role.PRIMARY, "notes": "", "sort_order": "0"},
+        data={"material": str(m2.pk), "role": ProductMaterial.Role.PRIMARY, "notes": ""},
     )
     assert r2.status_code == 302
     product.refresh_from_db()
@@ -227,7 +224,7 @@ def test_product_material_secondary_requires_primary(client):
 
     response = client.post(
         reverse("product_material_add", kwargs={"pk": product.pk}),
-        data={"material": str(m.pk), "role": ProductMaterial.Role.SECONDARY, "notes": "", "sort_order": "0"},
+        data={"material": str(m.pk), "role": ProductMaterial.Role.SECONDARY, "notes": ""},
     )
     assert response.status_code == 200
     assert "Спочатку обери основний матеріал.".encode() in response.content
@@ -248,13 +245,13 @@ def test_product_detail_primary_change_updates_product_material_roles(client):
 
     client.post(
         reverse("product_material_add", kwargs={"pk": product.pk}),
-        data={"material": str(m1.pk), "role": ProductMaterial.Role.PRIMARY, "notes": "", "sort_order": "0"},
+        data={"material": str(m1.pk), "role": ProductMaterial.Role.PRIMARY, "notes": ""},
     )
     assert ProductMaterial.objects.get(product=product, material=m1).role == ProductMaterial.Role.PRIMARY
 
     client.post(
         reverse("product_material_add", kwargs={"pk": product.pk}),
-        data={"material": str(m2.pk), "role": ProductMaterial.Role.PRIMARY, "notes": "", "sort_order": "0"},
+        data={"material": str(m2.pk), "role": ProductMaterial.Role.PRIMARY, "notes": ""},
     )
     product.refresh_from_db()
     assert product.primary_material_id == m2.pk

@@ -225,7 +225,6 @@ class ProductDetailUpdateView(LoginRequiredMixin, UpdateView):
 
         context["field_groups"] = [
             {"title": "Основне", "fields": ["name", "section"]},
-            {"title": "Ціни", "fields": ["price_retail_uah", "cost_price"]},
             {"title": "Інше", "fields": ["is_bundle"]},
         ]
 
@@ -320,6 +319,12 @@ class ProductMaterialCreateView(LoginRequiredMixin, CreateView):
         with transaction.atomic():
             obj: ProductMaterial = form.save(commit=False)
             obj.product = self.product
+            obj.sort_order = (
+                ProductMaterial.objects.filter(product=self.product).aggregate(
+                    max_order=models.Max("sort_order")
+                )["max_order"]
+                or 0
+            ) + 1
             if obj.role in (ProductMaterial.Role.PRIMARY, ProductMaterial.Role.SECONDARY):
                 ProductMaterial.objects.filter(product=self.product, role=obj.role).update(
                     role=ProductMaterial.Role.OTHER

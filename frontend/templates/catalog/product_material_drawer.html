@@ -7,7 +7,6 @@
         {% csrf_token %}
         {% include "partials/form_field.html" with field=form.material label=form.material.label %}
         {% include "partials/form_field.html" with field=form.role label=form.role.label %}
-        {% include "partials/form_field.html" with field=form.sort_order label=form.sort_order.label %}
         {% include "partials/form_field.html" with field=form.notes label=form.notes.label %}
         <button type="submit" class="btn-primary w-full">Зберегти</button>
     </form>
