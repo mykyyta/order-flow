@@ -1,6 +1,8 @@
 document.addEventListener("DOMContentLoaded", function () {
     const productSelect = document.querySelector("#id_product");
     const orderForm = document.querySelector("form[data-order-create-form]");
+    const productSelectForm = document.querySelector("form[data-product-select-form]");
+    const productSubmit = document.querySelector("[data-product-select-submit]");
 
     function isFormDirty(formEl) {
         if (!formEl) return false;
@@ -37,14 +39,25 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
             }
 
-            const url = new URL(window.location.href);
-            if (nextValue) {
-                url.searchParams.set("product", nextValue);
+            if (productSelectForm) {
+                productSelectForm.submit();
             } else {
-                url.searchParams.delete("product");
+                const url = new URL(window.location.href);
+                if (nextValue) {
+                    url.searchParams.set("product", nextValue);
+                } else {
+                    url.searchParams.delete("product");
+                }
+                window.location.href = url.toString();
             }
-            window.location.href = url.toString();
             lastProductValue = nextValue;
+        });
+    }
+
+    if (productSubmit && productSelect) {
+        productSubmit.disabled = !(productSelect.value || "").trim();
+        productSelect.addEventListener("change", function () {
+            productSubmit.disabled = !(productSelect.value || "").trim();
         });
     }
 
