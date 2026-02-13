@@ -220,8 +220,7 @@ class ProductDetailUpdateView(LoginRequiredMixin, UpdateView):
         context["actions"] = actions
 
         context["field_groups"] = [
-            {"title": "Основне", "fields": ["name", "section"]},
-            {"title": "Інше", "fields": ["kind"]},
+            {"title": "Основне", "fields": ["name", "kind", "section"]},
         ]
 
         if self.object.kind == Product.Kind.BUNDLE:

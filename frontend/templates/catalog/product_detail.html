@@ -4,6 +4,7 @@
 {% block page_title_text %}{{ product.name }}{% endblock %}
 
 {% block page_header_actions %}
+<button type="submit" form="product-detail-form" class="btn-primary">Зберегти</button>
 {% include "partials/action_menu.html" with items=actions icon_only=True icon_style="horizontal" %}
 {% endblock %}
 
@@ -16,7 +17,7 @@
         <div class="alert alert-warning mb-4">Ця модель в архіві.</div>
         {% endif %}
 
-        <form method="post" class="space-y-4">
+        <form id="product-detail-form" method="post" class="space-y-4">
             {% csrf_token %}
 
             {% for group in field_groups %}
@@ -31,8 +32,6 @@
                 </div>
             </section>
             {% endfor %}
-
-            <button type="submit" class="btn-primary">Зберегти</button>
         </form>
     </div>
 </div>
