@@ -104,6 +104,11 @@
                 {{ supplier.name }}
             </div>
         </div>
+        <div class="shrink-0">
+            <a href="{% url 'purchase_add' %}?supplier={{ supplier.id }}" class="btn-secondary">
+                Нове замовлення
+            </a>
+        </div>
     </div>
 </div>
 {% empty %}

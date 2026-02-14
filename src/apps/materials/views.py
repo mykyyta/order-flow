@@ -407,7 +407,6 @@ def purchases_list(request):
             "filter_form": filter_form,
             "search_query": search_query,
             "status": status,
-            "purchase_add_url": reverse("purchase_add"),
             "purchase_start_material_url": reverse("purchase_start_material"),
             "clear_url": reverse("purchases"),
         },
