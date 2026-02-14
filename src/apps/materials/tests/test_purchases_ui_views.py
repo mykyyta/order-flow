@@ -297,6 +297,44 @@ def test_suppliers_list_renders_suppliers(client):
     assert response.status_code == 200
     assert response.context["show_page_header"] is False
     assert supplier.name.encode() in response.content
+    assert reverse("supplier_detail", kwargs={"pk": supplier.pk}).encode() in response.content
+
+
+@pytest.mark.django_db(transaction=True)
+def test_supplier_offers_list_renders_offers(client):
+    user = UserFactory()
+    client.force_login(user, backend=AUTH_BACKEND)
+    supplier = Supplier.objects.create(name="Offer Supplier List")
+    material = Material.objects.create(name="Offer Material List", stock_unit=MaterialUnit.PIECE)
+    offer = SupplierMaterialOffer.objects.create(
+        supplier=supplier,
+        material=material,
+        unit=MaterialUnit.PIECE,
+        title="Offer For List",
+    )
+
+    response = client.get(reverse("supplier_offers"))
+    assert response.status_code == 200
+    assert response.context["show_page_header"] is False
+    assert supplier.name.encode() in response.content
+    assert material.name.encode() in response.content
+    assert offer.title.encode() in response.content
+
+
+@pytest.mark.django_db(transaction=True)
+def test_supplier_detail_renders_and_purchase_create_creates_order(client):
+    user = UserFactory()
+    client.force_login(user, backend=AUTH_BACKEND)
+    supplier = Supplier.objects.create(name="Supplier Detail Page")
+
+    response = client.get(reverse("supplier_detail", kwargs={"pk": supplier.pk}))
+    assert response.status_code == 200
+    assert supplier.name.encode() in response.content
+
+    response = client.post(reverse("supplier_purchase_create", kwargs={"pk": supplier.pk}))
+    assert response.status_code == 302
+    po = PurchaseOrder.objects.get()
+    assert po.supplier_id == supplier.pk
 
 
 @pytest.mark.django_db(transaction=True)

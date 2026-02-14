@@ -32,6 +32,9 @@ from apps.materials.views import (
     purchases_list,
     supplier_offer_add,
     supplier_add,
+    supplier_detail,
+    supplier_offers_list,
+    supplier_purchase_create,
     suppliers_list,
     purchase_pick_request_line_for_order,
 )
@@ -72,6 +75,9 @@ urlpatterns = [
     # Suppliers
     path("suppliers/", suppliers_list, name="suppliers"),
     path("suppliers/add/", supplier_add, name="supplier_add"),
+    path("suppliers/offers/", supplier_offers_list, name="supplier_offers"),
+    path("suppliers/<int:pk>/", supplier_detail, name="supplier_detail"),
+    path("suppliers/<int:pk>/purchase/create/", supplier_purchase_create, name="supplier_purchase_create"),
     # Purchase orders
     path("purchases/", purchases_list, name="purchases"),
     path("purchases/add/", purchase_add, name="purchase_add"),

@@ -299,18 +299,101 @@ def suppliers_list(request):
     paginator = Paginator(queryset, 50)
     page_obj = paginator.get_page(request.GET.get("page"))
 
+    active_offers_count = SupplierMaterialOffer.objects.filter(archived_at__isnull=True).count()
+    tabs = [
+        {"id": "suppliers", "label": "Постачальники", "url": reverse("suppliers")},
+        {"id": "offers", "label": "Офери", "url": reverse("supplier_offers"), "count": active_offers_count},
+    ]
+
     return render(
         request,
         "materials/suppliers.html",
         {
             "page_title": "Постачальники",
             "show_page_header": False,
+            "tabs": tabs,
+            "active_tab": "suppliers",
             "page_obj": page_obj,
             "search_query": search_query,
             "supplier_add_url": reverse("supplier_add"),
         },
     )
 
+
+@login_required(login_url=reverse_lazy("auth_login"))
+def supplier_offers_list(request):
+    search_query = (request.GET.get("q") or "").strip()
+    queryset = (
+        SupplierMaterialOffer.objects.filter(archived_at__isnull=True)
+        .select_related("supplier", "material", "material_color")
+        .order_by(Lower("supplier__name"), "supplier__name", Lower("material__name"), "material__name", "-created_at")
+    )
+    if search_query:
+        queryset = queryset.filter(
+            Q(supplier__name__icontains=search_query)
+            | Q(material__name__icontains=search_query)
+            | Q(title__icontains=search_query)
+            | Q(sku__icontains=search_query)
+        )
+
+    paginator = Paginator(queryset, 50)
+    page_obj = paginator.get_page(request.GET.get("page"))
+
+    active_offers_count = SupplierMaterialOffer.objects.filter(archived_at__isnull=True).count()
+    tabs = [
+        {"id": "suppliers", "label": "Постачальники", "url": reverse("suppliers")},
+        {"id": "offers", "label": "Офери", "url": reverse("supplier_offers"), "count": active_offers_count},
+    ]
+
+    return render(
+        request,
+        "materials/supplier_offers.html",
+        {
+            "page_title": "Офери",
+            "show_page_header": False,
+            "tabs": tabs,
+            "active_tab": "offers",
+            "page_obj": page_obj,
+            "search_query": search_query,
+            "offer_add_url": reverse("purchase_start_material"),
+        },
+    )
+
+
+@login_required(login_url=reverse_lazy("auth_login"))
+def supplier_detail(request, pk: int):
+    supplier = get_object_or_404(Supplier.objects.filter(archived_at__isnull=True), pk=pk)
+    offers = list(
+        supplier.offers.filter(archived_at__isnull=True)
+        .select_related("material", "material_color")
+        .order_by(Lower("material__name"), "material__name", "-created_at")
+    )
+    return render(
+        request,
+        "materials/supplier_detail.html",
+        {
+            "page_title": supplier.name,
+            "page_title_center": True,
+            "back_url": reverse("suppliers"),
+            "supplier": supplier,
+            "offers": offers,
+            "purchase_create_url": reverse("supplier_purchase_create", kwargs={"pk": supplier.pk}),
+            "offer_add_url": reverse("purchase_start_material"),
+        },
+    )
+
+
+@login_required(login_url=reverse_lazy("auth_login"))
+@require_POST
+def supplier_purchase_create(request, pk: int):
+    supplier = get_object_or_404(Supplier.objects.filter(archived_at__isnull=True), pk=pk)
+    purchase_order = PurchaseOrder.objects.create(
+        supplier=supplier,
+        status=PurchaseOrder.Status.DRAFT,
+        created_by=request.user,
+    )
+    messages.success(request, "Готово! Замовлення створено.")
+    return redirect("purchase_add_lines", pk=purchase_order.pk)
 
 def _safe_next_url(request: HttpRequest, raw_next_url: str | None, *, fallback: str) -> str:
     if not raw_next_url:
