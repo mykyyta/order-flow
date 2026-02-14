@@ -3,11 +3,27 @@
 Single form in a card: messages + mx-auto max-w-xl + card + form-card-body.
 Override block form_content with the form. Optionally override form_page_footer (e.g. link-back).
 Use for: create order, order edit, change password. See docs/design/design_components.md.
+
+Optional context:
+  - back_url: URL for back link (shows above the card)
+  - back_label: back link label (default: "Назад")
 {% endcomment %}
 
 {% block content %}
 {% include "partials/messages.html" %}
-<div class="mx-auto max-w-xl">
+<div class="mx-auto max-w-xl {% if page_title_center %}relative{% endif %}">
+    {% if back_url and page_title_center %}
+    <a href="{{ back_url }}"
+       class="link-back absolute -top-12 left-0 inline-flex min-h-10 items-center rounded-md pl-0 pr-2
+              hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-teal-500">
+        &larr; {{ back_label|default:"Назад" }}
+    </a>
+    {% endif %}
+    {% if back_url and not page_title_center %}
+    <div class="mb-4">
+        <a href="{{ back_url }}" class="link-back">&larr; {{ back_label|default:"Назад" }}</a>
+    </div>
+    {% endif %}
     <div class="card">
         <div class="form-card-body">
             {% block form_content %}{% endblock %}

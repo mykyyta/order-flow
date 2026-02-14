@@ -48,8 +48,6 @@ Child templates override:
 </div>
 {% endblock %}
 
-{% block form_page_footer %}
-<p class="mt-4">
-    <a href="{{ back_url }}" class="link-back">{{ back_label }}</a>
-</p>
-{% endblock %}
+{% comment %}
+Back link is rendered above the card by base_form_page.html via back_url/back_label.
+{% endcomment %}

@@ -225,7 +225,11 @@ def orders_completed(request):
 @login_required
 def orders_create(request):
     template_name = "orders/create.html"
-    context = {"page_title": "Нове замовлення", "page_title_center": True}
+    context = {
+        "page_title": "Нове замовлення",
+        "page_title_center": True,
+        "back_url": reverse("orders_active"),
+    }
 
     def _create_orders_for_bundle(*, form: OrderForm, orders_url: str) -> int:
         created = 0
@@ -305,6 +309,17 @@ def order_detail(request, pk):
     order = get_object_or_404(ProductionOrder, id=pk)
     statuses = ProductionOrderStatusHistory.objects.filter(order=order).order_by("-changed_at")
 
+    back_target = (request.GET.get("back") or "").strip()
+    if back_target == "completed":
+        back_url = reverse("orders_completed")
+        back_params = request.GET.copy()
+        back_params.pop("back", None)
+        if back_params:
+            back_url += "?" + back_params.urlencode()
+    else:
+        back_url = reverse("orders_active")
+    back_label = "Назад"
+
     order_data = {
         "id": order.id,
         "product": order.product.name,
@@ -336,8 +351,11 @@ def order_detail(request, pk):
         "orders/detail.html",
         {
             "order": order_data,
-            "page_title": f"Замовлення #{order.id}",
+            "page_title": "Деталі замовлення",
+            "order_card_title": f"Замовлення №{order.id}",
             "order_edit_url": reverse("order_edit", args=[order.id]),
+            "back_url": back_url,
+            "back_label": back_label,
         },
     )
 
@@ -363,5 +381,7 @@ def order_edit(request, pk):
             "form": form,
             "order": order,
             "page_title": f"Підправити замовлення #{order.id}",
+            "back_url": reverse("order_detail", args=[order.id]),
+            "back_label": "Назад",
         },
     )

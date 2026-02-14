@@ -8,57 +8,54 @@
 
 {% include "partials/messages.html" %}
 
+{% if back_url %}
+<div class="mb-4">
+    <a href="{{ back_url }}" class="link-back">&larr; {{ back_label|default:"Назад" }}</a>
+</div>
+{% endif %}
+
 <div class="card">
-    {% include "partials/card_section_header.html" with title="Деталі замовлення" edit_url=order_edit_url %}
-    <div class="detail-card-body">
-        <dl class="min-w-0">
-            <div class="detail-group">
-                <dt class="detail-group-title" aria-hidden="true">Замовлення</dt>
-                <dd class="sr-only">Замовлення</dd>
-                <div class="detail-row">
-                    <dt class="detail-dt">Модель · Основний колір</dt>
-                    <dd class="detail-hero">{{ order.product }} · {{ order.color }}</dd>
-                </div>
-                <div class="detail-row">
-                    <dt class="detail-dt">Вишивка</dt>
-                    <dd class="detail-dd">{% if order.is_embroidery %}<span class="inline-block text-[1rem] leading-none" title="Вишивка" aria-hidden="true">👨🏻‍🦳</span> Так{% else %}—{% endif %}</dd>
-                </div>
-                <div class="detail-row">
-                    <dt class="detail-dt">Etsy</dt>
-                    <dd class="detail-dd">{% if order.is_etsy %}<span class="inline-block text-[1rem] leading-none" title="Etsy" aria-hidden="true">🌍</span> Так{% else %}—{% endif %}</dd>
-                </div>
-                <div class="detail-row">
-                    <dt class="detail-dt">Терміново</dt>
-                    <dd class="detail-dd">{% if order.is_urgent %}<span class="inline-block text-[1rem] leading-none" title="Терміново" aria-hidden="true">⚡</span> Так{% else %}—{% endif %}</dd>
-                </div>
-                <div class="detail-row">
-                    <dt class="detail-dt">Коментар</dt>
-                    <dd class="detail-dd">{{ order.comment|default:"—" }}</dd>
-                </div>
-            </div>
-        </dl>
-        <dl class="min-w-0 md:border-l md:border-slate-100 md:pl-8">
-            <div class="detail-group">
-                <dt class="detail-group-title" aria-hidden="true">Дати</dt>
-                <dd class="sr-only">Дати</dd>
-                <div class="detail-row">
-                    <dt class="detail-dt">Створено</dt>
-                    <dd class="detail-dd">{{ order.created_at|date:"d.m.Y H:i" }}</dd>
-                </div>
-                <div class="detail-row">
-                    <dt class="detail-dt">Закінчено</dt>
-                    <dd class="detail-dd">{% if order.finished_at %}{{ order.finished_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</dd>
-                </div>
-            </div>
-            <div class="detail-group">
-                <dt class="detail-group-title" aria-hidden="true">Статус</dt>
-                <dd class="sr-only">Статус</dd>
-                <div class="detail-row">
-                    <dt class="detail-dt">Поточний</dt>
-                    <dd>
+    {% include "partials/card_section_header.html" with title=order_card_title edit_url=order_edit_url %}
+    <div class="px-5 py-5">
+        <dl class="min-w-0 divide-y divide-slate-100">
+            <div class="py-2">
+                <dt class="sr-only">Модель · Основний колір</dt>
+                <dd class="min-w-0 flex items-start justify-between gap-3">
+                    <span class="detail-hero min-w-0 truncate">{{ order.product }} · {{ order.color }}</span>
+                    <span class="flex-shrink-0">
                         {% status_indicator order.status_code order.status_display %}
-                    </dd>
-                </div>
+                    </span>
+                </dd>
+            </div>
+            <div class="detail-row">
+                <dt class="detail-dt">Мітки</dt>
+                <dd class="detail-dd">
+                    {% if order.is_urgent or order.is_embroidery or order.is_etsy %}
+                    {% include "partials/order_tags_icons.html" with order=order %}
+                    {% else %}
+                    —
+                    {% endif %}
+                </dd>
+            </div>
+
+            {% if order.comment %}
+            <div class="detail-row">
+                <dt class="detail-dt">Коментар</dt>
+                <dd class="detail-dd">
+                    <div class="max-h-60 overflow-auto rounded-md border border-slate-200 bg-slate-50/60 px-3 py-2 text-[0.8rem] leading-[1.35] text-slate-800 font-mono whitespace-pre-line">
+                        {{ order.comment }}
+                    </div>
+                </dd>
+            </div>
+            {% endif %}
+
+            <div class="detail-row">
+                <dt class="detail-dt">Створено</dt>
+                <dd class="detail-dd">{{ order.created_at|date:"d.m.Y H:i" }}</dd>
+            </div>
+            <div class="detail-row">
+                <dt class="detail-dt">Закінчено</dt>
+                <dd class="detail-dd">{% if order.finished_at %}{{ order.finished_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</dd>
             </div>
         </dl>
     </div>
@@ -66,7 +63,21 @@
 
 <div class="card mt-6">
     {% include "partials/card_section_header.html" with title="Історія статусів" %}
-    <div class="overflow-x-auto">
+    <div class="sm:hidden">
+        {% for status in order.status_history %}
+        <div class="border-b border-slate-100 px-4 py-3 last:border-b-0">
+            <div class="text-sm font-medium text-slate-900">{{ status.new_status_display }}</div>
+            <div class="mt-0.5 flex items-center justify-between gap-2 text-xs text-slate-500">
+                <span class="min-w-0 truncate">{{ status.changed_by }}</span>
+                <span class="shrink-0">{% if status.changed_at %}{{ status.changed_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</span>
+            </div>
+        </div>
+        {% empty %}
+        <div class="px-4 py-6 text-center text-sm text-slate-500">Історії статусів ще немає.</div>
+        {% endfor %}
+    </div>
+
+    <div class="hidden sm:block overflow-x-auto">
         <table class="data-table">
             <thead>
                 <tr>
@@ -80,7 +91,7 @@
                 <tr>
                     <td>{{ status.new_status_display }}</td>
                     <td class="text-slate-700">{{ status.changed_by }}</td>
-                    <td class="text-slate-500">{{ status.changed_at|date:"d.m.Y H:i" }}</td>
+                    <td class="text-slate-500">{% if status.changed_at %}{{ status.changed_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</td>
                 </tr>
                 {% empty %}
                 <tr>
@@ -90,10 +101,6 @@
             </tbody>
         </table>
     </div>
-</div>
-
-<div class="mt-4">
-    <a href="{% url 'orders_active' %}" class="link-back">&larr; Назад до роботи</a>
 </div>
 
 {% endblock %}

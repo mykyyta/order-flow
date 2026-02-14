@@ -1,4 +1,5 @@
 """HTTP layer and view tests for orders."""
+
 import pytest
 from django.urls import reverse
 from django.utils import timezone
@@ -35,7 +36,7 @@ def test_active_orders_render_comment_marker(client):
     )
     response = client.get(reverse("orders_active"))
     assert response.status_code == 200
-    assert b"data-has-comment=\"1\"" in response.content
+    assert b'data-has-comment="1"' in response.content
     assert b"data-order-comment" in response.content
 
 
@@ -152,6 +153,46 @@ def test_order_detail_renders_status_indicator(client):
 
 
 @pytest.mark.django_db(transaction=True)
+def test_order_detail_shows_notes_group_only_when_comment_present(client):
+    user = UserFactory()
+    client.force_login(user, backend=AUTH_BACKEND)
+
+    model = ProductFactory()
+    color = ColorFactory()
+
+    no_comment = OrderFactory(product=model, color=color, status=STATUS_NEW, comment="")
+    response = client.get(reverse("order_detail", kwargs={"pk": no_comment.id}))
+    assert response.status_code == 200
+    assert "Коментар".encode() not in response.content
+
+    with_comment = OrderFactory(
+        product=model, color=color, status=STATUS_NEW, comment="line1\nline2"
+    )
+    response = client.get(reverse("order_detail", kwargs={"pk": with_comment.id}))
+    assert response.status_code == 200
+    assert "Коментар".encode() in response.content
+    assert b"line1" in response.content
+
+
+@pytest.mark.django_db(transaction=True)
+def test_order_detail_renders_tag_icons_when_present(client):
+    user = UserFactory()
+    client.force_login(user, backend=AUTH_BACKEND)
+
+    model = ProductFactory()
+    color = ColorFactory()
+    order = OrderFactory(
+        product=model,
+        color=color,
+        status=STATUS_NEW,
+        is_urgent=True,
+    )
+    response = client.get(reverse("order_detail", kwargs={"pk": order.id}))
+    assert response.status_code == 200
+    assert 'title="Терміново"'.encode() in response.content
+
+
+@pytest.mark.django_db(transaction=True)
 def test_orders_create_hides_archived_catalog_items(client):
     user = UserFactory()
     client.force_login(user, backend=AUTH_BACKEND)
@@ -243,6 +284,7 @@ def test_order_edit_disables_primary_color_when_product_primary_changed(client):
 
 def test_message_alert_class_mapping():
     from apps.ui.templatetags.order_ui import message_alert_class
+
     assert message_alert_class("error") == "alert alert-error"
     assert message_alert_class("success") == "alert alert-success"
     assert message_alert_class("warning extra") == "alert alert-warning"
@@ -386,7 +428,9 @@ def test_orders_create_post_without_color_shows_form_error(client):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_orders_create_post_without_primary_color_is_allowed_for_model_without_primary_material(client):
+def test_orders_create_post_without_primary_color_is_allowed_for_model_without_primary_material(
+    client,
+):
     user = UserFactory()
     client.force_login(user, backend=AUTH_BACKEND)
     model = ProductFactory(primary_material=None)
@@ -433,8 +477,12 @@ def test_orders_create_post_for_bundle_creates_component_orders(client):
     )
     bundle = ProductFactory(name="Bag + Strap", kind="bundle", primary_material=None)
 
-    bc_bag = BundleComponent.objects.create(bundle=bundle, component=bag, quantity=1, is_primary=True)
-    bc_strap = BundleComponent.objects.create(bundle=bundle, component=strap, quantity=2, is_primary=False)
+    bc_bag = BundleComponent.objects.create(
+        bundle=bundle, component=bag, quantity=1, is_primary=True
+    )
+    bc_strap = BundleComponent.objects.create(
+        bundle=bundle, component=strap, quantity=2, is_primary=False
+    )
 
     response = client.post(
         reverse("orders_create"),
@@ -453,11 +501,23 @@ def test_orders_create_post_for_bundle_creates_component_orders(client):
 
     from apps.production.models import ProductionOrder
 
-    orders = list(ProductionOrder.objects.filter(comment="Bundle order").select_related("product", "variant"))
+    orders = list(
+        ProductionOrder.objects.filter(comment="Bundle order").select_related("product", "variant")
+    )
     assert len(orders) == 3
     assert {o.product_id for o in orders} == {bag.id, strap.id}
-    assert any(o.product_id == bag.id and o.variant.primary_material_color_id == bag_color.id for o in orders)
-    assert sum(1 for o in orders if o.product_id == strap.id and o.variant.primary_material_color_id == strap_color.id) == 2
+    assert any(
+        o.product_id == bag.id and o.variant.primary_material_color_id == bag_color.id
+        for o in orders
+    )
+    assert (
+        sum(
+            1
+            for o in orders
+            if o.product_id == strap.id and o.variant.primary_material_color_id == strap_color.id
+        )
+        == 2
+    )
     assert any(o.product_id == strap.id and o.is_embroidery is True for o in orders)
     assert all(o.is_embroidery is False for o in orders if o.product_id == bag.id)
 

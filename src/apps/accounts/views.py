@@ -162,4 +162,13 @@ def change_password(request):
         messages.success(request, "Готово! Пароль змінено.")
         return redirect("profile")
 
-    return render(request, "account/change_password.html", {"page_title": "Зміна пароля"})
+    return render(
+        request,
+        "account/change_password.html",
+        {
+            "page_title": "Зміна пароля",
+            "page_title_center": True,
+            "back_url": reverse("profile"),
+            "back_label": "Назад",
+        },
+    )

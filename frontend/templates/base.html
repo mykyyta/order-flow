@@ -164,7 +164,7 @@
     {% endwith %}
     {% endif %}
     {% comment %}Layout: default = .main-content (max-w-2xl). Centered pages (login, create order) = .main-centered + inner max-w-2xl. See docs/design/design_components.md. {% endcomment %}
-    <main class="{% if page_title_center or not request.user.is_authenticated %}main-centered px-4 py-10 sm:px-6 lg:px-8{% else %}main-content mx-auto px-4 py-6 pb-24 md:pb-6 sm:px-6 lg:px-8{% endif %}">
+    <main class="{% if page_title_center or not request.user.is_authenticated %}main-centered relative px-4 py-10 sm:px-6 lg:px-8{% else %}main-content mx-auto px-4 py-6 pb-24 md:pb-6 sm:px-6 lg:px-8{% endif %}">
         <div class="{% if page_title_center or not request.user.is_authenticated %}w-full max-w-2xl mx-auto{% endif %}">
             {% block content %}{% endblock %}
         </div>

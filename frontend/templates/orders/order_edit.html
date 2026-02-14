@@ -35,8 +35,6 @@
 </form>
 {% endblock %}
 
-{% block form_page_footer %}
-<div class="mt-4">
-    <a href="{% url 'order_detail' order.id %}" class="link-back">&larr; Назад до замовлення #{{ order.id }}</a>
-</div>
-{% endblock %}
+{% comment %}
+Back link is rendered above the card by base_form_page.html via back_url/back_label.
+{% endcomment %}
