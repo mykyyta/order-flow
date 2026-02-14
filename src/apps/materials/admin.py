@@ -11,6 +11,8 @@ from apps.materials.models import (
     MaterialStockTransferLine,
     PurchaseOrder,
     PurchaseOrderLine,
+    PurchaseRequest,
+    PurchaseRequestLine,
     Supplier,
     SupplierMaterialOffer,
 )
@@ -43,7 +45,7 @@ class SupplierMaterialOfferAdmin(admin.ModelAdmin):
 
 @admin.register(PurchaseOrder)
 class PurchaseOrderAdmin(admin.ModelAdmin):
-    list_display = ("id", "supplier", "status", "expected_at", "created_at")
+    list_display = ("id", "supplier", "status", "expected_at", "external_ref", "tracking_number", "created_at")
     list_filter = ("status", "supplier")
     search_fields = ("id", "supplier__name")
 
@@ -62,6 +64,28 @@ class PurchaseOrderLineAdmin(admin.ModelAdmin):
     )
     list_filter = ("unit", "material")
     search_fields = ("purchase_order__id", "material__name")
+
+
+@admin.register(PurchaseRequest)
+class PurchaseRequestAdmin(admin.ModelAdmin):
+    list_display = ("id", "warehouse", "status", "created_at")
+    list_filter = ("status", "warehouse")
+    search_fields = ("id", "notes")
+
+
+@admin.register(PurchaseRequestLine)
+class PurchaseRequestLineAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "request",
+        "status",
+        "material",
+        "material_color",
+        "requested_quantity",
+        "unit",
+    )
+    list_filter = ("status", "unit", "material")
+    search_fields = ("request__id", "material__name", "material_color__name", "notes")
 
 
 @admin.register(GoodsReceipt)

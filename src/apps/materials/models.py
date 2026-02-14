@@ -6,6 +6,14 @@ from django.utils import timezone
 from config import settings
 
 
+class MaterialUnit(models.TextChoices):
+    PIECE = "pcs", "шт"
+    METER = "m", "м"
+    SQUARE_METER = "m2", "м²"
+    GRAM = "g", "г"
+    MILLILITER = "ml", "мл"
+
+
 class MaterialStockQuerySet(models.QuerySet):
     def for_warehouse(self, warehouse_id: int):
         return self.filter(warehouse_id=warehouse_id)
@@ -22,6 +30,11 @@ MaterialStockManager = models.Manager.from_queryset(MaterialStockQuerySet)
 
 class Material(models.Model):
     name = models.CharField(max_length=255, unique=True)
+    stock_unit = models.CharField(
+        max_length=8,
+        choices=MaterialUnit.choices,
+        help_text="Одиниця обліку на складі.",
+    )
     archived_at = models.DateTimeField(null=True, blank=True, db_index=True)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
@@ -37,7 +50,7 @@ class MaterialColor(models.Model):
         related_name="colors",
     )
     name = models.CharField(max_length=255)
-    code = models.IntegerField()
+    code = models.IntegerField(null=True, blank=True)
     archived_at = models.DateTimeField(null=True, blank=True, db_index=True)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
@@ -51,14 +64,6 @@ class MaterialColor(models.Model):
 
     def __str__(self) -> str:
         return f"{self.material.name}: {self.name}"
-
-
-class MaterialUnit(models.TextChoices):
-    PIECE = "pcs", "шт"
-    METER = "m", "м"
-    SQUARE_METER = "m2", "м²"
-    GRAM = "g", "г"
-    MILLILITER = "ml", "мл"
 
 
 class Supplier(models.Model):
@@ -131,6 +136,8 @@ class PurchaseOrder(models.Model):
     class Status(models.TextChoices):
         DRAFT = "draft", "Чернетка"
         SENT = "sent", "Відправлено"
+        PAID = "paid", "Оплачено"
+        IN_TRANSIT = "in_transit", "В дорозі"
         PARTIALLY_RECEIVED = "partially_received", "Частково отримано"
         RECEIVED = "received", "Отримано"
         CANCELLED = "cancelled", "Скасовано"
@@ -141,6 +148,16 @@ class PurchaseOrder(models.Model):
         related_name="purchase_orders",
     )
     status = models.CharField(max_length=24, choices=Status.choices, default=Status.DRAFT)
+    external_ref = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="Номер/посилання замовлення в магазині (необов'язково).",
+    )
+    tracking_number = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="ТТН / трек-номер (необов'язково).",
+    )
     expected_at = models.DateField(null=True, blank=True)
     notes = models.TextField(blank=True)
     created_by = models.ForeignKey(
@@ -165,6 +182,13 @@ class PurchaseOrderLine(models.Model):
         PurchaseOrder,
         on_delete=models.CASCADE,
         related_name="lines",
+    )
+    request_line = models.ForeignKey(
+        "materials.PurchaseRequestLine",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="purchase_order_lines",
     )
     material = models.ForeignKey(
         Material,
@@ -465,3 +489,97 @@ class MaterialStockTransferLine(models.Model):
 
     def __str__(self) -> str:
         return f"{self.transfer_id}: {self.material.name} {self.quantity} {self.unit}"
+
+
+class PurchaseRequest(models.Model):
+    class Status(models.TextChoices):
+        OPEN = "open", "Відкрито"
+        IN_PROGRESS = "in_progress", "В роботі"
+        DONE = "done", "Закрито"
+        CANCELLED = "cancelled", "Скасовано"
+
+    warehouse = models.ForeignKey(
+        "warehouses.Warehouse",
+        on_delete=models.PROTECT,
+        related_name="purchase_requests",
+    )
+    status = models.CharField(max_length=24, choices=Status.choices, default=Status.OPEN)
+    notes = models.TextField(blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="material_purchase_requests",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ("-created_at",)
+
+    def __str__(self) -> str:
+        return f"PR #{self.id}"
+
+
+class PurchaseRequestLine(models.Model):
+    class Status(models.TextChoices):
+        OPEN = "open", "Відкрито"
+        ORDERED = "ordered", "Замовлено"
+        DONE = "done", "Закрито"
+        CANCELLED = "cancelled", "Скасовано"
+
+    request = models.ForeignKey(
+        PurchaseRequest,
+        on_delete=models.CASCADE,
+        related_name="lines",
+    )
+    status = models.CharField(max_length=24, choices=Status.choices, default=Status.OPEN)
+    material = models.ForeignKey(
+        Material,
+        on_delete=models.PROTECT,
+        related_name="purchase_request_lines",
+    )
+    material_color = models.ForeignKey(
+        MaterialColor,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="purchase_request_lines",
+    )
+    requested_quantity = models.DecimalField(
+        max_digits=12,
+        decimal_places=3,
+        null=True,
+        blank=True,
+    )
+    unit = models.CharField(
+        max_length=8,
+        choices=MaterialUnit.choices,
+        null=True,
+        blank=True,
+    )
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    (models.Q(requested_quantity__isnull=True) & models.Q(unit__isnull=True))
+                    | (models.Q(requested_quantity__isnull=False) & models.Q(unit__isnull=False))
+                ),
+                name="materials_purchaserequestline_norm_quantity_unit_nullability",
+            ),
+        ]
+        ordering = ("request_id", "id")
+
+    def clean(self) -> None:
+        if self.material_color and self.material_color.material_id != self.material_id:
+            raise ValidationError("Material color must belong to selected material.")
+
+    def __str__(self) -> str:
+        color_name = self.material_color.name if self.material_color else "-"
+        qty = f"{self.requested_quantity} {self.unit}" if self.requested_quantity else "-"
+        return f"PR #{self.request_id}: {self.material.name} ({color_name}) {qty}"

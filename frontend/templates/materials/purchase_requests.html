@@ -1,0 +1,75 @@
+{% extends "base_list_page.html" %}
+
+{% block page_header_actions %}
+<a href="{{ request_add_url }}" class="btn-primary">+ Заявка</a>
+{% endblock %}
+
+{% block filters %}
+{% include "partials/tabs.html" with tabs=tabs active=active_tab %}
+
+<form method="get" class="m-0 mt-3 flex w-full flex-nowrap items-stretch gap-2">
+    <div class="min-w-0 flex-1">
+        <input
+            type="text"
+            name="q"
+            value="{{ search_query }}"
+            placeholder="Пошук: # або коментар"
+            class="form-input"
+        >
+    </div>
+    <button type="submit" class="btn-secondary shrink-0 px-4">Шукати</button>
+    <a
+        href="{% url 'purchase_requests' %}"
+        class="btn-secondary flex h-10 w-10 shrink-0 items-center justify-center rounded-md px-0 {% if not search_query %}pointer-events-none opacity-40{% endif %}"
+        aria-label="Очистити пошук"
+        title="Очистити"
+    >
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+    </a>
+</form>
+{% endblock %}
+
+{% block list_content %}
+<div class="card">
+    {% for pr in page_obj.object_list %}
+    <a
+        href="{% url 'purchase_request_detail' pr.id %}"
+        class="block border-b border-slate-100 transition-colors hover:bg-slate-50/80 focus:outline-none focus:ring-2 focus:ring-teal-500 last:border-b-0"
+        aria-label="Деталі заявки #{{ pr.id }}"
+    >
+        <div class="flex items-center gap-3 px-3 py-2">
+            <div class="min-w-0 flex-1">
+                <div class="truncate text-sm font-medium text-slate-800">
+                    Заявка #{{ pr.id }}
+                </div>
+                <div class="mt-0.5 flex items-center justify-between gap-2 text-xs text-slate-500">
+                    <span class="truncate">
+                        {% if pr.notes %}{{ pr.notes }}{% else %}—{% endif %}
+                    </span>
+                    <span class="shrink-0">{{ pr.created_at|date:"d.m.Y" }}</span>
+                </div>
+            </div>
+            <div class="shrink-0">
+                {% if pr.status == "done" %}
+                    {% include "partials/badge.html" with label=pr.get_status_display variant="success" size="sm" %}
+                {% elif pr.status == "cancelled" %}
+                    {% include "partials/badge.html" with label=pr.get_status_display variant="danger" size="sm" %}
+                {% else %}
+                    {% include "partials/badge.html" with label=pr.get_status_display variant="info" size="sm" %}
+                {% endif %}
+            </div>
+            <svg class="h-4 w-4 flex-shrink-0 text-slate-300" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 5l7 7-7 7"/>
+            </svg>
+        </div>
+    </a>
+    {% empty %}
+    {% include "partials/empty_state.html" with message="Поки що заявок немає." %}
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block list_footer %}
+{% include "partials/pagination.html" with page_obj=page_obj %}
+{% endblock %}
+

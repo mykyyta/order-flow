@@ -81,8 +81,8 @@ def test_bundle_color_mapping_unique_per_bundle_color_component():
 
 @pytest.mark.django_db
 def test_product_supports_primary_and_secondary_materials():
-    felt = Material.objects.create(name="Felt")
-    leather = Material.objects.create(name="Leather smooth")
+    felt = Material.objects.create(name="Felt", stock_unit="pcs")
+    leather = Material.objects.create(name="Leather smooth", stock_unit="pcs")
 
     product = ProductFactory(
         kind="standard",
@@ -96,8 +96,8 @@ def test_product_supports_primary_and_secondary_materials():
 
 @pytest.mark.django_db
 def test_bundle_preset_component_unique_per_component():
-    felt = Material.objects.create(name="Felt")
-    leather = Material.objects.create(name="Leather")
+    felt = Material.objects.create(name="Felt", stock_unit="pcs")
+    leather = Material.objects.create(name="Leather", stock_unit="pcs")
     black_felt = MaterialColor.objects.create(material=felt, name="Black", code=1)
     black_leather = MaterialColor.objects.create(material=leather, name="Black", code=1)
     bundle = ProductFactory(kind="bundle")

@@ -111,7 +111,7 @@ def test_verify_mode_returns_material_balance_by_warehouse_and_unit():
         is_default_for_production=False,
         is_active=True,
     )
-    material = Material.objects.create(name="Verify Leather")
+    material = Material.objects.create(name="Verify Leather", stock_unit=MaterialUnit.PIECE)
     stock_record = MaterialStock.objects.create(
         warehouse=warehouse,
         material=material,

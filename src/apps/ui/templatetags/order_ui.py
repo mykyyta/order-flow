@@ -115,7 +115,19 @@ NAV_SECTIONS = [
             {
                 "url_name": "purchases",
                 "label": "Закупівлі",
-                "active_on": ("purchases",),
+                "active_on": (
+                    "purchases",
+                    "purchase_add",
+                    "purchase_detail",
+                    "purchase_set_status",
+                    "purchase_line_add",
+                    "purchase_line_receive",
+                    "purchase_requests",
+                    "purchase_request_add",
+                    "purchase_request_detail",
+                    "purchase_request_line_add",
+                    "purchase_request_line_order",
+                ),
             },
             {
                 "url_name": "profile",

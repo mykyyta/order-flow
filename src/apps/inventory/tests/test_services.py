@@ -115,8 +115,8 @@ def test_remove_from_stock_raises_when_not_enough():
 
 @pytest.mark.django_db
 def test_add_and_remove_stock_by_material_colors():
-    felt = Material.objects.create(name="Felt")
-    leather = Material.objects.create(name="Leather smooth")
+    felt = Material.objects.create(name="Felt", stock_unit="pcs")
+    leather = Material.objects.create(name="Leather smooth", stock_unit="pcs")
     blue = MaterialColor.objects.create(material=felt, name="Blue", code=11)
     black = MaterialColor.objects.create(material=leather, name="Black", code=2)
     product = ProductFactory(

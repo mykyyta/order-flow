@@ -22,7 +22,7 @@ from apps.warehouses.models import Warehouse
 @pytest.mark.django_db
 def test_supplier_material_offer_allows_multiple_offers_per_material():
     supplier = Supplier.objects.create(name="Supplier A")
-    material = Material.objects.create(name="Felt")
+    material = Material.objects.create(name="Felt", stock_unit=MaterialUnit.SQUARE_METER)
 
     SupplierMaterialOffer.objects.create(
         supplier=supplier,
@@ -43,7 +43,7 @@ def test_supplier_material_offer_allows_multiple_offers_per_material():
 
 @pytest.mark.django_db
 def test_material_stock_record_unique_per_material_color_and_unit():
-    material = Material.objects.create(name="Felt")
+    material = Material.objects.create(name="Felt", stock_unit=MaterialUnit.SQUARE_METER)
     warehouse = Warehouse.objects.create(
         name="Material Main",
         code="MAT-MAIN-UNIQ",
@@ -70,7 +70,7 @@ def test_material_stock_record_unique_per_material_color_and_unit():
 
 @pytest.mark.django_db
 def test_material_stock_record_requires_warehouse():
-    material = Material.objects.create(name="Warehouse required material")
+    material = Material.objects.create(name="Warehouse required material", stock_unit=MaterialUnit.SQUARE_METER)
 
     with pytest.raises(IntegrityError):
         MaterialStock.objects.create(
@@ -82,7 +82,7 @@ def test_material_stock_record_requires_warehouse():
 
 @pytest.mark.django_db
 def test_material_stock_record_allows_same_material_in_different_warehouses():
-    material = Material.objects.create(name="Canvas")
+    material = Material.objects.create(name="Canvas", stock_unit=MaterialUnit.SQUARE_METER)
     wh_a = Warehouse.objects.create(
         name="Warehouse A",
         code="WH-A",
@@ -117,7 +117,7 @@ def test_material_stock_record_allows_same_material_in_different_warehouses():
 @pytest.mark.django_db
 def test_purchase_order_line_remaining_quantity_property():
     supplier = Supplier.objects.create(name="Supplier B")
-    material = Material.objects.create(name="Leather")
+    material = Material.objects.create(name="Leather", stock_unit=MaterialUnit.PIECE)
     user = UserFactory()
     purchase_order = PurchaseOrder.objects.create(supplier=supplier, created_by=user)
     line = PurchaseOrderLine.objects.create(
@@ -135,7 +135,7 @@ def test_purchase_order_line_remaining_quantity_property():
 @pytest.mark.django_db
 def test_goods_receipt_line_links_purchase_line_and_stock_movement():
     supplier = Supplier.objects.create(name="Supplier C")
-    material = Material.objects.create(name="Glue")
+    material = Material.objects.create(name="Glue", stock_unit=MaterialUnit.MILLILITER)
     user = UserFactory()
     purchase_order = PurchaseOrder.objects.create(supplier=supplier, created_by=user)
     po_line = PurchaseOrderLine.objects.create(

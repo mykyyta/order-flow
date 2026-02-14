@@ -12,6 +12,16 @@ from apps.materials.views import (
     material_unarchive,
     material_colors_archive,
     materials_archive,
+    purchase_add,
+    purchase_detail,
+    purchase_line_add,
+    purchase_line_receive,
+    purchase_request_add,
+    purchase_request_detail,
+    purchase_request_line_add,
+    purchase_request_line_order,
+    purchase_requests_list,
+    purchase_set_status,
     purchases_list,
     suppliers_list,
 )
@@ -53,4 +63,31 @@ urlpatterns = [
     path("suppliers/", suppliers_list, name="suppliers"),
     # Purchase orders
     path("purchases/", purchases_list, name="purchases"),
+    path("purchases/add/", purchase_add, name="purchase_add"),
+    path("purchases/<int:pk>/", purchase_detail, name="purchase_detail"),
+    path("purchases/<int:pk>/status/", purchase_set_status, name="purchase_set_status"),
+    path("purchases/<int:pk>/lines/add/", purchase_line_add, name="purchase_line_add"),
+    path(
+        "purchases/<int:pk>/lines/<int:line_pk>/receive/",
+        purchase_line_receive,
+        name="purchase_line_receive",
+    ),
+    # Purchase requests
+    path("purchase-requests/", purchase_requests_list, name="purchase_requests"),
+    path("purchase-requests/add/", purchase_request_add, name="purchase_request_add"),
+    path(
+        "purchase-requests/<int:pk>/",
+        purchase_request_detail,
+        name="purchase_request_detail",
+    ),
+    path(
+        "purchase-requests/<int:pk>/lines/add/",
+        purchase_request_line_add,
+        name="purchase_request_line_add",
+    ),
+    path(
+        "purchase-requests/lines/<int:line_pk>/order/",
+        purchase_request_line_order,
+        name="purchase_request_line_order",
+    ),
 ]

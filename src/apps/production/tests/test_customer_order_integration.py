@@ -58,8 +58,8 @@ def test_change_order_status_finished_adds_item_to_stock_for_customer_line():
 @pytest.mark.django_db
 def test_change_order_status_finished_uses_material_color_stock_key():
     user = UserFactory()
-    felt = Material.objects.create(name="Felt")
-    leather = Material.objects.create(name="Leather smooth")
+    felt = Material.objects.create(name="Felt", stock_unit="pcs")
+    leather = Material.objects.create(name="Leather smooth", stock_unit="pcs")
     blue = MaterialColor.objects.create(material=felt, name="Blue", code=77)
     black = MaterialColor.objects.create(material=leather, name="Black", code=7)
     product = ProductFactory(

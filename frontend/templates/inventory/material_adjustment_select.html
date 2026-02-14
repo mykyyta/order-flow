@@ -1,0 +1,11 @@
+{% extends "base_form_page.html" %}
+
+{% block form_content %}
+<form method="get" class="space-y-4">
+    {% include "partials/form_field.html" with field=form.material label="Матеріал" %}
+    <button type="submit" class="btn-primary w-full min-h-[44px]">
+        Далі
+    </button>
+</form>
+{% endblock %}
+

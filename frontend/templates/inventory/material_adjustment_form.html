@@ -1,0 +1,44 @@
+{% extends "base_form_page.html" %}
+
+{% block form_content %}
+<form method="post" class="space-y-4">
+    {% csrf_token %}
+    {% if lock %}
+    <input type="hidden" name="material" value="{{ locked_stock_record.material_id }}">
+    <input type="hidden" name="material_color" value="{{ locked_stock_record.material_color_id|default_if_none:'' }}">
+
+    <div class="card">
+        <div class="px-4 py-3 border-b border-slate-100">
+            <h3 class="text-sm font-semibold text-slate-900">Позиція</h3>
+        </div>
+        <div class="p-4 space-y-1">
+            {% include "partials/detail_field.html" with label="Матеріал" value=locked_stock_record.material.name %}
+            {% if locked_stock_record.material_color %}
+            {% include "partials/detail_field.html" with label="Колір" value=locked_stock_record.material_color.name muted=True %}
+            {% endif %}
+            {% include "partials/detail_field.html" with label="Одиниця" value=locked_stock_record.unit muted=True %}
+        </div>
+    </div>
+    {% elif lock_material %}
+    <input type="hidden" name="material" value="{{ locked_material.id }}">
+    <div class="card">
+        <div class="px-4 py-3 border-b border-slate-100">
+            <h3 class="text-sm font-semibold text-slate-900">Матеріал</h3>
+        </div>
+        <div class="p-4 space-y-1">
+            {% include "partials/detail_field.html" with label="Назва" value=locked_material.name %}
+            {% include "partials/detail_field.html" with label="Одиниця" value=locked_material.stock_unit muted=True %}
+        </div>
+    </div>
+    {% include "partials/form_field.html" with field=form.material_color label="Колір (необов'язково)" %}
+    {% else %}
+    {% include "partials/form_field.html" with field=form.material %}
+    {% include "partials/form_field.html" with field=form.material_color %}
+    {% endif %}
+    {% include "partials/form_field.html" with field=form.quantity %}
+
+    <button type="submit" class="btn-primary w-full min-h-[44px]">
+        {{ submit_label|default:"Зберегти" }}
+    </button>
+</form>
+{% endblock %}

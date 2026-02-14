@@ -9,7 +9,7 @@ from django.utils import timezone
 def test_materials_views_require_authentication(client):
     from apps.materials.models import Material
 
-    material = Material.objects.create(name="Cotton")
+    material = Material.objects.create(name="Cotton", stock_unit="pcs")
     assert client.get(reverse("materials")).status_code == 302
     assert client.get(reverse("material_add")).status_code == 302
     assert client.get(reverse("material_detail", kwargs={"pk": material.pk})).status_code == 302
@@ -23,8 +23,8 @@ def test_materials_list_hides_archived_by_default(client):
     user = User.objects.create_user(username="materials_viewer", password="pass12345")
     client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
 
-    Material.objects.create(name="Active material")
-    Material.objects.create(name="Archived material", archived_at=timezone.now())
+    Material.objects.create(name="Active material", stock_unit="pcs")
+    Material.objects.create(name="Archived material", stock_unit="pcs", archived_at=timezone.now())
 
     response = client.get(reverse("materials"))
     assert response.status_code == 200
@@ -37,15 +37,20 @@ def test_materials_list_hides_archived_by_default(client):
 @pytest.mark.django_db(transaction=True)
 def test_materials_create_and_archive_unarchive(client):
     from apps.materials.models import Material
+    from apps.materials.models import MaterialUnit
     from apps.accounts.models import User
 
     user = User.objects.create_user(username="materials_editor", password="pass12345")
     client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
 
-    create_response = client.post(reverse("material_add"), data={"name": "Linen"})
+    create_response = client.post(
+        reverse("material_add"),
+        data={"name": "Linen", "stock_unit": MaterialUnit.METER},
+    )
     assert create_response.status_code == 302
     material = Material.objects.get(name="Linen")
     assert material.archived_at is None
+    assert material.stock_unit == MaterialUnit.METER
 
     archive_response = client.post(reverse("material_archive", kwargs={"pk": material.pk}))
     assert archive_response.status_code == 302
@@ -61,6 +66,19 @@ def test_materials_create_and_archive_unarchive(client):
 
 
 @pytest.mark.django_db(transaction=True)
+def test_materials_create_requires_stock_unit(client):
+    from apps.accounts.models import User
+
+    user = User.objects.create_user(username="materials_unit_required", password="pass12345")
+    client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
+
+    response = client.post(reverse("material_add"), data={"name": "Linen"})
+    assert response.status_code == 200
+    assert "form" in response.context
+    assert "stock_unit" in response.context["form"].errors
+
+
+@pytest.mark.django_db(transaction=True)
 def test_materials_archive_page_shows_only_archived(client):
     from apps.materials.models import Material
     from apps.accounts.models import User
@@ -68,8 +86,8 @@ def test_materials_archive_page_shows_only_archived(client):
     user = User.objects.create_user(username="materials_archive_viewer", password="pass12345")
     client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
 
-    Material.objects.create(name="Active material")
-    Material.objects.create(name="Archived material", archived_at=timezone.now())
+    Material.objects.create(name="Active material", stock_unit="pcs")
+    Material.objects.create(name="Archived material", stock_unit="pcs", archived_at=timezone.now())
 
     response = client.get(reverse("materials_archive"))
     assert response.status_code == 200
@@ -85,7 +103,7 @@ def test_material_detail_shows_colors(client):
     user = User.objects.create_user(username="color_viewer", password="pass12345")
     client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
 
-    material = Material.objects.create(name="Leather")
+    material = Material.objects.create(name="Leather", stock_unit="pcs")
     MaterialColor.objects.create(material=material, code=1, name="Brown")
     MaterialColor.objects.create(material=material, code=99, name="Black")
     MaterialColor.objects.create(
@@ -111,18 +129,19 @@ def test_material_color_add_and_edit(client):
     user = User.objects.create_user(username="color_editor", password="pass12345")
     client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
 
-    material = Material.objects.create(name="Fabric")
+    material = Material.objects.create(name="Fabric", stock_unit="pcs")
 
     # Add color
     add_url = reverse("material_color_add", kwargs={"pk": material.pk})
-    response = client.post(add_url, data={"code": 1, "name": "red"})
+    response = client.post(add_url, data={"code": "", "name": "red"})
     assert response.status_code == 302
-    color = MaterialColor.objects.get(material=material, code=1)
+    color = MaterialColor.objects.get(material=material, name="Red")
     assert color.name == "Red"  # capitalized
+    assert color.code is None
 
     # Edit color
     edit_url = reverse("material_color_edit", kwargs={"pk": material.pk, "color_pk": color.pk})
-    response = client.post(edit_url, data={"code": 1, "name": "crimson"})
+    response = client.post(edit_url, data={"code": "", "name": "crimson"})
     assert response.status_code == 302
     color.refresh_from_db()
     assert color.name == "Crimson"
@@ -136,7 +155,7 @@ def test_material_color_archive(client):
     user = User.objects.create_user(username="color_archiver", password="pass12345")
     client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
 
-    material = Material.objects.create(name="Silk")
+    material = Material.objects.create(name="Silk", stock_unit="pcs")
     color = MaterialColor.objects.create(material=material, code=1, name="White")
     assert color.archived_at is None
 
@@ -157,7 +176,7 @@ def test_material_colors_archive_page_shows_archived_only(client):
     user = User.objects.create_user(username="color_archive_viewer", password="pass12345")
     client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
 
-    material = Material.objects.create(name="Canvas")
+    material = Material.objects.create(name="Canvas", stock_unit="pcs")
     MaterialColor.objects.create(material=material, code=50, name="Active White")
     archived = MaterialColor.objects.create(
         material=material, code=1, name="Zeta", archived_at=timezone.now()
@@ -173,7 +192,7 @@ def test_material_colors_archive_page_shows_archived_only(client):
     assert b"Active White" not in response.content
     assert response.content.index(b"Alpha") < response.content.index(b"Zeta")
     assert b"divide-y divide-slate-100" in response.content
-    assert b"text-xs font-mono text-slate-400 w-8" in response.content
+    assert b"text-xs font-mono text-slate-400" in response.content
     assert (
         reverse(
             "material_color_unarchive", kwargs={"pk": material.pk, "color_pk": archived.pk}
@@ -196,7 +215,7 @@ def test_material_color_unarchive(client):
     user = User.objects.create_user(username="color_unarchiver", password="pass12345")
     client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
 
-    material = Material.objects.create(name="Wool")
+    material = Material.objects.create(name="Wool", stock_unit="pcs")
     color = MaterialColor.objects.create(
         material=material, code=7, name="Grey", archived_at=timezone.now()
     )

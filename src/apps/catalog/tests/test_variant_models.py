@@ -31,7 +31,7 @@ def test_variant_allows_single_uncolored_variant_per_product():
 @pytest.mark.django_db
 def test_variant_requires_primary_when_secondary_color_set():
     product = ProductFactory()
-    material = Material.objects.create(name="Felt")
+    material = Material.objects.create(name="Felt", stock_unit="pcs")
     secondary = MaterialColor.objects.create(material=material, name="Black", code=101)
 
     with pytest.raises(IntegrityError):
@@ -45,7 +45,7 @@ def test_variant_requires_primary_when_secondary_color_set():
 def test_variant_disallows_mix_of_color_and_primary_material_color():
     product = ProductFactory()
     color = ColorFactory()
-    material = Material.objects.create(name="Leather")
+    material = Material.objects.create(name="Leather", stock_unit="pcs")
     primary = MaterialColor.objects.create(material=material, name="Blue", code=202)
 
     with pytest.raises(IntegrityError):

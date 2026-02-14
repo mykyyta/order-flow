@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from django.db import transaction
+from django.db import models, transaction
 from django.utils import timezone
 
 from apps.catalog.models import BundleComponent, ProductMaterial
@@ -94,6 +94,10 @@ def add_material_stock(
     if quantity_decimal <= Decimal("0"):
         raise ValueError("Quantity must be greater than 0")
 
+    if unit != material.stock_unit:
+        expected = material.get_stock_unit_display()
+        raise ValueError(f"Одиниця не відповідає одиниці складу матеріалу ({expected}).")
+
     stock_record, _ = MaterialStock.objects.get_or_create(
         warehouse_id=warehouse_id,
         material=material,
@@ -133,6 +137,10 @@ def remove_material_stock(
     quantity_decimal = Decimal(str(quantity))
     if quantity_decimal <= Decimal("0"):
         raise ValueError("Quantity must be greater than 0")
+
+    if unit != material.stock_unit:
+        expected = material.get_stock_unit_display()
+        raise ValueError(f"Одиниця не відповідає одиниці складу матеріалу ({expected}).")
 
     stock_record = (
         MaterialStock.objects.for_warehouse(warehouse_id)
@@ -179,6 +187,10 @@ def transfer_material_stock(
     quantity_decimal = Decimal(str(quantity))
     if quantity_decimal <= Decimal("0"):
         raise ValueError("Quantity must be greater than 0")
+
+    if unit != material.stock_unit:
+        expected = material.get_stock_unit_display()
+        raise ValueError(f"Одиниця не відповідає одиниці складу матеріалу ({expected}).")
 
     transfer = MaterialStockTransfer.objects.create(
         from_warehouse_id=from_warehouse_id,
@@ -238,8 +250,18 @@ def receive_purchase_order_line(
         raise ValueError("Quantity must be greater than 0")
 
     po_line = PurchaseOrderLine.objects.select_for_update().select_related(
-        "purchase_order", "material", "material_color"
+        "purchase_order",
+        "material",
+        "material_color",
+        "request_line",
     ).get(pk=purchase_order_line.pk)
+
+    if po_line.unit != po_line.material.stock_unit:
+        expected = po_line.material.get_stock_unit_display()
+        raise ValueError(
+            f"Одиниця в замовленні не відповідає одиниці складу матеріалу ({expected}). "
+            "Виправ одиницю в рядку замовлення.",
+        )
 
     if quantity_decimal > po_line.remaining_quantity:
         raise ValueError(f"Cannot receive more than remaining quantity: {po_line.remaining_quantity}")
@@ -279,6 +301,7 @@ def receive_purchase_order_line(
     po_line.save(update_fields=["received_quantity", "updated_at"])
 
     _update_purchase_order_status(po_line.purchase_order)
+    _update_purchase_request_line_status(po_line=po_line)
     return receipt_line
 
 
@@ -297,3 +320,34 @@ def _update_purchase_order_status(purchase_order: PurchaseOrder) -> None:
     if purchase_order.status != new_status:
         purchase_order.status = new_status
         purchase_order.save(update_fields=["status", "updated_at"])
+
+
+def _update_purchase_request_line_status(*, po_line: PurchaseOrderLine) -> None:
+    request_line = getattr(po_line, "request_line", None)
+    if request_line is None:
+        return
+
+    # Avoid reviving closed items.
+    if request_line.status in {"done", "cancelled"}:
+        return
+
+    # Quantity unknown: close on first confirmed receiving.
+    if request_line.requested_quantity is None:
+        any_received = PurchaseOrderLine.objects.filter(
+            request_line_id=request_line.id,
+            received_quantity__gt=Decimal("0.000"),
+        ).exists()
+        if any_received:
+            request_line.status = request_line.Status.DONE
+            request_line.save(update_fields=["status", "updated_at"])
+        return
+
+    total_received = (
+        PurchaseOrderLine.objects.filter(request_line_id=request_line.id).aggregate(
+            total=models.Sum("received_quantity")
+        )["total"]
+        or Decimal("0.000")
+    )
+    if total_received >= request_line.requested_quantity:
+        request_line.status = request_line.Status.DONE
+        request_line.save(update_fields=["status", "updated_at"])

@@ -85,7 +85,7 @@ def test_create_production_orders_for_sales_order_orchestrated():
 def test_receive_purchase_order_line_orchestrated_updates_received_quantity():
     user = UserFactory()
     supplier = Supplier.objects.create(name="Supplier Fulfillment")
-    material = Material.objects.create(name="Thread Fulfillment")
+    material = Material.objects.create(name="Thread Fulfillment", stock_unit=MaterialUnit.PIECE)
     purchase_order = PurchaseOrder.objects.create(
         supplier=supplier,
         status=PurchaseOrder.Status.SENT,
@@ -203,7 +203,7 @@ def test_transfer_finished_stock_orchestrated():
 @pytest.mark.django_db
 def test_transfer_material_stock_orchestrated():
     user = UserFactory()
-    material = Material.objects.create(name="Fulfillment material transfer")
+    material = Material.objects.create(name="Fulfillment material transfer", stock_unit=MaterialUnit.PIECE)
     from_warehouse = Warehouse.objects.create(
         name="From Fulfillment Material",
         code="FUL-MAT-FROM",
@@ -249,7 +249,7 @@ def test_transfer_material_stock_orchestrated():
 def test_receive_purchase_order_line_orchestrated_rolls_back_when_quantity_exceeds_remaining():
     user = UserFactory()
     supplier = Supplier.objects.create(name="Supplier rollback")
-    material = Material.objects.create(name="Thread rollback")
+    material = Material.objects.create(name="Thread rollback", stock_unit=MaterialUnit.PIECE)
     purchase_order = PurchaseOrder.objects.create(
         supplier=supplier,
         status=PurchaseOrder.Status.SENT,
@@ -279,7 +279,7 @@ def test_receive_purchase_order_line_orchestrated_rolls_back_when_quantity_excee
 @pytest.mark.django_db
 def test_transfer_material_stock_orchestrated_rolls_back_when_not_enough_stock():
     user = UserFactory()
-    material = Material.objects.create(name="Fulfillment transfer rollback")
+    material = Material.objects.create(name="Fulfillment transfer rollback", stock_unit=MaterialUnit.PIECE)
     from_warehouse = Warehouse.objects.create(
         name="From Fulfillment Rollback",
         code="FUL-MAT-RB-FROM",

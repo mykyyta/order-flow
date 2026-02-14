@@ -247,7 +247,7 @@ def test_order_edit_allows_saving_when_product_primary_material_changed(client):
 
     from apps.materials.models import Material
 
-    product.primary_material = Material.objects.create(name="New primary material")
+    product.primary_material = Material.objects.create(name="New primary material", stock_unit="pcs")
     product.save(update_fields=["primary_material"])
 
     response = client.post(
@@ -273,7 +273,7 @@ def test_order_edit_disables_primary_color_when_product_primary_changed(client):
 
     from apps.materials.models import Material
 
-    product.primary_material = Material.objects.create(name="Other primary")
+    product.primary_material = Material.objects.create(name="Other primary", stock_unit="pcs")
     product.save(update_fields=["primary_material"])
 
     response = client.get(reverse("order_edit", kwargs={"pk": order.id}))
@@ -458,8 +458,8 @@ def test_orders_create_post_for_bundle_creates_component_orders(client):
     from apps.catalog.models import BundleComponent
     from apps.materials.models import Material
 
-    bag_material = Material.objects.create(name="Bag material")
-    strap_material = Material.objects.create(name="Strap material")
+    bag_material = Material.objects.create(name="Bag material", stock_unit="pcs")
+    strap_material = Material.objects.create(name="Strap material", stock_unit="pcs")
     bag_color = ColorFactory(material=bag_material, name="Bag color", code=1111)
     strap_color = ColorFactory(material=strap_material, name="Strap color", code=2222)
 
@@ -529,7 +529,7 @@ def test_orders_create_hides_embroidery_when_product_disallows_it(client):
 
     from apps.materials.models import Material
 
-    material = Material.objects.create(name="NoEmb material")
+    material = Material.objects.create(name="NoEmb material", stock_unit="pcs")
     color = ColorFactory(material=material, name="NoEmb color", code=3333)
     model = ProductFactory(primary_material=material, allows_embroidery=False)
 

@@ -132,7 +132,7 @@ def test_product_detail_shows_material_fields_and_bom_section(client):
     client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
 
     product = Product.objects.create(name="Wallet")
-    Material.objects.create(name="Leather")
+    Material.objects.create(name="Leather", stock_unit="pcs")
 
     response = client.get(reverse("product_edit", kwargs={"pk": product.pk}))
     assert response.status_code == 200
@@ -194,8 +194,8 @@ def test_product_detail_primary_secondary_set_via_product_material_roles(client)
     user = User.objects.create_user(username="model_detail_editor", password="pass12345")
     client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
 
-    primary = Material.objects.create(name="Leather")
-    secondary = Material.objects.create(name="Felt")
+    primary = Material.objects.create(name="Leather", stock_unit="pcs")
+    secondary = Material.objects.create(name="Felt", stock_unit="pcs")
     product = Product.objects.create(name="Clutch")
 
     r1 = client.post(
@@ -241,7 +241,7 @@ def test_product_material_add_creates_link(client):
     client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
 
     product = Product.objects.create(name="Bag")
-    material = Material.objects.create(name="Thread")
+    material = Material.objects.create(name="Thread", stock_unit="pcs")
 
     response = client.post(
         reverse("product_material_add", kwargs={"pk": product.pk}),
@@ -265,8 +265,8 @@ def test_product_material_primary_role_is_unique_per_product(client):
     client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
 
     product = Product.objects.create(name="Model X")
-    m1 = Material.objects.create(name="Leather")
-    m2 = Material.objects.create(name="Felt")
+    m1 = Material.objects.create(name="Leather", stock_unit="pcs")
+    m2 = Material.objects.create(name="Felt", stock_unit="pcs")
 
     r1 = client.post(
         reverse("product_material_add", kwargs={"pk": product.pk}),
@@ -302,7 +302,7 @@ def test_product_material_secondary_requires_primary(client):
     client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
 
     product = Product.objects.create(name="Model Y", primary_material=None)
-    m = Material.objects.create(name="Thread")
+    m = Material.objects.create(name="Thread", stock_unit="pcs")
 
     response = client.post(
         reverse("product_material_add", kwargs={"pk": product.pk}),
@@ -321,8 +321,8 @@ def test_product_detail_primary_change_updates_product_material_roles(client):
     user = User.objects.create_user(username="product_primary_change", password="pass12345")
     client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
 
-    m1 = Material.objects.create(name="Leather")
-    m2 = Material.objects.create(name="Felt")
+    m1 = Material.objects.create(name="Leather", stock_unit="pcs")
+    m2 = Material.objects.create(name="Felt", stock_unit="pcs")
     product = Product.objects.create(name="Clutch")
 
     client.post(
@@ -359,7 +359,7 @@ def test_product_material_add_can_set_norm_fields(client):
     client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
 
     product = Product.objects.create(name="Bag")
-    material = Material.objects.create(name="Thread")
+    material = Material.objects.create(name="Thread", stock_unit="pcs")
 
     response = client.post(
         reverse("product_material_add", kwargs={"pk": product.pk}),
@@ -387,8 +387,8 @@ def test_product_material_delete_removes_only_other_role(client):
     client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
 
     product = Product.objects.create(name="Bag")
-    m1 = Material.objects.create(name="Leather")
-    m2 = Material.objects.create(name="Thread")
+    m1 = Material.objects.create(name="Leather", stock_unit="pcs")
+    m2 = Material.objects.create(name="Thread", stock_unit="pcs")
 
     client.post(
         reverse("product_material_add", kwargs={"pk": product.pk}),

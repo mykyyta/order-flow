@@ -1,0 +1,72 @@
+{% extends "base_detail_page.html" %}
+
+{% block page_title_text %}
+{% include "partials/tabs.html" with tabs=tabs active=active_tab %}
+<div class="mt-3">{{ page_title }}</div>
+{% endblock %}
+
+{% block page_header_actions %}
+<a href="{{ line_add_url }}" class="btn-primary">+ Позиція</a>
+{% endblock %}
+
+{% block detail_content %}
+<div class="card">
+    <div class="px-4 py-3 border-b border-slate-100">
+        <h3 class="text-sm font-semibold text-slate-900">Позиції</h3>
+    </div>
+    <div class="divide-y divide-slate-100">
+        {% for line in lines %}
+        <div class="px-4 py-3">
+            <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                    <p class="truncate text-sm font-medium text-slate-900">
+                        {{ line.material.name }}
+                        {% if line.material_color %}· {{ line.material_color.name }}{% endif %}
+                    </p>
+                    <p class="text-xs text-slate-500">
+                        {% if line.requested_quantity %}{{ line.requested_quantity }} {{ line.unit }}{% else %}Кількість не вказана{% endif %}
+                    </p>
+                    {% if line.notes %}
+                    <p class="text-xs text-slate-500 whitespace-pre-line">{{ line.notes }}</p>
+                    {% endif %}
+                </div>
+                <div class="shrink-0 flex items-center gap-2">
+                    {% if line.status == "done" %}
+                        {% include "partials/badge.html" with label=line.get_status_display variant="success" size="sm" %}
+                    {% elif line.status == "cancelled" %}
+                        {% include "partials/badge.html" with label=line.get_status_display variant="danger" size="sm" %}
+                    {% elif line.status == "ordered" %}
+                        {% include "partials/badge.html" with label=line.get_status_display variant="primary" size="sm" %}
+                    {% else %}
+                        {% include "partials/badge.html" with label=line.get_status_display variant="info" size="sm" %}
+                    {% endif %}
+                    <a href="{% url 'purchase_request_line_order' line.id %}" class="btn-secondary">Замовити</a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        {% include "partials/empty_state.html" with message="Поки що позицій немає." %}
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block detail_sidebar %}
+<div class="card">
+    <div class="px-4 py-3 border-b border-slate-100">
+        <h3 class="text-sm font-semibold text-slate-900">Інфо</h3>
+    </div>
+    <div class="p-4 space-y-1">
+        {% include "partials/detail_field.html" with label="Склад" value=purchase_request.warehouse.name muted=True %}
+        {% include "partials/detail_field.html" with label="Статус" value=purchase_request.get_status_display badge=True %}
+        {% include "partials/detail_field.html" with label="Створено" value=purchase_request.created_at muted=True %}
+        {% if purchase_request.notes %}
+        <div class="pt-2">
+            <p class="text-xs font-medium uppercase tracking-wider text-slate-400">Коментар</p>
+            <p class="mt-1 text-sm text-slate-600 whitespace-pre-line">{{ purchase_request.notes }}</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

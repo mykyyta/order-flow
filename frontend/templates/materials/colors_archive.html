@@ -6,8 +6,9 @@
     <ul class="divide-y divide-slate-100">
         {% for color in items %}
         <li class="flex items-center px-4 py-3">
-            <span class="text-xs font-mono text-slate-400 w-8">{{ color.code }}</span>
-            <span class="text-sm font-medium text-slate-900 flex-1 truncate">{{ color.name }}</span>
+            <span class="text-sm font-medium text-slate-900 flex-1 truncate">
+                {{ color.name }}{% if color.code %}<span class="text-xs font-mono text-slate-400"> · {{ color.code }}</span>{% endif %}
+            </span>
             <form method="post" action="{% url 'material_color_unarchive' material.pk color.pk %}">
                 {% csrf_token %}
                 <button type="submit" class="text-sm text-slate-500 hover:text-teal-600 transition-colors">
@@ -24,4 +25,3 @@
     {% endif %}
 </div>
 {% endblock %}
-

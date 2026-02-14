@@ -1,0 +1,24 @@
+{% extends "base_form_page.html" %}
+
+{% block form_content %}
+<div class="space-y-4">
+    <div class="card">
+        <div class="px-4 py-3 border-b border-slate-100">
+            <h3 class="text-sm font-semibold text-slate-900">Залишок</h3>
+        </div>
+        <div class="p-4 space-y-1">
+            {% include "partials/detail_field.html" with label="Виріб / компонент" value=record.variant.product.name %}
+            {% include "partials/detail_field.html" with label="Варіант" value=record.variant.display_color_label muted=True %}
+            {% if record.variant.sku %}
+            {% include "partials/detail_field.html" with label="SKU" value=record.variant.sku muted=True %}
+            {% endif %}
+            {% include "partials/detail_field.html" with label="Кількість" value=record.quantity %}
+        </div>
+    </div>
+
+    <div class="text-sm text-slate-600">
+        Деталі та історія рухів будуть додані пізніше.
+    </div>
+</div>
+{% endblock %}
+

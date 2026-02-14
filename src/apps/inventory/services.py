@@ -188,7 +188,19 @@ def _resolve_stock_key(
     if product_id is None:
         raise ValueError("Stock key requires variant_id or product_id")
     if color_id is None and primary_material_color_id is None:
-        raise ValueError("Stock key requires color_id or primary_material_color_id")
+        # Uncolored component / product: allow stock by product only.
+        if secondary_material_color_id is not None:
+            raise ValueError("Stock key requires primary_material_color_id when secondary is provided")
+        variant, _ = Variant.objects.get_or_create(
+            product_id=product_id,
+            color_id=None,
+            primary_material_color_id=None,
+            secondary_material_color_id=None,
+        )
+        return {
+            "warehouse_id": warehouse_id,
+            "variant_id": VariantId(variant.id),
+        }
 
     variant = resolve_or_create_variant(
         product_id=product_id,

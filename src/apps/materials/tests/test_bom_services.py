@@ -12,8 +12,8 @@ from apps.sales.models import SalesOrder, SalesOrderLine
 
 @pytest.mark.django_db
 def test_calculate_material_requirements_for_single_product_line():
-    felt = Material.objects.create(name="Felt")
-    leather = Material.objects.create(name="Leather smooth")
+    felt = Material.objects.create(name="Felt", stock_unit=MaterialUnit.SQUARE_METER)
+    leather = Material.objects.create(name="Leather smooth", stock_unit=MaterialUnit.SQUARE_METER)
     product = ProductFactory(name="Shopper", kind="standard")
     color = ColorFactory()
     ProductMaterial.objects.create(
@@ -49,8 +49,8 @@ def test_calculate_material_requirements_for_single_product_line():
 
 @pytest.mark.django_db
 def test_calculate_material_requirements_for_bundle_line():
-    felt = Material.objects.create(name="Felt")
-    leather = Material.objects.create(name="Leather smooth")
+    felt = Material.objects.create(name="Felt", stock_unit=MaterialUnit.SQUARE_METER)
+    leather = Material.objects.create(name="Leather smooth", stock_unit=MaterialUnit.PIECE)
     bundle = ProductFactory(name="Set", kind="bundle")
     clutch = ProductFactory(name="Clutch", kind="standard")
     strap = ProductFactory(name="Strap", kind="standard")

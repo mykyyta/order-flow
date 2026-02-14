@@ -5,7 +5,7 @@ from django.core.management import call_command
 from django.core.management.base import BaseCommand
 
 from apps.catalog.models import Product
-from apps.materials.models import Material, MaterialColor
+from apps.materials.models import Material, MaterialColor, MaterialUnit
 from apps.user_settings.models import NotificationSetting
 
 
@@ -71,7 +71,13 @@ class Command(BaseCommand):
         return user, created
 
     def _ensure_catalog(self) -> None:
-        primary_material, _ = Material.objects.get_or_create(name="Повсть")
+        primary_material, _ = Material.objects.get_or_create(
+            name="Повсть",
+            defaults={"stock_unit": MaterialUnit.SQUARE_METER},
+        )
+        if not primary_material.stock_unit:
+            primary_material.stock_unit = MaterialUnit.SQUARE_METER
+            primary_material.save(update_fields=["stock_unit", "updated_at"])
 
         product_names = [
             "Сумка клатч",

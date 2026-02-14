@@ -19,6 +19,7 @@
         <form method="post" class="space-y-4">
             {% csrf_token %}
             {% include "partials/form_field.html" with field=form.name label="Назва" %}
+            {% include "partials/form_field.html" with field=form.stock_unit label="Одиниця складу" %}
             <button type="submit" class="btn-primary">Зберегти</button>
         </form>
     </div>
@@ -42,8 +43,9 @@
     <ul class="divide-y divide-slate-100">
         {% for color in colors %}
         <a href="{% url 'material_color_edit' material.pk color.pk %}" class="flex items-center px-4 py-3 hover:bg-slate-50/80 transition-colors group">
-            <span class="text-xs font-mono text-slate-400 w-8">{{ color.code }}</span>
-            <span class="text-sm font-medium text-slate-900 flex-1 truncate">{{ color.name }}</span>
+            <span class="text-sm font-medium text-slate-900 flex-1 truncate">
+                {{ color.name }}{% if color.code %}<span class="text-xs font-mono text-slate-400"> · {{ color.code }}</span>{% endif %}
+            </span>
             <svg class="w-4 h-4 text-slate-300 group-hover:text-slate-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
             </svg>

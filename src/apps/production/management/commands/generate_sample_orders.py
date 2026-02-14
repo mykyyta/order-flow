@@ -5,7 +5,7 @@ from django.utils import timezone
 
 from apps.catalog.models import Product
 from apps.catalog.variants import resolve_or_create_variant
-from apps.materials.models import Material, MaterialColor
+from apps.materials.models import Material, MaterialColor, MaterialUnit
 from apps.production.domain.status import (
     STATUS_BLOCKED,
     STATUS_DECIDING,
@@ -54,7 +54,13 @@ class Command(BaseCommand):
         self.stdout.write(f"Ensured {len(products_data)} products.")
 
     def _ensure_primary_colors(self) -> Material:
-        material, _ = Material.objects.get_or_create(name="Повсть")
+        material, _ = Material.objects.get_or_create(
+            name="Повсть",
+            defaults={"stock_unit": MaterialUnit.SQUARE_METER},
+        )
+        if not material.stock_unit:
+            material.stock_unit = MaterialUnit.SQUARE_METER
+            material.save(update_fields=["stock_unit", "updated_at"])
         colors_data = [
             ("Чорний", 1001),
             ("Білий", 1002),

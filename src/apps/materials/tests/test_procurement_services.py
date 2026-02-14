@@ -19,7 +19,7 @@ from apps.warehouses.services import get_default_warehouse
 
 @pytest.mark.django_db
 def test_add_material_stock_creates_stock_and_movement():
-    material = Material.objects.create(name="Felt")
+    material = Material.objects.create(name="Felt", stock_unit=MaterialUnit.SQUARE_METER)
     user = UserFactory()
     warehouse = get_default_warehouse()
 
@@ -43,7 +43,7 @@ def test_add_material_stock_creates_stock_and_movement():
 
 @pytest.mark.django_db
 def test_remove_material_stock_fails_when_not_enough():
-    material = Material.objects.create(name="Leather")
+    material = Material.objects.create(name="Leather", stock_unit=MaterialUnit.PIECE)
     warehouse = get_default_warehouse()
 
     add_material_stock(
@@ -67,7 +67,7 @@ def test_remove_material_stock_fails_when_not_enough():
 @pytest.mark.django_db
 def test_receive_purchase_order_line_updates_stock_and_po_status():
     supplier = Supplier.objects.create(name="Supplier Service")
-    material = Material.objects.create(name="Thread")
+    material = Material.objects.create(name="Thread", stock_unit=MaterialUnit.PIECE)
     user = UserFactory()
     purchase_order = PurchaseOrder.objects.create(
         supplier=supplier,
@@ -107,3 +107,46 @@ def test_receive_purchase_order_line_updates_stock_and_po_status():
     assert purchase_order.status == PurchaseOrder.Status.PARTIALLY_RECEIVED
 
     assert Warehouse.objects.filter(code="MAIN").exists()
+
+
+@pytest.mark.django_db
+def test_add_material_stock_rejects_unit_mismatch():
+    material = Material.objects.create(name="Fabric Roll", stock_unit=MaterialUnit.METER)
+    warehouse = get_default_warehouse()
+
+    with pytest.raises(ValueError, match="Одиниця не відповідає одиниці складу матеріалу"):
+        add_material_stock(
+            warehouse_id=warehouse.id,
+            material=material,
+            quantity=Decimal("1.000"),
+            unit=MaterialUnit.PIECE,
+            reason=MaterialStockMovement.Reason.ADJUSTMENT_IN,
+        )
+
+
+@pytest.mark.django_db
+def test_receive_purchase_order_line_rejects_unit_mismatch():
+    supplier = Supplier.objects.create(name="Supplier Units")
+    user = UserFactory()
+    material = Material.objects.create(name="Leather", stock_unit=MaterialUnit.SQUARE_METER)
+    purchase_order = PurchaseOrder.objects.create(
+        supplier=supplier,
+        status=PurchaseOrder.Status.SENT,
+        created_by=user,
+    )
+    line = PurchaseOrderLine.objects.create(
+        purchase_order=purchase_order,
+        material=material,
+        quantity=Decimal("2.000"),
+        unit=MaterialUnit.PIECE,
+        unit_price=Decimal("1.00"),
+    )
+    warehouse = get_default_warehouse()
+
+    with pytest.raises(ValueError, match="Одиниця в замовленні не відповідає одиниці складу матеріалу"):
+        receive_purchase_order_line(
+            purchase_order_line=line,
+            quantity=Decimal("1.000"),
+            warehouse_id=warehouse.id,
+            received_by=user,
+        )

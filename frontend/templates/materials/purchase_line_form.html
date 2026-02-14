@@ -1,0 +1,18 @@
+{% extends "base_form_page.html" %}
+
+{% block form_content %}
+<form method="post" class="space-y-4">
+    {% csrf_token %}
+    {% include "partials/form_field.html" with field=form.material label="Матеріал" %}
+    {% include "partials/form_field.html" with field=form.material_color label="Колір (необов'язково)" %}
+    {% include "partials/form_field.html" with field=form.quantity label="Кількість" %}
+    {% include "partials/form_field.html" with field=form.unit label="Одиниця" %}
+    {% include "partials/form_field.html" with field=form.unit_price label="Ціна за одиницю (необов'язково)" %}
+    {% include "partials/form_field.html" with field=form.notes label="Коментар (необов'язково)" %}
+
+    <button type="submit" class="btn-primary w-full min-h-[44px]">
+        {{ submit_label|default:"Зберегти" }}
+    </button>
+</form>
+{% endblock %}
+
