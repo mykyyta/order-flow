@@ -31,6 +31,7 @@ from apps.materials.views import (
     purchase_set_status,
     purchases_list,
     supplier_offer_add,
+    supplier_offer_start,
     supplier_add,
     supplier_detail,
     supplier_offers_list,
@@ -75,6 +76,7 @@ urlpatterns = [
     # Suppliers
     path("suppliers/", suppliers_list, name="suppliers"),
     path("suppliers/add/", supplier_add, name="supplier_add"),
+    path("suppliers/offers/add/", supplier_offer_start, name="supplier_offer_start"),
     path("suppliers/offers/", supplier_offers_list, name="supplier_offers"),
     path("suppliers/<int:pk>/", supplier_detail, name="supplier_detail"),
     path("suppliers/<int:pk>/purchase/create/", supplier_purchase_create, name="supplier_purchase_create"),

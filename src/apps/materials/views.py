@@ -30,6 +30,7 @@ from apps.materials.forms import (
     PurchaseRequestLineOrderForm,
     SupplierForm,
     SupplierMaterialOfferForm,
+    SupplierMaterialOfferStartForm,
 )
 from apps.materials.models import (
     Material,
@@ -355,7 +356,7 @@ def supplier_offers_list(request):
             "active_tab": "offers",
             "page_obj": page_obj,
             "search_query": search_query,
-            "offer_add_url": reverse("purchase_start_material"),
+            "offer_add_url": reverse("supplier_offer_start"),
         },
     )
 
@@ -378,7 +379,10 @@ def supplier_detail(request, pk: int):
             "supplier": supplier,
             "offers": offers,
             "purchase_create_url": reverse("supplier_purchase_create", kwargs={"pk": supplier.pk}),
-            "offer_add_url": reverse("purchase_start_material"),
+            "offer_add_url": _append_query_params(
+                reverse("supplier_offer_start"),
+                {"supplier": str(supplier.pk), "next": reverse("supplier_detail", kwargs={"pk": supplier.pk})},
+            ),
         },
     )
 
@@ -546,6 +550,9 @@ def purchase_start_material_offers(request, material_pk: int):
 @login_required(login_url=reverse_lazy("auth_login"))
 def supplier_offer_add(request, material_pk: int):
     material = get_object_or_404(Material, pk=material_pk, archived_at__isnull=True)
+    supplier_id = None
+    if request.GET.get("supplier") and str(request.GET.get("supplier")).isdigit():
+        supplier_id = int(request.GET.get("supplier"))
     if request.method == "POST":
         form = SupplierMaterialOfferForm(request.POST, material=material)
         if form.is_valid():
@@ -554,9 +561,18 @@ def supplier_offer_add(request, material_pk: int):
             offer.unit = material.stock_unit
             offer.save()
             messages.success(request, "Готово! Офер додано.")
-            return redirect("purchase_start_material_offers", material_pk=material.pk)
+            next_url = (request.GET.get("next") or request.POST.get("next") or "").strip()
+            safe_next = _safe_next_url(
+                request,
+                next_url,
+                fallback=reverse("purchase_start_material_offers", kwargs={"material_pk": material.pk}),
+            )
+            return redirect(safe_next)
     else:
-        form = SupplierMaterialOfferForm(material=material)
+        initial = {}
+        if supplier_id and Supplier.objects.filter(pk=supplier_id, archived_at__isnull=True).exists():
+            initial["supplier"] = supplier_id
+        form = SupplierMaterialOfferForm(initial=initial, material=material)
 
     return render(
         request,
@@ -564,14 +580,58 @@ def supplier_offer_add(request, material_pk: int):
         {
             "page_title": "Новий офер",
             "page_title_center": True,
-            "back_url": reverse("purchase_start_material_offers", kwargs={"material_pk": material.pk}),
+            "back_url": _safe_next_url(
+                request,
+                (request.GET.get("next") or "").strip(),
+                fallback=reverse("purchase_start_material_offers", kwargs={"material_pk": material.pk}),
+            ),
             "back_label": "Назад",
             "form": form,
             "material": material,
             "submit_label": "Додати",
+            "next_url": (request.GET.get("next") or "").strip(),
         },
     )
 
+
+@login_required(login_url=reverse_lazy("auth_login"))
+def supplier_offer_start(request):
+    supplier_id = None
+    if request.GET.get("supplier") and str(request.GET.get("supplier")).isdigit():
+        supplier_id = int(request.GET.get("supplier"))
+
+    next_url = _safe_next_url(
+        request,
+        (request.GET.get("next") or "").strip(),
+        fallback=reverse("supplier_offers"),
+    )
+
+    if request.method == "POST":
+        form = SupplierMaterialOfferStartForm(request.POST)
+        if form.is_valid():
+            supplier: Supplier = form.cleaned_data["supplier"]
+            material: Material = form.cleaned_data["material"]
+            url = reverse("supplier_offer_add", kwargs={"material_pk": material.pk})
+            url = _append_query_params(url, {"supplier": str(supplier.pk), "next": next_url})
+            return redirect(url)
+    else:
+        initial = {}
+        if supplier_id and Supplier.objects.filter(pk=supplier_id, archived_at__isnull=True).exists():
+            initial["supplier"] = supplier_id
+        form = SupplierMaterialOfferStartForm(initial=initial)
+
+    return render(
+        request,
+        "materials/supplier_offer_start.html",
+        {
+            "page_title": "Додати офер",
+            "page_title_center": True,
+            "back_url": next_url,
+            "back_label": "Назад",
+            "form": form,
+            "submit_label": "Далі",
+        },
+    )
 
 @login_required(login_url=reverse_lazy("auth_login"))
 def purchase_add_from_offer(request, offer_pk: int):

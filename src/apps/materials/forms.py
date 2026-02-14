@@ -138,6 +138,19 @@ class SupplierMaterialOfferForm(forms.ModelForm):
         return title
 
 
+class SupplierMaterialOfferStartForm(forms.Form):
+    supplier = forms.ModelChoiceField(
+        queryset=Supplier.objects.filter(archived_at__isnull=True).order_by("name"),
+        widget=forms.Select(attrs={"class": FORM_SELECT}),
+        label="Постачальник",
+    )
+    material = forms.ModelChoiceField(
+        queryset=Material.objects.filter(archived_at__isnull=True).order_by("name"),
+        widget=forms.Select(attrs={"class": FORM_SELECT}),
+        label="Матеріал",
+    )
+
+
 class PurchaseAddFromOfferForm(forms.Form):
     quantity = forms.DecimalField(
         min_value=Decimal("0.001"),

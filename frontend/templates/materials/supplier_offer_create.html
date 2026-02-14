@@ -3,6 +3,9 @@
 {% block form_content %}
 <form method="post" class="space-y-4">
     {% csrf_token %}
+    {% if next_url %}
+    <input type="hidden" name="next" value="{{ next_url }}">
+    {% endif %}
 
     <div class="rounded-md bg-slate-50 px-3 py-2 text-sm text-slate-700">
         Матеріал: <span class="font-medium">{{ material.name }}</span>

@@ -319,6 +319,7 @@ def test_supplier_offers_list_renders_offers(client):
     assert supplier.name.encode() in response.content
     assert material.name.encode() in response.content
     assert offer.title.encode() in response.content
+    assert reverse("supplier_offer_start").encode() in response.content
 
 
 @pytest.mark.django_db(transaction=True)
@@ -335,6 +336,19 @@ def test_supplier_detail_renders_and_purchase_create_creates_order(client):
     assert response.status_code == 302
     po = PurchaseOrder.objects.get()
     assert po.supplier_id == supplier.pk
+
+
+@pytest.mark.django_db(transaction=True)
+def test_supplier_offer_start_redirects_to_material_offer_add_with_prefill(client):
+    user = UserFactory()
+    client.force_login(user, backend=AUTH_BACKEND)
+    supplier = Supplier.objects.create(name="Offer Start Supplier")
+    material = Material.objects.create(name="Offer Start Material", stock_unit=MaterialUnit.PIECE)
+
+    response = client.post(reverse("supplier_offer_start"), data={"supplier": supplier.pk, "material": material.pk})
+    assert response.status_code == 302
+    assert reverse("supplier_offer_add", kwargs={"material_pk": material.pk}).encode() in response["Location"].encode()
+    assert f"supplier={supplier.pk}".encode() in response["Location"].encode()
 
 
 @pytest.mark.django_db(transaction=True)

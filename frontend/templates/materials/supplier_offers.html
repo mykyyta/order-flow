@@ -5,7 +5,7 @@
 
 <div class="mt-3 flex items-center justify-between gap-2" x-data="{ open: false }">
     <div class="flex items-center gap-2">
-        <a href="{{ offer_add_url }}" class="btn-primary px-3">Додати</a>
+        <a href="{{ offer_add_url }}?next={% url 'supplier_offers' %}" class="btn-primary px-3">Додати</a>
     </div>
 
     <div class="relative flex items-center gap-2">
@@ -132,4 +132,3 @@
 {% block list_footer %}
 {% include "partials/pagination.html" with page_obj=page_obj %}
 {% endblock %}
-
