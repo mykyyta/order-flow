@@ -69,7 +69,6 @@ class ProductListCreateView(LoginRequiredMixin, View):
             self.template_name,
             {
                 "page_title": "Моделі",
-                "show_nav_title": False,
                 "show_page_header": False,
                 "products": products,
                 "form": form,
@@ -87,7 +86,6 @@ class ProductListCreateView(LoginRequiredMixin, View):
             self.template_name,
             {
                 "page_title": "Моделі",
-                "show_nav_title": False,
                 "show_page_header": False,
                 "products": products,
                 "form": form,
@@ -116,7 +114,6 @@ class ColorListCreateView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["page_title"] = "Кольори"
-        context["show_nav_title"] = False
         context["show_page_header"] = False
         context["color_form"] = ColorForm()
         return context
