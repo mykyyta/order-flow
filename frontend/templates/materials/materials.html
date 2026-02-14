@@ -3,6 +3,15 @@
 {% block list_wrapper %}
 
 <div class="space-y-6">
+    <div class="flex items-center justify-between gap-3">
+        <a href="{% url 'materials_archive' %}"
+           class="link-muted inline-flex items-center gap-2 rounded-md px-3 py-2 hover:bg-slate-50">
+            <span aria-hidden="true">🗄️</span>
+            <span>Архів</span>
+        </a>
+        <a href="{{ material_add_url }}" class="btn-primary">+ Додати</a>
+    </div>
+
     <div>
         {% if materials %}
         <div class="flex flex-wrap gap-2">
@@ -13,33 +22,6 @@
         {% else %}
         {% include "partials/empty_state.html" with message="Поки що матеріалів немає." %}
         {% endif %}
-    </div>
-
-    <div class="card form-card-body">
-        <h2 class="section-title mb-4">Додати матеріал</h2>
-        <form method="post" class="space-y-4">
-            {% csrf_token %}
-            <div>
-                <label for="id_name" class="sr-only">Назва матеріалу</label>
-                {{ form.name }}
-                {% if form.name.errors %}
-                <p class="form-error">{{ form.name.errors.0 }}</p>
-                {% endif %}
-            </div>
-            <button type="submit" class="btn-primary">
-                Додати
-            </button>
-        </form>
-    </div>
-
-    <div class="pt-4">
-        <div class="flex items-center justify-center">
-            <a href="{% url 'materials_archive' %}"
-               class="link-muted inline-flex items-center gap-2 rounded-md px-3 py-2 hover:bg-slate-50">
-                <span aria-hidden="true">🗄️</span>
-                <span>Архів</span>
-            </a>
-        </div>
     </div>
 </div>
 

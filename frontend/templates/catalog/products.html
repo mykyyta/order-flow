@@ -3,41 +3,54 @@
 {% block list_wrapper %}
 
 <div class="space-y-6">
+    <div class="flex items-center justify-between gap-3">
+        <a href="{% url 'products_archive' %}"
+           class="link-muted inline-flex items-center gap-2 rounded-md px-3 py-2 hover:bg-slate-50">
+            <span aria-hidden="true">🗄️</span>
+            <span>Архів</span>
+        </a>
+        <a href="{{ product_add_url }}" class="btn-primary">+ Додати</a>
+    </div>
+
     <div>
-        <div class="flex flex-wrap gap-2">
-            {% for product in products %}
-            <a href="{% url 'product_edit' product.id %}" class="catalog-chip-link catalog-chip-availability-in">{{ product.name }}</a>
-            {% empty %}
-            <p class="text-sm text-slate-500">Поки що моделей немає.</p>
-            {% endfor %}
-        </div>
-    </div>
+        {% if standard_products or bundle_products or component_products %}
+        <div class="space-y-6">
+            {% if standard_products %}
+            <section class="space-y-3">
+                <h2 class="section-title">Модель</h2>
+                <div class="flex flex-wrap gap-2">
+                    {% for product in standard_products %}
+                    <a href="{% url 'product_edit' product.id %}" class="catalog-chip-link catalog-chip-availability-in">{{ product.name }}</a>
+                    {% endfor %}
+                </div>
+            </section>
+            {% endif %}
 
-    <div class="card form-card-body">
-        <h2 class="section-title mb-4">Додати модель</h2>
-        <form method="post" class="space-y-4">
-            {% csrf_token %}
-            <div>
-                <label for="id_name" class="sr-only">Назва моделі</label>
-                {{ form.name }}
-                {% if form.name.errors %}
-                <p class="form-error">{{ form.name.errors.0 }}</p>
-                {% endif %}
-            </div>
-            <button type="submit" class="btn-primary">
-                Додати
-            </button>
-        </form>
-    </div>
+            {% if bundle_products %}
+            <section class="space-y-3">
+                <h2 class="section-title">Бандл</h2>
+                <div class="flex flex-wrap gap-2">
+                    {% for product in bundle_products %}
+                    <a href="{% url 'product_edit' product.id %}" class="catalog-chip-link catalog-chip-availability-in">{{ product.name }}</a>
+                    {% endfor %}
+                </div>
+            </section>
+            {% endif %}
 
-    <div class="pt-4">
-        <div class="flex items-center justify-center">
-            <a href="{% url 'products_archive' %}"
-               class="link-muted inline-flex items-center gap-2 rounded-md px-3 py-2 hover:bg-slate-50">
-                <span aria-hidden="true">🗄️</span>
-                <span>Архів</span>
-            </a>
+            {% if component_products %}
+            <section class="space-y-3">
+                <h2 class="section-title">Компонент</h2>
+                <div class="flex flex-wrap gap-2">
+                    {% for product in component_products %}
+                    <a href="{% url 'product_edit' product.id %}" class="catalog-chip-link catalog-chip-availability-in">{{ product.name }}</a>
+                    {% endfor %}
+                </div>
+            </section>
+            {% endif %}
         </div>
+        {% else %}
+        {% include "partials/empty_state.html" with message="Поки що моделей немає." %}
+        {% endif %}
     </div>
 </div>
 

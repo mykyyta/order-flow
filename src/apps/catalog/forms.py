@@ -26,9 +26,7 @@ class ColorForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["status"].choices = [("", "Наявність")] + list(
-            Color.AVAILABILITY_CHOICES
-        )
+        self.fields["status"].choices = [("", "Наявність")] + list(Color.AVAILABILITY_CHOICES)
         if not self.instance.pk:
             self.initial["status"] = ""
         self.fields["status"].required = False
@@ -42,12 +40,21 @@ class ColorForm(forms.ModelForm):
 
 
 class ProductCreateForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Backwards-compatible: old callers/tests post only "name". Default kind to "Модель".
+        self.fields["kind"].required = False
+
     class Meta:
         model = Product
-        fields = ["name"]
+        fields = ["kind", "name"]
         widgets = {
+            "kind": forms.Select(attrs={"class": FORM_SELECT}),
             "name": forms.TextInput(attrs={"class": FORM_INPUT, "placeholder": "Клатч"}),
         }
+
+    def clean_kind(self):
+        return self.cleaned_data.get("kind") or Product.Kind.STANDARD
 
     def clean_name(self):
         name = self.cleaned_data["name"]

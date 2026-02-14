@@ -11,6 +11,7 @@ def test_materials_views_require_authentication(client):
 
     material = Material.objects.create(name="Cotton")
     assert client.get(reverse("materials")).status_code == 302
+    assert client.get(reverse("material_add")).status_code == 302
     assert client.get(reverse("material_detail", kwargs={"pk": material.pk})).status_code == 302
 
 
@@ -41,7 +42,7 @@ def test_materials_create_and_archive_unarchive(client):
     user = User.objects.create_user(username="materials_editor", password="pass12345")
     client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
 
-    create_response = client.post(reverse("materials"), data={"name": "Linen"})
+    create_response = client.post(reverse("material_add"), data={"name": "Linen"})
     assert create_response.status_code == 302
     material = Material.objects.get(name="Linen")
     assert material.archived_at is None
@@ -97,7 +98,9 @@ def test_material_detail_shows_colors(client):
     assert b"Brown" in response.content
     assert b"Archived color" not in response.content
     assert response.content.index(b"Black") < response.content.index(b"Brown")
-    assert reverse("material_colors_archive", kwargs={"pk": material.pk}).encode() in response.content
+    assert (
+        reverse("material_colors_archive", kwargs={"pk": material.pk}).encode() in response.content
+    )
 
 
 @pytest.mark.django_db(transaction=True)
@@ -170,13 +173,19 @@ def test_material_colors_archive_page_shows_archived_only(client):
     assert b"Active White" not in response.content
     assert response.content.index(b"Alpha") < response.content.index(b"Zeta")
     assert b"divide-y divide-slate-100" in response.content
-    assert b'text-xs font-mono text-slate-400 w-8' in response.content
-    assert reverse(
-        "material_color_unarchive", kwargs={"pk": material.pk, "color_pk": archived.pk}
-    ).encode() in response.content
-    assert reverse(
-        "material_color_unarchive", kwargs={"pk": material.pk, "color_pk": archived_alpha.pk}
-    ).encode() in response.content
+    assert b"text-xs font-mono text-slate-400 w-8" in response.content
+    assert (
+        reverse(
+            "material_color_unarchive", kwargs={"pk": material.pk, "color_pk": archived.pk}
+        ).encode()
+        in response.content
+    )
+    assert (
+        reverse(
+            "material_color_unarchive", kwargs={"pk": material.pk, "color_pk": archived_alpha.pk}
+        ).encode()
+        in response.content
+    )
 
 
 @pytest.mark.django_db(transaction=True)

@@ -4,49 +4,51 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
-from django.views import View
 from django.views.decorators.http import require_POST
-from django.views.generic import CreateView, UpdateView
+from django.views.generic import CreateView, ListView, UpdateView
 from django.db.models.functions import Lower
 
 from apps.materials.forms import MaterialColorForm, MaterialForm
 from apps.materials.models import Material, MaterialColor
 
 
-class MaterialListCreateView(LoginRequiredMixin, View):
+class MaterialListView(LoginRequiredMixin, ListView):
     login_url = reverse_lazy("auth_login")
+    model = Material
     template_name = "materials/materials.html"
+    context_object_name = "materials"
 
-    def get(self, request, *args, **kwargs):
-        materials = Material.objects.filter(archived_at__isnull=True).order_by("name")
-        form = MaterialForm()
-        return render(
-            request,
-            self.template_name,
-            {
-                "page_title": "Матеріали",
-                "show_page_header": False,
-                "materials": materials,
-                "form": form,
-            },
-        )
+    def get_queryset(self):
+        return Material.objects.filter(archived_at__isnull=True).only("id", "name").order_by("name")
 
-    def post(self, request, *args, **kwargs):
-        form = MaterialForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect(reverse_lazy("materials"))
-        materials = Material.objects.filter(archived_at__isnull=True).order_by("name")
-        return render(
-            request,
-            self.template_name,
-            {
-                "page_title": "Матеріали",
-                "show_page_header": False,
-                "materials": materials,
-                "form": form,
-            },
-        )
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["page_title"] = "Матеріали"
+        context["show_page_header"] = False
+        context["material_add_url"] = reverse("material_add")
+        return context
+
+
+class MaterialCreateView(LoginRequiredMixin, CreateView):
+    login_url = reverse_lazy("auth_login")
+    model = Material
+    form_class = MaterialForm
+    template_name = "materials/material_create.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["page_title"] = "Додати матеріал"
+        context["page_title_center"] = True
+        context["back_url"] = reverse("materials")
+        return context
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, "Готово! Додано.")
+        return response
+
+    def get_success_url(self):
+        return reverse("material_detail", kwargs={"pk": self.object.pk})
 
 
 class MaterialDetailView(LoginRequiredMixin, UpdateView):

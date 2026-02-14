@@ -6,7 +6,7 @@ from apps.materials.models import MaterialUnit
 
 class Product(models.Model):
     class Kind(models.TextChoices):
-        STANDARD = "standard", "Звичайний"
+        STANDARD = "standard", "Модель"
         COMPONENT = "component", "Компонент"
         BUNDLE = "bundle", "Бандл"
 
@@ -15,9 +15,7 @@ class Product(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     currency = models.CharField(max_length=3, default="UAH")
     # Роздрібна ціна в Україні (грн). Інші ціни — окремими полями пізніше.
-    price_retail_uah = models.DecimalField(
-        max_digits=10, decimal_places=2, null=True, blank=True
-    )
+    price_retail_uah = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     cost_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     kind = models.CharField(
         max_length=16,
@@ -125,9 +123,7 @@ class Color(models.Model):
 
     name = models.CharField(max_length=255, unique=True)
     code = models.IntegerField(unique=True)
-    status = models.CharField(
-        max_length=20, choices=AVAILABILITY_CHOICES, default="in_stock"
-    )
+    status = models.CharField(max_length=20, choices=AVAILABILITY_CHOICES, default="in_stock")
     archived_at = models.DateTimeField(null=True, blank=True, db_index=True)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
@@ -209,8 +205,7 @@ class Variant(models.Model):
             ),
             models.CheckConstraint(
                 condition=(
-                    models.Q(color__isnull=True)
-                    | models.Q(primary_material_color__isnull=True)
+                    models.Q(color__isnull=True) | models.Q(primary_material_color__isnull=True)
                 ),
                 name="catalog_productvariant_color_primary_exclusive",
             ),
@@ -228,7 +223,9 @@ class Variant(models.Model):
         if self.primary_material_color:
             primary_name = self.primary_material_color.name
             if self.secondary_material_color:
-                return f"{self.product.name} ({primary_name} / {self.secondary_material_color.name})"
+                return (
+                    f"{self.product.name} ({primary_name} / {self.secondary_material_color.name})"
+                )
             return f"{self.product.name} ({primary_name})"
         return f"{self.product.name} (custom)"
 
@@ -251,7 +248,8 @@ class BundleComponent(models.Model):
         Product,
         on_delete=models.CASCADE,
         related_name="part_of_bundles",
-        limit_choices_to=models.Q(kind=Product.Kind.STANDARD) | models.Q(kind=Product.Kind.COMPONENT),
+        limit_choices_to=models.Q(kind=Product.Kind.STANDARD)
+        | models.Q(kind=Product.Kind.COMPONENT),
     )
     is_primary = models.BooleanField(default=False)
     is_required = models.BooleanField(default=True)
@@ -282,7 +280,8 @@ class BundleColorMapping(models.Model):
         Product,
         on_delete=models.CASCADE,
         related_name="bundle_color_components",
-        limit_choices_to=models.Q(kind=Product.Kind.STANDARD) | models.Q(kind=Product.Kind.COMPONENT),
+        limit_choices_to=models.Q(kind=Product.Kind.STANDARD)
+        | models.Q(kind=Product.Kind.COMPONENT),
     )
     component_color = models.ForeignKey(
         Color,
@@ -330,7 +329,8 @@ class BundlePresetComponent(models.Model):
         Product,
         on_delete=models.CASCADE,
         related_name="bundle_presets",
-        limit_choices_to=models.Q(kind=Product.Kind.STANDARD) | models.Q(kind=Product.Kind.COMPONENT),
+        limit_choices_to=models.Q(kind=Product.Kind.STANDARD)
+        | models.Q(kind=Product.Kind.COMPONENT),
     )
     primary_material_color = models.ForeignKey(
         "materials.MaterialColor",

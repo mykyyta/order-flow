@@ -3,8 +3,9 @@ from django.urls import path
 from apps.materials.views import (
     MaterialColorCreateView,
     MaterialColorUpdateView,
+    MaterialCreateView,
     MaterialDetailView,
-    MaterialListCreateView,
+    MaterialListView,
     material_archive,
     material_color_archive,
     material_color_unarchive,
@@ -16,7 +17,8 @@ from apps.materials.views import (
 )
 
 urlpatterns = [
-    path("materials/", MaterialListCreateView.as_view(), name="materials"),
+    path("materials/", MaterialListView.as_view(), name="materials"),
+    path("materials/add/", MaterialCreateView.as_view(), name="material_add"),
     path("materials/archive/", materials_archive, name="materials_archive"),
     path("materials/<int:pk>/", MaterialDetailView.as_view(), name="material_detail"),
     path("materials/<int:pk>/archive/", material_archive, name="material_archive"),

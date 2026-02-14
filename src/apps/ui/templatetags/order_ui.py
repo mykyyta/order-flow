@@ -70,6 +70,7 @@ NAV_SECTIONS = [
                 "label": "Продукти",
                 "active_on": (
                     "products",
+                    "product_add",
                     "product_detail",
                     "product_edit",
                     "products_archive",
@@ -85,6 +86,7 @@ NAV_SECTIONS = [
                 "label": "Матеріали",
                 "active_on": (
                     "materials",
+                    "material_add",
                     "material_detail",
                     "material_edit",
                     "materials_archive",
@@ -153,13 +155,15 @@ def get_nav_sections(context):
             }
             for item in section["items"]
         ]
-        sections.append({
-            "key": section["key"],
-            "label": section["label"],
-            "emoji": section["emoji"],
-            "items": items,
-            "is_active": any(item["is_active"] for item in items),
-        })
+        sections.append(
+            {
+                "key": section["key"],
+                "label": section["label"],
+                "emoji": section["emoji"],
+                "items": items,
+                "is_active": any(item["is_active"] for item in items),
+            }
+        )
     return sections
 
 
@@ -182,12 +186,12 @@ NAV_ITEMS = [
     {
         "url_name": "products",
         "label": "Моделі",
-        "active_on": ("products", "product_edit", "products_archive"),
+        "active_on": ("products", "product_add", "product_edit", "products_archive"),
     },
     {
         "url_name": "materials",
         "label": "Матеріали",
-        "active_on": ("materials", "material_edit", "materials_archive"),
+        "active_on": ("materials", "material_add", "material_edit", "materials_archive"),
     },
     {"url_name": "profile", "label": "Профіль", "active_on": ("profile", "change_password")},
 ]

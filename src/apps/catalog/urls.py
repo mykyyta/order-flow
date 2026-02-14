@@ -3,10 +3,11 @@ from django.urls import path
 from .views import (
     BundleComponentCreateView,
     BundleComponentUpdateView,
+    ProductCreateView,
     ProductMaterialCreateView,
     ProductMaterialUpdateView,
     ProductDetailUpdateView,
-    ProductListCreateView,
+    ProductListView,
     bundle_component_delete,
     products_archive,
     product_archive,
@@ -15,7 +16,8 @@ from .views import (
 )
 
 urlpatterns = [
-    path("products/", ProductListCreateView.as_view(), name="products"),
+    path("products/", ProductListView.as_view(), name="products"),
+    path("products/add/", ProductCreateView.as_view(), name="product_add"),
     path("products/archive/", products_archive, name="products_archive"),
     path("products/<int:pk>/", ProductDetailUpdateView.as_view(), name="product_edit"),
     path(

@@ -1,4 +1,5 @@
 """Catalog model and view tests."""
+
 import pytest
 from django.urls import reverse
 from django.utils import timezone
@@ -19,6 +20,7 @@ def test_color_str():
 @pytest.mark.django_db
 def test_products_views_require_authentication(client):
     assert client.get(reverse("products")).status_code == 302
+    assert client.get(reverse("product_add")).status_code == 302
 
 
 @pytest.mark.django_db(transaction=True)
@@ -37,6 +39,38 @@ def test_catalog_lists_hide_archived_by_default(client):
     assert b"Archived model" not in models_response.content
     assert b'class="catalog-chip-link catalog-chip-availability-in"' in models_response.content
     assert reverse("products_archive").encode() in models_response.content
+
+
+@pytest.mark.django_db(transaction=True)
+def test_product_create_flow_and_grouped_list(client):
+    from apps.accounts.models import User
+
+    user = User.objects.create_user(username="product_creator", password="pass12345")
+    client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
+
+    create_page = client.get(reverse("product_add"))
+    assert create_page.status_code == 200
+
+    r = client.post(
+        reverse("product_add"),
+        data={"name": "Set", "kind": Product.Kind.BUNDLE},
+    )
+    assert r.status_code == 302
+    created = Product.objects.get(name="Set")
+    assert created.kind == Product.Kind.BUNDLE
+    assert r.url == reverse("product_edit", kwargs={"pk": created.pk})
+
+    Product.objects.create(name="Wallet", kind=Product.Kind.STANDARD)
+    Product.objects.create(name="Strap", kind=Product.Kind.COMPONENT)
+
+    response = client.get(reverse("products"))
+    assert response.status_code == 200
+    assert b"Wallet" in response.content
+    assert b"Set" in response.content
+    assert b"Strap" in response.content
+    assert "Модель".encode() in response.content
+    assert "Бандл".encode() in response.content
+    assert "Компонент".encode() in response.content
 
 
 @pytest.mark.django_db(transaction=True)
@@ -249,8 +283,13 @@ def test_product_material_primary_role_is_unique_per_product(client):
     assert r2.status_code == 302
     product.refresh_from_db()
     assert product.primary_material_id == m2.pk
-    assert ProductMaterial.objects.get(product=product, material=m2).role == ProductMaterial.Role.PRIMARY
-    assert ProductMaterial.objects.get(product=product, material=m1).role == ProductMaterial.Role.OTHER
+    assert (
+        ProductMaterial.objects.get(product=product, material=m2).role
+        == ProductMaterial.Role.PRIMARY
+    )
+    assert (
+        ProductMaterial.objects.get(product=product, material=m1).role == ProductMaterial.Role.OTHER
+    )
 
 
 @pytest.mark.django_db(transaction=True)
@@ -290,7 +329,10 @@ def test_product_detail_primary_change_updates_product_material_roles(client):
         reverse("product_material_add", kwargs={"pk": product.pk}),
         data={"material": str(m1.pk), "role": ProductMaterial.Role.PRIMARY, "notes": ""},
     )
-    assert ProductMaterial.objects.get(product=product, material=m1).role == ProductMaterial.Role.PRIMARY
+    assert (
+        ProductMaterial.objects.get(product=product, material=m1).role
+        == ProductMaterial.Role.PRIMARY
+    )
 
     client.post(
         reverse("product_material_add", kwargs={"pk": product.pk}),
@@ -298,8 +340,13 @@ def test_product_detail_primary_change_updates_product_material_roles(client):
     )
     product.refresh_from_db()
     assert product.primary_material_id == m2.pk
-    assert ProductMaterial.objects.get(product=product, material=m2).role == ProductMaterial.Role.PRIMARY
-    assert ProductMaterial.objects.get(product=product, material=m1).role == ProductMaterial.Role.OTHER
+    assert (
+        ProductMaterial.objects.get(product=product, material=m2).role
+        == ProductMaterial.Role.PRIMARY
+    )
+    assert (
+        ProductMaterial.objects.get(product=product, material=m1).role == ProductMaterial.Role.OTHER
+    )
 
 
 @pytest.mark.django_db(transaction=True)
@@ -349,7 +396,9 @@ def test_product_material_delete_removes_only_other_role(client):
     )
     pm1 = ProductMaterial.objects.get(product=product, material=m1)
 
-    client.post(reverse("product_material_add", kwargs={"pk": product.pk}), data={"material": str(m2.pk)})
+    client.post(
+        reverse("product_material_add", kwargs={"pk": product.pk}), data={"material": str(m2.pk)}
+    )
     pm2 = ProductMaterial.objects.get(product=product, material=m2)
 
     # Cannot delete primary

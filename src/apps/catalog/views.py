@@ -4,7 +4,6 @@ from django.contrib.auth.decorators import login_required
 from django.db import models, transaction
 from django.shortcuts import get_object_or_404, render, redirect
 from django.urls import reverse, reverse_lazy
-from django.views import View
 from django.views.generic import CreateView, ListView, UpdateView
 from django.views.decorators.http import require_POST
 from django.utils import timezone
@@ -57,40 +56,53 @@ def _apply_product_material_role_change(
     ProductDetailUpdateView._sync_product_material_roles(product=product)
 
 
-class ProductListCreateView(LoginRequiredMixin, View):
+class ProductListView(LoginRequiredMixin, ListView):
     login_url = reverse_lazy("auth_login")
+    model = Product
     template_name = "catalog/products.html"
+    context_object_name = "products"
 
-    def get(self, request, *args, **kwargs):
-        products = Product.objects.filter(archived_at__isnull=True).order_by("name")
-        form = ProductCreateForm()
-        return render(
-            request,
-            self.template_name,
-            {
-                "page_title": "Моделі",
-                "show_page_header": False,
-                "products": products,
-                "form": form,
-            },
+    def get_queryset(self):
+        return (
+            Product.objects.filter(archived_at__isnull=True)
+            .only("id", "name", "kind")
+            .order_by("name")
         )
 
-    def post(self, request, *args, **kwargs):
-        form = ProductCreateForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect(reverse_lazy("products"))
-        products = Product.objects.filter(archived_at__isnull=True).order_by("name")
-        return render(
-            request,
-            self.template_name,
-            {
-                "page_title": "Моделі",
-                "show_page_header": False,
-                "products": products,
-                "form": form,
-            },
-        )
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        products = list(context.get("products") or [])
+
+        context["page_title"] = "Моделі"
+        context["show_page_header"] = False
+        context["product_add_url"] = reverse("product_add")
+
+        context["standard_products"] = [p for p in products if p.kind == Product.Kind.STANDARD]
+        context["bundle_products"] = [p for p in products if p.kind == Product.Kind.BUNDLE]
+        context["component_products"] = [p for p in products if p.kind == Product.Kind.COMPONENT]
+        return context
+
+
+class ProductCreateView(LoginRequiredMixin, CreateView):
+    login_url = reverse_lazy("auth_login")
+    model = Product
+    form_class = ProductCreateForm
+    template_name = "catalog/product_create.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["page_title"] = "Додати модель"
+        context["page_title_center"] = True
+        context["back_url"] = reverse("products")
+        return context
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, "Готово! Додано.")
+        return response
+
+    def get_success_url(self):
+        return reverse("product_edit", kwargs={"pk": self.object.pk})
 
 
 class ColorListCreateView(LoginRequiredMixin, ListView):
