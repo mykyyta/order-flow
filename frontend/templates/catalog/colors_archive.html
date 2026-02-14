@@ -5,7 +5,7 @@
 {% block archive_items %}
     {% for color in items %}
     <a href="{% url 'color_edit' color.id %}" class="catalog-chip-link catalog-chip-availability-out">
-        {{ color.name }} ({{ color.code }})
+        {{ color.name }}{% if color.code %} ({{ color.code }}){% endif %}
     </a>
     {% endfor %}
 {% endblock %}

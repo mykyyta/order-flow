@@ -11,6 +11,11 @@ class TestColorForm:
         assert form.is_valid()
         assert form.cleaned_data["name"] == "Blue sky"
 
+    def test_code_is_optional(self):
+        form = ColorForm(data={"name": "Blue", "status": ""})
+        assert form.is_valid()
+        assert form.cleaned_data["code"] is None
+
     def test_clean_status_defaults_to_in_stock(self):
         form = ColorForm(data={"name": "Red", "code": 101, "status": ""})
         assert form.is_valid()

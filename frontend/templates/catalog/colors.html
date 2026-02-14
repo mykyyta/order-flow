@@ -8,7 +8,7 @@
         <div class="flex flex-wrap gap-2">
             {% for color in colors %}
             <a href="{% url 'color_edit' color.id %}" class="catalog-chip-link {% if color.status == 'out_of_stock' %}catalog-chip-availability-out{% elif color.status == 'low_stock' %}catalog-chip-availability-low{% else %}catalog-chip-availability-in{% endif %}">
-                {{ color.name }} ({{ color.code }})
+                {{ color.name }}{% if color.code %} ({{ color.code }}){% endif %}
             </a>
             {% endfor %}
         </div>
@@ -29,7 +29,7 @@
                 {% endif %}
             </div>
             <div>
-                <label for="id_code" class="sr-only">Код кольору</label>
+                <label for="id_code" class="sr-only">Код кольору (необов'язково)</label>
                 {{ color_form.code }}
                 {% if color_form.code.errors %}
                 <p class="form-error">{{ color_form.code.errors.0 }}</p>

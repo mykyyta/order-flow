@@ -132,7 +132,7 @@ class Color(models.Model):
     ]
 
     name = models.CharField(max_length=255, unique=True)
-    code = models.IntegerField(unique=True)
+    code = models.IntegerField(null=True, blank=True, unique=True)
     status = models.CharField(max_length=20, choices=AVAILABILITY_CHOICES, default="in_stock")
     archived_at = models.DateTimeField(null=True, blank=True, db_index=True)
     created_at = models.DateTimeField(default=timezone.now)

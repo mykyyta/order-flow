@@ -20,12 +20,15 @@ class ColorForm(forms.ModelForm):
         labels = {"status": ""}
         widgets = {
             "name": forms.TextInput(attrs={"class": FORM_INPUT, "placeholder": "Колір"}),
-            "code": forms.NumberInput(attrs={"class": FORM_INPUT, "placeholder": "Код"}),
+            "code": forms.NumberInput(
+                attrs={"class": FORM_INPUT, "placeholder": "Код (необов'язково)"}
+            ),
             "status": forms.Select(attrs={"class": FORM_SELECT}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields["code"].required = False
         self.fields["status"].choices = [("", "Наявність")] + list(Color.AVAILABILITY_CHOICES)
         if not self.instance.pk:
             self.initial["status"] = ""
@@ -33,6 +36,11 @@ class ColorForm(forms.ModelForm):
 
     def clean_status(self):
         return self.cleaned_data.get("status") or "in_stock"
+
+    def clean_code(self):
+        # Treat empty input as NULL to allow multiple colors without code.
+        code = self.cleaned_data.get("code")
+        return code if code not in ("", None) else None
 
     def clean_name(self):
         name = self.cleaned_data["name"]
