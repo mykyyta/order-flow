@@ -79,7 +79,7 @@ class ProductDetailForm(forms.ModelForm):
             "name": "Назва",
             "section": "Секція",
             "kind": "Тип",
-            "allows_embroidery": "Вишивка",
+            "allows_embroidery": "Підходить для вишивки",
         }
         widgets = {
             "name": forms.TextInput(attrs={"class": FORM_INPUT}),

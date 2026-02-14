@@ -22,7 +22,9 @@
 
             {% for group in field_groups %}
             <section class="{% if group.title == 'Основне' %}p-0{% else %}rounded-lg border border-slate-100 p-4{% endif %}">
+                {% if group.title and group.title != "Основне" %}
                 <h2 class="text-sm font-semibold text-slate-900">{{ group.title }}</h2>
+                {% endif %}
                 <div class="mt-4 space-y-4">
                     {% for field_name in group.fields %}
                     {% if field_name == "allows_embroidery" and product.kind == "bundle" %}
