@@ -22,7 +22,7 @@ Parameters:
 <nav
     class="
         {% if variant == 'segmented' %}
-            flex w-full items-center rounded-md border border-slate-200 bg-slate-50/70 p-0.5 sm:w-auto
+            flex w-full items-center overflow-hidden rounded-md border border-slate-200 bg-slate-50/70 sm:w-auto divide-x divide-slate-200
         {% elif variant == 'pills' %}
             flex gap-1
         {% else %}
@@ -38,7 +38,7 @@ Parameters:
             {% if size == 'sm' %}text-sm{% else %}text-sm{% endif %}
             font-medium transition-colors
             {% if variant == 'segmented' %}
-                flex-1 rounded-md px-3 py-1.5 text-center sm:flex-none
+                flex-1 rounded-none px-3 py-1.5 text-center sm:flex-none
                 {% if tab.id == active %}
                     bg-white text-slate-900 shadow-sm
                 {% else %}
