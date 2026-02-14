@@ -122,18 +122,12 @@ class ProductDetailForm(forms.ModelForm):
         has_materials = ProductMaterial.objects.filter(product=self.instance).exists()
         has_components = BundleComponent.objects.filter(bundle=self.instance).exists()
 
-        # If the product already has materials, type changes are blocked to prevent
-        # confusing/invalid mixes. Remove materials first.
-        if has_materials and current_kind in (Product.Kind.STANDARD, Product.Kind.COMPONENT):
-            self.add_error("kind", "Спочатку видали матеріали виробу.")
-            return cleaned
-
         # If the product is a bundle (комплект), you must remove components first before changing type.
         if current_kind == Product.Kind.BUNDLE and has_components:
             self.add_error("kind", "Спочатку видали компоненти комплекту.")
             return cleaned
 
-        # Additional guard: do not allow switching to bundle while materials exist.
+        # Guard: do not allow switching to bundle while materials exist.
         if kind == Product.Kind.BUNDLE and has_materials:
             self.add_error(
                 "kind", "Для комплекту матеріали не задаються. Спочатку видали матеріали."
