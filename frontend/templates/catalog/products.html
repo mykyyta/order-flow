@@ -4,12 +4,20 @@
 
 <div class="space-y-6">
     <div class="flex items-center justify-between gap-3">
-        <a href="{% url 'products_archive' %}"
-           class="link-muted inline-flex items-center gap-2 rounded-md px-3 py-2 hover:bg-slate-50">
-            <span aria-hidden="true">🗄️</span>
-            <span>Архів</span>
-        </a>
-        <a href="{{ product_add_url }}" class="btn-primary">+ Додати</a>
+        <div></div>
+        <div class="flex items-center gap-2">
+            <a
+                href="{% url 'products_archive' %}"
+                class="btn-secondary flex h-10 w-10 items-center justify-center px-0"
+                aria-label="Архів"
+                title="Архів"
+            >
+                <svg class="h-5 w-5 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
+                </svg>
+            </a>
+            <a href="{{ product_add_url }}" class="btn-primary">+ Додати</a>
+        </div>
     </div>
 
     <div>
