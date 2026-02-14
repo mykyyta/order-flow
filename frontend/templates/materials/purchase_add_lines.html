@@ -1,72 +1,59 @@
-{% extends "base_detail_page.html" %}
+{% extends "base_form_page.html" %}
 
-{% block page_header_actions %}
-<a href="{{ done_url }}" class="btn-primary">Готово</a>
-{% endblock %}
+{% block form_content %}
+{% url 'purchase_add_lines' purchase_order.id as add_lines_url %}
 
-{% block detail_content %}
-<div class="card">
-    <div class="px-4 py-3 border-b border-slate-100">
-        <h3 class="text-sm font-semibold text-slate-900">Додати позицію</h3>
-        <p class="mt-1 text-xs text-slate-500">Одиниця береться з картки матеріалу автоматично.</p>
-    </div>
-    <div class="p-4">
-        <form method="post" class="space-y-4 m-0">
-            {% csrf_token %}
-            {% include "partials/form_field.html" with field=form.material label="Матеріал" %}
-            {% include "partials/form_field.html" with field=form.material_color label="Колір (необов'язково)" %}
-            {% include "partials/form_field.html" with field=form.quantity label="Кількість" %}
-            {% include "partials/form_field.html" with field=form.unit_price label="Ціна за одиницю (необов'язково)" %}
-            {% include "partials/form_field.html" with field=form.notes label="Коментар (необов'язково)" %}
-
-            <button type="submit" class="btn-secondary w-full min-h-[44px]">
-                {{ submit_label|default:"Додати" }}
-            </button>
-        </form>
-    </div>
-</div>
-
-<div class="card">
-    <div class="px-4 py-3 border-b border-slate-100">
-        <h3 class="text-sm font-semibold text-slate-900">Позиції</h3>
-    </div>
-    <div class="divide-y divide-slate-100">
-        {% for line in lines %}
-        <div class="px-4 py-3">
-            <div class="flex items-start justify-between gap-3">
-                <div class="min-w-0">
-                    <p class="truncate text-sm font-medium text-slate-900">
-                        {{ line.material.name }}
-                        {% if line.material_color %}· {{ line.material_color.name }}{% endif %}
-                    </p>
-                    {% if line.supplier_offer %}
-                    <p class="text-xs text-slate-500">
-                        {{ line.supplier_offer.title }}
-                    </p>
-                    {% endif %}
-                    <p class="text-xs text-slate-500">
-                        {{ line.quantity }} {{ line.unit }}
-                        {% if line.unit_price %}· {{ line.unit_price }}{% endif %}
-                    </p>
-                </div>
+<div class="space-y-4">
+    <div class="card">
+        <div class="px-4 py-3 border-b border-slate-100 flex items-start justify-between gap-3">
+            <div class="min-w-0">
+                <h3 class="text-sm font-semibold text-slate-900 truncate">
+                    Замовлення #{{ purchase_order.id }}
+                </h3>
+                <p class="mt-1 text-xs text-slate-500 truncate">
+                    {{ purchase_order.supplier.name }} · {{ purchase_order.get_status_display }}
+                </p>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+                <a href="{{ line_add_url }}?next={{ add_lines_url|urlencode }}" class="btn-secondary">Додати позицію</a>
+                <a href="{{ done_url }}" class="btn-primary">Готово</a>
             </div>
         </div>
-        {% empty %}
-        {% include "partials/empty_state.html" with message="Поки що позицій немає." %}
-        {% endfor %}
-    </div>
-</div>
-{% endblock %}
 
-{% block detail_sidebar %}
-<div class="card">
-    <div class="px-4 py-3 border-b border-slate-100">
-        <h3 class="text-sm font-semibold text-slate-900">Інфо</h3>
+        <div class="p-4 text-xs text-slate-500">
+            Позиції додаються окремо. Одиниця береться з картки матеріалу автоматично.
+        </div>
     </div>
-    <div class="p-4 space-y-1">
-        {% include "partials/detail_field.html" with label="Постачальник" value=purchase_order.supplier.name %}
-        {% include "partials/detail_field.html" with label="Статус" value=purchase_order.get_status_display badge=True %}
-        {% include "partials/detail_field.html" with label="Створено" value=purchase_order.created_at muted=True %}
+
+    <div class="card">
+        <div class="px-4 py-3 border-b border-slate-100">
+            <h3 class="text-sm font-semibold text-slate-900">Позиції</h3>
+        </div>
+        <div class="divide-y divide-slate-100">
+            {% for line in lines %}
+            <div class="px-4 py-3">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                        <p class="truncate text-sm font-medium text-slate-900">
+                            {{ line.material.name }}
+                            {% if line.material_color %}· {{ line.material_color.name }}{% endif %}
+                        </p>
+                        {% if line.supplier_offer %}
+                        <p class="text-xs text-slate-500">
+                            {{ line.supplier_offer.title }}
+                        </p>
+                        {% endif %}
+                        <p class="text-xs text-slate-500">
+                            {{ line.quantity }} {{ line.unit }}
+                            {% if line.unit_price %}· {{ line.unit_price }}{% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            {% include "partials/empty_state.html" with message="Поки що позицій немає." %}
+            {% endfor %}
+        </div>
     </div>
 </div>
 {% endblock %}

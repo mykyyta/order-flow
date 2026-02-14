@@ -30,6 +30,7 @@ def test_purchases_list_renders_purchase_orders(client):
 
     response = client.get(reverse("purchases"))
     assert response.status_code == 200
+    assert response.context["show_page_header"] is False
     assert supplier.name.encode() in response.content
 
 
@@ -122,12 +123,13 @@ def test_purchase_add_lines_step2_adds_line_and_redirects_back(client):
     response = client.get(reverse("purchase_add_lines", kwargs={"pk": po.pk}))
     assert response.status_code == 200
 
+    next_url = reverse("purchase_add_lines", kwargs={"pk": po.pk})
     response = client.post(
-        reverse("purchase_add_lines", kwargs={"pk": po.pk}),
+        f"{reverse('purchase_line_add', kwargs={'pk': po.pk})}?next={next_url}",
         data={"material": material.pk, "quantity": "2.000", "unit_price": "10.00"},
     )
     assert response.status_code == 302
-    assert response["Location"] == reverse("purchase_add_lines", kwargs={"pk": po.pk})
+    assert response["Location"] == next_url
 
     line = PurchaseOrderLine.objects.get(purchase_order=po)
     assert line.unit == material.stock_unit
@@ -143,6 +145,7 @@ def test_purchase_requests_list_renders_requests(client):
 
     response = client.get(reverse("purchase_requests"))
     assert response.status_code == 200
+    assert response.context["show_page_header"] is False
     assert f"Заявка #{pr.id}".encode() in response.content
 
 
@@ -292,6 +295,7 @@ def test_suppliers_list_renders_suppliers(client):
 
     response = client.get(reverse("suppliers"))
     assert response.status_code == 200
+    assert response.context["show_page_header"] is False
     assert supplier.name.encode() in response.content
 
 
@@ -326,6 +330,7 @@ def test_purchase_start_material_renders_materials(client):
 
     response = client.get(reverse("purchase_start_material"))
     assert response.status_code == 200
+    assert response.context["show_page_header"] is False
     assert material.name.encode() in response.content
 
 
@@ -404,7 +409,7 @@ def test_purchase_add_lines_requires_color_when_material_has_colors(client):
 
     po = PurchaseOrder.objects.create(supplier=supplier, status=PurchaseOrder.Status.DRAFT, created_by=user)
     response = client.post(
-        reverse("purchase_add_lines", kwargs={"pk": po.pk}),
+        reverse("purchase_line_add", kwargs={"pk": po.pk}),
         data={"material": material.pk, "material_color": "", "quantity": "1.000", "unit_price": ""},
     )
     assert response.status_code == 200

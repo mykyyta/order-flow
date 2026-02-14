@@ -303,6 +303,7 @@ def suppliers_list(request):
         "materials/suppliers.html",
         {
             "page_title": "Постачальники",
+            "show_page_header": False,
             "page_obj": page_obj,
             "search_query": search_query,
             "supplier_add_url": reverse("supplier_add"),
@@ -310,15 +311,15 @@ def suppliers_list(request):
     )
 
 
-def _safe_next_url(request: HttpRequest, raw_next_url: str | None) -> str:
+def _safe_next_url(request: HttpRequest, raw_next_url: str | None, *, fallback: str) -> str:
     if not raw_next_url:
-        return reverse("suppliers")
+        return fallback
     if not url_has_allowed_host_and_scheme(
         raw_next_url,
         allowed_hosts={request.get_host()},
         require_https=request.is_secure(),
     ):
-        return reverse("suppliers")
+        return fallback
     return raw_next_url
 
 
@@ -332,7 +333,7 @@ def _append_query_params(url: str, params: dict[str, str]) -> str:
 @login_required(login_url=reverse_lazy("auth_login"))
 def supplier_add(request):
     raw_next_url = (request.GET.get("next") or "").strip()
-    next_url = _safe_next_url(request, raw_next_url)
+    next_url = _safe_next_url(request, raw_next_url, fallback=reverse("suppliers"))
 
     if request.method == "POST":
         form = SupplierForm(request.POST)
@@ -398,6 +399,7 @@ def purchases_list(request):
         "materials/purchases.html",
         {
             "page_title": "Закупівлі",
+            "show_page_header": False,
             "tabs": tabs,
             "active_tab": "orders",
             "page_obj": page_obj,
@@ -426,6 +428,7 @@ def purchase_start_material(request):
         "materials/purchase_start_material.html",
         {
             "page_title": "Замовити матеріал",
+            "show_page_header": False,
             "back_url": reverse("purchases"),
             "back_label": "Закупівлі",
             "page_obj": page_obj,
@@ -489,17 +492,12 @@ def supplier_offer_add(request, material_pk: int):
 
 
 @login_required(login_url=reverse_lazy("auth_login"))
-@require_POST
 def purchase_add_from_offer(request, offer_pk: int):
     offer = get_object_or_404(
         SupplierMaterialOffer.objects.select_related("supplier", "material", "material_color"),
         pk=offer_pk,
         archived_at__isnull=True,
     )
-    form = PurchaseAddFromOfferForm(request.POST)
-    if not form.is_valid():
-        messages.error(request, "Упс. Перевір кількість.")
-        return redirect("purchase_start_material_offers", material_pk=offer.material_id)
 
     if offer.unit != offer.material.stock_unit:
         expected = offer.material.get_stock_unit_display()
@@ -510,29 +508,50 @@ def purchase_add_from_offer(request, offer_pk: int):
         messages.error(request, "Офер без кольору. Додай офер з вибраним кольором.")
         return redirect("purchase_start_material_offers", material_pk=offer.material_id)
 
-    quantity: Decimal = form.cleaned_data["quantity"]
-    unit_price = form.cleaned_data.get("unit_price")
-    if unit_price is None:
-        unit_price = offer.price_per_unit
+    if request.method == "POST":
+        form = PurchaseAddFromOfferForm(request.POST)
+        if not form.is_valid():
+            messages.error(request, "Упс. Перевір кількість.")
+        else:
+            quantity: Decimal = form.cleaned_data["quantity"]
+            unit_price = form.cleaned_data.get("unit_price")
+            if unit_price is None:
+                unit_price = offer.price_per_unit
 
-    with transaction.atomic():
-        purchase_order = PurchaseOrder.objects.create(
-            supplier=offer.supplier,
-            status=PurchaseOrder.Status.DRAFT,
-            created_by=request.user,
-        )
-        PurchaseOrderLine.objects.create(
-            purchase_order=purchase_order,
-            supplier_offer=offer,
-            material=offer.material,
-            material_color=offer.material_color,
-            quantity=quantity,
-            unit=offer.material.stock_unit,
-            unit_price=unit_price,
-        )
+            with transaction.atomic():
+                purchase_order = PurchaseOrder.objects.create(
+                    supplier=offer.supplier,
+                    status=PurchaseOrder.Status.DRAFT,
+                    created_by=request.user,
+                )
+                PurchaseOrderLine.objects.create(
+                    purchase_order=purchase_order,
+                    supplier_offer=offer,
+                    material=offer.material,
+                    material_color=offer.material_color,
+                    quantity=quantity,
+                    unit=offer.material.stock_unit,
+                    unit_price=unit_price,
+                )
 
-    messages.success(request, "Готово! Додано в замовлення.")
-    return redirect("purchase_add_lines", pk=purchase_order.pk)
+            messages.success(request, "Готово! Додано в замовлення.")
+            return redirect("purchase_add_lines", pk=purchase_order.pk)
+    else:
+        form = PurchaseAddFromOfferForm(initial={"unit_price": offer.price_per_unit})
+
+    return render(
+        request,
+        "materials/purchase_add_from_offer_form.html",
+        {
+            "page_title": "Додати з офера",
+            "page_title_center": True,
+            "back_url": reverse("purchase_start_material_offers", kwargs={"material_pk": offer.material_id}),
+            "back_label": "Назад",
+            "offer": offer,
+            "form": form,
+            "submit_label": "Додати",
+        },
+    )
 
 
 @login_required(login_url=reverse_lazy("auth_login"))
@@ -584,18 +603,6 @@ def purchase_add_lines(request, pk: int):
         purchase_order.lines.select_related("material", "material_color", "supplier_offer").order_by("id")
     )
 
-    if request.method == "POST":
-        form = PurchaseOrderLineForm(request.POST)
-        if form.is_valid():
-            line: PurchaseOrderLine = form.save(commit=False)
-            line.purchase_order = purchase_order
-            line.unit = line.material.stock_unit
-            line.save()
-            messages.success(request, "Готово! Позицію додано.")
-            return redirect("purchase_add_lines", pk=purchase_order.pk)
-    else:
-        form = PurchaseOrderLineForm()
-
     return render(
         request,
         "materials/purchase_add_lines.html",
@@ -606,9 +613,8 @@ def purchase_add_lines(request, pk: int):
             "back_label": "Закупівлі",
             "purchase_order": purchase_order,
             "lines": lines,
-            "form": form,
-            "submit_label": "Додати",
             "done_url": reverse("purchase_detail", kwargs={"pk": purchase_order.pk}),
+            "line_add_url": reverse("purchase_line_add", kwargs={"pk": purchase_order.pk}),
         },
     )
 
@@ -699,6 +705,12 @@ def purchase_set_status(request, pk: int):
 @login_required(login_url=reverse_lazy("auth_login"))
 def purchase_line_add(request, pk: int):
     purchase_order = get_object_or_404(PurchaseOrder, pk=pk)
+    raw_next_url = (request.GET.get("next") or request.POST.get("next") or "").strip()
+    next_url = _safe_next_url(
+        request,
+        raw_next_url,
+        fallback=reverse("purchase_detail", kwargs={"pk": purchase_order.pk}),
+    )
     if request.method == "POST":
         form = PurchaseOrderLineForm(request.POST)
         if form.is_valid():
@@ -707,7 +719,7 @@ def purchase_line_add(request, pk: int):
             line.unit = line.material.stock_unit
             line.save()
             messages.success(request, "Готово! Позицію додано.")
-            return redirect("purchase_detail", pk=purchase_order.pk)
+            return redirect(next_url)
     else:
         form = PurchaseOrderLineForm()
 
@@ -720,6 +732,7 @@ def purchase_line_add(request, pk: int):
             "back_url": reverse("purchase_detail", kwargs={"pk": purchase_order.pk}),
             "form": form,
             "submit_label": "Додати",
+            "next_url": next_url,
         },
     )
 
@@ -795,6 +808,7 @@ def purchase_requests_list(request):
         "materials/purchase_requests.html",
         {
             "page_title": "Заявки на закупівлю",
+            "show_page_header": False,
             "tabs": tabs,
             "active_tab": "requests",
             "page_obj": page_obj,
