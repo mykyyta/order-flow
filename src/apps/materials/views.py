@@ -25,6 +25,7 @@ class MaterialListCreateView(LoginRequiredMixin, View):
             self.template_name,
             {
                 "page_title": "Матеріали",
+                "show_nav_title": False,
                 "show_page_header": False,
                 "materials": materials,
                 "form": form,
@@ -42,6 +43,7 @@ class MaterialListCreateView(LoginRequiredMixin, View):
             self.template_name,
             {
                 "page_title": "Матеріали",
+                "show_nav_title": False,
                 "show_page_header": False,
                 "materials": materials,
                 "form": form,
