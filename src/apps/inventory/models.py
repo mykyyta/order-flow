@@ -54,6 +54,7 @@ class ProductStockMovement(models.Model):
         TRANSFER_OUT = "transfer_out", "Переміщення на склад"
         ADJUSTMENT_IN = "adjustment_in", "Коригування +"
         ADJUSTMENT_OUT = "adjustment_out", "Коригування -"
+        WRITE_OFF = "write_off", "Списання"
         RETURN_IN = "return_in", "Повернення"
 
     stock_record = models.ForeignKey(

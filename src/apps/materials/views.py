@@ -391,6 +391,42 @@ def purchase_detail(request, pk: int):
             "purchase_order": purchase_order,
             "lines": lines,
             "line_add_url": reverse("purchase_line_add", kwargs={"pk": purchase_order.pk}),
+            "line_add_from_request_url": reverse(
+                "purchase_pick_request_line_for_order",
+                kwargs={"pk": purchase_order.pk},
+            ),
+        },
+    )
+
+
+@login_required(login_url=reverse_lazy("auth_login"))
+def purchase_pick_request_line_for_order(request, pk: int):
+    purchase_order = get_object_or_404(PurchaseOrder.objects.select_related("supplier"), pk=pk)
+    search_query = (request.GET.get("q") or "").strip()
+
+    queryset = (
+        PurchaseRequestLine.objects.select_related("request", "material", "material_color")
+        .exclude(status__in=[PurchaseRequestLine.Status.DONE, PurchaseRequestLine.Status.CANCELLED])
+        .order_by("-request__created_at", "id")
+    )
+    if search_query:
+        queryset = queryset.filter(
+            Q(material__name__icontains=search_query) | Q(material_color__name__icontains=search_query)
+        )
+
+    paginator = Paginator(queryset, 50)
+    page_obj = paginator.get_page(request.GET.get("page"))
+
+    return render(
+        request,
+        "materials/purchase_request_line_pick.html",
+        {
+            "page_title": "Додати з заявки",
+            "page_title_center": True,
+            "back_url": reverse("purchase_detail", kwargs={"pk": purchase_order.pk}),
+            "purchase_order": purchase_order,
+            "page_obj": page_obj,
+            "search_query": search_query,
         },
     )
 
@@ -552,6 +588,74 @@ def purchase_request_detail(request, pk: int):
     lines = list(
         pr.lines.select_related("material", "material_color").order_by("id")
     )
+    po_lines = list(
+        PurchaseOrderLine.objects.select_related("purchase_order", "purchase_order__supplier")
+        .filter(request_line__request_id=pr.id)
+        .order_by("id")
+    )
+    po_lines_by_request_line: dict[int, list[PurchaseOrderLine]] = {}
+    for po_line in po_lines:
+        if po_line.request_line_id is None:
+            continue
+        po_lines_by_request_line.setdefault(po_line.request_line_id, []).append(po_line)
+
+    line_action_items: dict[int, list[dict]] = {}
+    for line in lines:
+        if line.status in {PurchaseRequestLine.Status.DONE, PurchaseRequestLine.Status.CANCELLED}:
+            continue
+        line_action_items[line.id] = [
+            {
+                "label": "Закрити",
+                "url": reverse("purchase_request_line_set_status", kwargs={"line_pk": line.pk}),
+                "method": "post",
+                "icon": "check",
+                "confirm": "Закрити позицію?",
+                "extra_fields": {"status": PurchaseRequestLine.Status.DONE},
+            },
+            {"divider": True},
+            {
+                "label": "Скасувати",
+                "url": reverse("purchase_request_line_set_status", kwargs={"line_pk": line.pk}),
+                "method": "post",
+                "icon": "trash",
+                "danger": True,
+                "confirm": "Скасувати позицію?",
+                "extra_fields": {"status": PurchaseRequestLine.Status.CANCELLED},
+            },
+        ]
+
+    actions = []
+    if pr.status not in {PurchaseRequest.Status.DONE, PurchaseRequest.Status.CANCELLED}:
+        actions.append(
+            {
+                "label": "В роботу",
+                "url": reverse("purchase_request_set_status", kwargs={"pk": pr.pk}),
+                "method": "post",
+                "extra_fields": {"status": PurchaseRequest.Status.IN_PROGRESS},
+            }
+        )
+        actions.append(
+            {
+                "label": "Закрити",
+                "url": reverse("purchase_request_set_status", kwargs={"pk": pr.pk}),
+                "method": "post",
+                "icon": "check",
+                "confirm": "Закрити заявку?",
+                "extra_fields": {"status": PurchaseRequest.Status.DONE},
+            }
+        )
+        actions.append({"divider": True})
+        actions.append(
+            {
+                "label": "Скасувати",
+                "url": reverse("purchase_request_set_status", kwargs={"pk": pr.pk}),
+                "method": "post",
+                "icon": "trash",
+                "danger": True,
+                "confirm": "Скасувати заявку?",
+                "extra_fields": {"status": PurchaseRequest.Status.CANCELLED},
+            }
+        )
     tabs = [
         {"id": "orders", "label": "Замовлення", "url": reverse("purchases")},
         {"id": "requests", "label": "Заявки", "url": reverse("purchase_requests")},
@@ -565,11 +669,40 @@ def purchase_request_detail(request, pk: int):
             "active_tab": "requests",
             "back_url": reverse("purchase_requests"),
             "back_label": "Заявки",
+            "actions": actions,
             "purchase_request": pr,
             "lines": lines,
+            "po_lines_by_request_line": po_lines_by_request_line,
+            "line_action_items": line_action_items,
             "line_add_url": reverse("purchase_request_line_add", kwargs={"pk": pr.pk}),
         },
     )
+
+
+@login_required(login_url=reverse_lazy("auth_login"))
+@require_POST
+def purchase_request_set_status(request, pk: int):
+    pr = get_object_or_404(PurchaseRequest, pk=pk)
+    new_status = (request.POST.get("status") or "").strip()
+    valid_statuses = {value for value, _ in PurchaseRequest.Status.choices}
+    if new_status not in valid_statuses:
+        messages.error(request, "Упс. Невірний статус.")
+        return redirect("purchase_request_detail", pk=pk)
+
+    with transaction.atomic():
+        pr.status = new_status
+        pr.save(update_fields=["status", "updated_at"])
+
+        # Manual close/cancel should also close the remaining lines,
+        # otherwise a "closed" request still has active positions.
+        if new_status in {PurchaseRequest.Status.DONE, PurchaseRequest.Status.CANCELLED}:
+            now = timezone.now()
+            pr.lines.exclude(
+                status__in=[PurchaseRequestLine.Status.DONE, PurchaseRequestLine.Status.CANCELLED]
+            ).update(status=new_status, updated_at=now)
+
+    messages.success(request, "Готово! Статус оновлено.")
+    return redirect("purchase_request_detail", pk=pk)
 
 
 @login_required(login_url=reverse_lazy("auth_login"))
@@ -608,6 +741,9 @@ def purchase_request_line_order(request, line_pk: int):
     supplier_id = None
     if request.GET.get("supplier") and str(request.GET.get("supplier")).isdigit():
         supplier_id = int(request.GET.get("supplier"))
+    purchase_order_id = None
+    if request.GET.get("purchase_order") and str(request.GET.get("purchase_order")).isdigit():
+        purchase_order_id = int(request.GET.get("purchase_order"))
 
     if request.method == "POST":
         form = PurchaseRequestLineOrderForm(request.POST)
@@ -643,6 +779,8 @@ def purchase_request_line_order(request, line_pk: int):
             "quantity": line.requested_quantity,
             "unit": line.unit,
         }
+        if purchase_order_id is not None:
+            initial["purchase_order"] = purchase_order_id
         form = PurchaseRequestLineOrderForm(initial=initial, supplier_id=supplier_id)
 
     return render(
@@ -657,3 +795,34 @@ def purchase_request_line_order(request, line_pk: int):
             "submit_label": "Додати",
         },
     )
+
+
+@login_required(login_url=reverse_lazy("auth_login"))
+@require_POST
+def purchase_request_line_set_status(request, line_pk: int):
+    line = get_object_or_404(PurchaseRequestLine.objects.select_related("request"), pk=line_pk)
+    new_status = (request.POST.get("status") or "").strip()
+    allowed_statuses = {PurchaseRequestLine.Status.DONE, PurchaseRequestLine.Status.CANCELLED}
+    if new_status not in allowed_statuses:
+        messages.error(request, "Упс. Невірний статус.")
+        return redirect("purchase_request_detail", pk=line.request_id)
+
+    with transaction.atomic():
+        line.status = new_status
+        line.save(update_fields=["status", "updated_at"])
+
+        pr = line.request
+        if pr.status not in {PurchaseRequest.Status.DONE, PurchaseRequest.Status.CANCELLED}:
+            has_open_lines = pr.lines.exclude(
+                status__in=[PurchaseRequestLine.Status.DONE, PurchaseRequestLine.Status.CANCELLED]
+            ).exists()
+            if not has_open_lines:
+                has_done_lines = pr.lines.filter(status=PurchaseRequestLine.Status.DONE).exists()
+                pr.status = PurchaseRequest.Status.DONE if has_done_lines else PurchaseRequest.Status.CANCELLED
+                pr.save(update_fields=["status", "updated_at"])
+            elif pr.status == PurchaseRequest.Status.OPEN:
+                pr.status = PurchaseRequest.Status.IN_PROGRESS
+                pr.save(update_fields=["status", "updated_at"])
+
+    messages.success(request, "Готово! Статус оновлено.")
+    return redirect("purchase_request_detail", pk=line.request_id)

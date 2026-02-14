@@ -1,4 +1,5 @@
 {% extends "base_detail_page.html" %}
+{% load order_ui %}
 
 {% block page_title_text %}
 {% include "partials/tabs.html" with tabs=tabs active=active_tab %}
@@ -6,7 +7,12 @@
 {% endblock %}
 
 {% block page_header_actions %}
+{% if purchase_request.status != "done" and purchase_request.status != "cancelled" %}
 <a href="{{ line_add_url }}" class="btn-primary">+ Позиція</a>
+{% endif %}
+{% if actions %}
+{% include "partials/action_menu.html" with items=actions icon_only=True icon_style="horizontal" %}
+{% endif %}
 {% endblock %}
 
 {% block detail_content %}
@@ -26,6 +32,18 @@
                     <p class="text-xs text-slate-500">
                         {% if line.requested_quantity %}{{ line.requested_quantity }} {{ line.unit }}{% else %}Кількість не вказана{% endif %}
                     </p>
+                    {% with po_lines=po_lines_by_request_line|get_item:line.id %}
+                    {% if po_lines %}
+                    <p class="mt-1 text-xs text-slate-500">
+                        Замовлення:
+                        {% for po_line in po_lines %}
+                            <a href="{% url 'purchase_detail' po_line.purchase_order_id %}" class="hover:underline">
+                                #{{ po_line.purchase_order_id }}
+                            </a>{% if not forloop.last %},{% endif %}
+                        {% endfor %}
+                    </p>
+                    {% endif %}
+                    {% endwith %}
                     {% if line.notes %}
                     <p class="text-xs text-slate-500 whitespace-pre-line">{{ line.notes }}</p>
                     {% endif %}
@@ -40,7 +58,14 @@
                     {% else %}
                         {% include "partials/badge.html" with label=line.get_status_display variant="info" size="sm" %}
                     {% endif %}
-                    <a href="{% url 'purchase_request_line_order' line.id %}" class="btn-secondary">Замовити</a>
+                    {% if line.status != "done" and line.status != "cancelled" %}
+                        <a href="{% url 'purchase_request_line_order' line.id %}" class="btn-secondary">Замовити</a>
+                        {% with items=line_action_items|get_item:line.id %}
+                            {% if items %}
+                                {% include "partials/action_menu.html" with icon_only=True icon_style="horizontal" items=items %}
+                            {% endif %}
+                        {% endwith %}
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -69,4 +94,3 @@
     </div>
 </div>
 {% endblock %}
-

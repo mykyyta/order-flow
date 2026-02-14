@@ -5,10 +5,12 @@ from apps.inventory.views import (
     inventory_materials,
     inventory_materials_add,
     inventory_materials_remove,
+    inventory_materials_writeoff,
     inventory_product_stock_detail,
     inventory_products,
     inventory_products_add,
     inventory_products_remove,
+    inventory_products_writeoff,
     inventory_wip,
 )
 
@@ -21,6 +23,7 @@ urlpatterns = [
     ),
     path("inventory/products/add/", inventory_products_add, name="inventory_products_add"),
     path("inventory/products/remove/", inventory_products_remove, name="inventory_products_remove"),
+    path("inventory/products/writeoff/", inventory_products_writeoff, name="inventory_products_writeoff"),
     path("inventory/wip/", inventory_wip, name="inventory_wip"),
     path("inventory/materials/", inventory_materials, name="inventory_materials"),
     path(
@@ -30,4 +33,5 @@ urlpatterns = [
     ),
     path("inventory/materials/add/", inventory_materials_add, name="inventory_materials_add"),
     path("inventory/materials/remove/", inventory_materials_remove, name="inventory_materials_remove"),
+    path("inventory/materials/writeoff/", inventory_materials_writeoff, name="inventory_materials_writeoff"),
 ]

@@ -122,11 +122,14 @@ NAV_SECTIONS = [
                     "purchase_set_status",
                     "purchase_line_add",
                     "purchase_line_receive",
+                    "purchase_pick_request_line_for_order",
                     "purchase_requests",
                     "purchase_request_add",
                     "purchase_request_detail",
+                    "purchase_request_set_status",
                     "purchase_request_line_add",
                     "purchase_request_line_order",
+                    "purchase_request_line_set_status",
                 ),
             },
             {
@@ -241,3 +244,14 @@ def message_alert_class(message_tags: str) -> str:
 def get_form_field(form, field_name: str):
     """Template helper to render grouped/dynamic form fields by name."""
     return form[field_name]
+
+
+@register.filter
+def get_item(mapping, key):
+    """Return mapping[key] for dict-like objects; None for missing/invalid inputs."""
+    if mapping is None:
+        return None
+    try:
+        return mapping.get(key)
+    except AttributeError:
+        return None

@@ -19,11 +19,14 @@ from apps.materials.views import (
     purchase_request_add,
     purchase_request_detail,
     purchase_request_line_add,
+    purchase_request_line_set_status,
     purchase_request_line_order,
+    purchase_request_set_status,
     purchase_requests_list,
     purchase_set_status,
     purchases_list,
     suppliers_list,
+    purchase_pick_request_line_for_order,
 )
 
 urlpatterns = [
@@ -68,6 +71,11 @@ urlpatterns = [
     path("purchases/<int:pk>/status/", purchase_set_status, name="purchase_set_status"),
     path("purchases/<int:pk>/lines/add/", purchase_line_add, name="purchase_line_add"),
     path(
+        "purchases/<int:pk>/from-request/",
+        purchase_pick_request_line_for_order,
+        name="purchase_pick_request_line_for_order",
+    ),
+    path(
         "purchases/<int:pk>/lines/<int:line_pk>/receive/",
         purchase_line_receive,
         name="purchase_line_receive",
@@ -81,6 +89,11 @@ urlpatterns = [
         name="purchase_request_detail",
     ),
     path(
+        "purchase-requests/<int:pk>/status/",
+        purchase_request_set_status,
+        name="purchase_request_set_status",
+    ),
+    path(
         "purchase-requests/<int:pk>/lines/add/",
         purchase_request_line_add,
         name="purchase_request_line_add",
@@ -89,5 +102,10 @@ urlpatterns = [
         "purchase-requests/lines/<int:line_pk>/order/",
         purchase_request_line_order,
         name="purchase_request_line_order",
+    ),
+    path(
+        "purchase-requests/lines/<int:line_pk>/status/",
+        purchase_request_line_set_status,
+        name="purchase_request_line_set_status",
     ),
 ]

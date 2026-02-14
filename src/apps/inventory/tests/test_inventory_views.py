@@ -158,6 +158,7 @@ def test_inventory_material_stock_detail_renders(client):
     response = client.get(reverse("inventory_material_stock_detail", kwargs={"pk": record.id}))
     assert response.status_code == 200
     assert mat.name.encode() in response.content
+    assert "Рухи".encode() in response.content
 
 
 @pytest.mark.django_db(transaction=True)
@@ -179,3 +180,60 @@ def test_inventory_product_stock_detail_renders(client):
     response = client.get(reverse("inventory_product_stock_detail", kwargs={"pk": record.id}))
     assert response.status_code == 200
     assert product.name.encode() in response.content
+    assert "Рухи".encode() in response.content
+
+
+@pytest.mark.django_db(transaction=True)
+def test_inventory_materials_writeoff_creates_movement(client):
+    user = UserFactory()
+    client.force_login(user, backend=AUTH_BACKEND)
+    warehouse = get_default_warehouse()
+
+    mat = Material.objects.create(name="Glue", stock_unit="ml")
+    stock = MaterialStock.objects.create(
+        warehouse=warehouse,
+        material=mat,
+        material_color=None,
+        unit="ml",
+        quantity="2.000",
+    )
+
+    response = client.post(
+        reverse("inventory_materials_writeoff"),
+        data={
+            "material": str(mat.id),
+            "material_color": "",
+            "quantity": "1.000",
+        },
+    )
+    assert response.status_code == 302
+
+    stock.refresh_from_db()
+    assert str(stock.quantity) == "1.000"
+
+
+@pytest.mark.django_db(transaction=True)
+def test_inventory_products_writeoff_creates_movement(client):
+    user = UserFactory()
+    client.force_login(user, backend=AUTH_BACKEND)
+    warehouse = get_default_warehouse()
+
+    product = ProductFactory(kind="standard")
+    from apps.catalog.models import Variant
+
+    variant = Variant.objects.create(product=product)
+    stock = ProductStock.objects.create(warehouse=warehouse, variant=variant, quantity=3)
+
+    response = client.post(
+        reverse("inventory_products_writeoff"),
+        data={
+            "product": str(product.id),
+            "primary_material_color": "",
+            "secondary_material_color": "",
+            "quantity": "2",
+            "notes": "",
+        },
+    )
+    assert response.status_code == 302
+    stock.refresh_from_db()
+    assert stock.quantity == 1

@@ -73,6 +73,11 @@ Parameters:
             {% elif item.method == "post" %}
             <form method="post" action="{{ item.url }}" class="m-0">
                 {% csrf_token %}
+                {% if item.extra_fields %}
+                {% for key, value in item.extra_fields.items %}
+                <input type="hidden" name="{{ key }}" value="{{ value }}">
+                {% endfor %}
+                {% endif %}
                 <button
                     type="submit"
                     class="action-menu-item w-full text-left {% if item.danger %}text-red-600 hover:bg-red-50{% endif %}"
