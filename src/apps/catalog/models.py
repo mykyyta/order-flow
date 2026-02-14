@@ -5,13 +5,23 @@ from apps.materials.models import MaterialUnit
 
 
 class Product(models.Model):
+    class Section(models.TextChoices):
+        BAGS = "bags", "Сумки"
+        ACCESSORIES = "accessories", "Аксесуари"
+        CASES = "cases", "Чохли"
+
     class Kind(models.TextChoices):
         STANDARD = "standard", "Продукт"
         BUNDLE = "bundle", "Комплект"
         COMPONENT = "component", "Компонент"
 
     name = models.CharField(max_length=255, unique=True)
-    section = models.CharField(max_length=255, blank=True, db_index=True)
+    section = models.CharField(
+        max_length=255,
+        choices=Section.choices,
+        blank=True,
+        db_index=True,
+    )
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     currency = models.CharField(max_length=3, default="UAH")
     # Роздрібна ціна в Україні (грн). Інші ціни — окремими полями пізніше.

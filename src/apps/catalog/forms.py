@@ -83,7 +83,7 @@ class ProductDetailForm(forms.ModelForm):
         }
         widgets = {
             "name": forms.TextInput(attrs={"class": FORM_INPUT}),
-            "section": forms.TextInput(attrs={"class": FORM_INPUT, "placeholder": "Напр. сумки"}),
+            "section": forms.Select(attrs={"class": FORM_SELECT}),
             "kind": forms.Select(attrs={"class": FORM_SELECT}),
             "allows_embroidery": forms.CheckboxInput(attrs={"class": FORM_CHECKBOX}),
         }
@@ -96,6 +96,10 @@ class ProductDetailForm(forms.ModelForm):
             (Product.Kind.BUNDLE, Product.Kind.BUNDLE.label),
             (Product.Kind.COMPONENT, Product.Kind.COMPONENT.label),
         ]
+        self.fields["section"].required = False
+        self.fields["section"].choices = [("", "Секція")] + list(Product.Section.choices)
+        if not (self.instance and self.instance.pk):
+            self.initial["section"] = ""
 
     def clean(self):
         cleaned = super().clean()
