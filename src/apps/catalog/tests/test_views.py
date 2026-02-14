@@ -68,7 +68,7 @@ def test_product_create_flow_and_grouped_list(client):
     assert b"Wallet" in response.content
     assert b"Set" in response.content
     assert b"Strap" in response.content
-    assert "Моделі".encode() in response.content
+    assert "Продукти".encode() in response.content
     assert "Комплекти".encode() in response.content
     assert "Компоненти".encode() in response.content
 
@@ -138,7 +138,7 @@ def test_product_detail_shows_material_fields_and_bom_section(client):
     assert response.status_code == 200
     assert b'name="primary_material"' not in response.content
     assert b'name="secondary_material"' not in response.content
-    assert "Матеріали моделі".encode() in response.content
+    assert "Матеріали продукту".encode() in response.content
     assert "Норми матеріалів".encode() not in response.content
 
 

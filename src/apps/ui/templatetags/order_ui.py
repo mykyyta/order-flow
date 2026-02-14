@@ -185,7 +185,7 @@ NAV_ITEMS = [
     {"url_name": "orders_completed", "label": "Завершені", "active_on": ("orders_completed",)},
     {
         "url_name": "products",
-        "label": "Моделі",
+        "label": "Продукти",
         "active_on": ("products", "product_add", "product_edit", "products_archive"),
     },
     {

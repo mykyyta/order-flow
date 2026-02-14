@@ -42,8 +42,13 @@ class ColorForm(forms.ModelForm):
 class ProductCreateForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Backwards-compatible: old callers/tests post only "name". Default kind to "Модель".
+        # Backwards-compatible: old callers/tests post only "name". Default kind to "Продукт".
         self.fields["kind"].required = False
+        self.fields["kind"].choices = [
+            (Product.Kind.STANDARD, Product.Kind.STANDARD.label),
+            (Product.Kind.BUNDLE, Product.Kind.BUNDLE.label),
+            (Product.Kind.COMPONENT, Product.Kind.COMPONENT.label),
+        ]
 
     class Meta:
         model = Product
@@ -83,20 +88,61 @@ class ProductDetailForm(forms.ModelForm):
             "allows_embroidery": forms.CheckboxInput(attrs={"class": FORM_CHECKBOX}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # UI order: продукт, комплект, компонент.
+        self.fields["kind"].choices = [
+            (Product.Kind.STANDARD, Product.Kind.STANDARD.label),
+            (Product.Kind.BUNDLE, Product.Kind.BUNDLE.label),
+            (Product.Kind.COMPONENT, Product.Kind.COMPONENT.label),
+        ]
+
     def clean(self):
         cleaned = super().clean()
         kind = cleaned.get("kind")
-        if (
-            kind == Product.Kind.BUNDLE
-            and self.instance
-            and self.instance.pk
-            and ProductMaterial.objects.filter(product=self.instance).exists()
-        ):
+        if not self.instance or not self.instance.pk or not kind:
+            return cleaned
+
+        current_kind = self.instance.kind
+        if kind == current_kind:
+            return cleaned
+
+        has_materials = ProductMaterial.objects.filter(product=self.instance).exists()
+        has_components = BundleComponent.objects.filter(bundle=self.instance).exists()
+
+        # If the product already has materials, type changes are blocked to prevent
+        # confusing/invalid mixes. Remove materials first.
+        if has_materials and current_kind in (Product.Kind.STANDARD, Product.Kind.COMPONENT):
+            self.add_error("kind", "Спочатку видали матеріали продукту.")
+            return cleaned
+
+        # If the product is a bundle (комплект), you must remove components first before changing type.
+        if current_kind == Product.Kind.BUNDLE and has_components:
+            self.add_error("kind", "Спочатку видали компоненти комплекту.")
+            return cleaned
+
+        # Additional guard: do not allow switching to bundle while materials exist.
+        if kind == Product.Kind.BUNDLE and has_materials:
             self.add_error(
-                "kind",
-                "Для комплекту матеріали не задаються. Видали матеріали або зміни тип продукту.",
+                "kind", "Для комплекту матеріали не задаються. Спочатку видали матеріали."
             )
+            return cleaned
+
         return cleaned
+
+    def save(self, commit=True):
+        product: Product = super().save(commit=False)
+
+        # Normalize fields that do not apply to bundles.
+        if product.kind == Product.Kind.BUNDLE:
+            product.allows_embroidery = False
+            product.primary_material = None
+            product.secondary_material = None
+
+        if commit:
+            product.save()
+            self.save_m2m()
+        return product
 
 
 # Backwards-compat import name used in older tests/callers.
@@ -156,7 +202,7 @@ class ProductMaterialForm(forms.ModelForm):
             and not self.instance.pk
             and ProductMaterial.objects.filter(product=self.product, material=material).exists()
         ):
-            self.add_error("material", "Для цієї моделі цей матеріал вже додано.")
+            self.add_error("material", "Для цього продукту цей матеріал вже додано.")
             return cleaned
 
         if unit and not quantity_per_unit:
