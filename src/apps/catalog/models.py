@@ -11,7 +11,7 @@ class Product(models.Model):
         CASES = "cases", "Чохли"
 
     class Kind(models.TextChoices):
-        STANDARD = "standard", "Продукт"
+        STANDARD = "standard", "Виріб"
         BUNDLE = "bundle", "Комплект"
         COMPONENT = "component", "Компонент"
 

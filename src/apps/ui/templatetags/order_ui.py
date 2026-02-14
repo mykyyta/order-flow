@@ -67,7 +67,7 @@ NAV_SECTIONS = [
         "items": [
             {
                 "url_name": "products",
-                "label": "Продукти",
+                "label": "Вироби",
                 "active_on": (
                     "products",
                     "product_add",
@@ -185,7 +185,7 @@ NAV_ITEMS = [
     {"url_name": "orders_completed", "label": "Завершені", "active_on": ("orders_completed",)},
     {
         "url_name": "products",
-        "label": "Продукти",
+        "label": "Вироби",
         "active_on": ("products", "product_add", "product_edit", "products_archive"),
     },
     {

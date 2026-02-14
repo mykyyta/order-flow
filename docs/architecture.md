@@ -108,7 +108,7 @@ MaterialStock (+quantity)
 ### catalog
 
 ```python
-Product           # Продукт (раніше ProductModel)
+Product           # Виріб (раніше ProductModel)
   ├─ name, price, currency, cost_price
   ├─ is_bundle
   └─ primary_material, secondary_material

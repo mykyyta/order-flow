@@ -50,7 +50,7 @@ class ColorForm(forms.ModelForm):
 class ProductCreateForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Backwards-compatible: old callers/tests post only "name". Default kind to "Продукт".
+        # Backwards-compatible: old callers/tests post only "name". Default kind to "Виріб".
         self.fields["kind"].required = False
         self.fields["kind"].choices = [
             (Product.Kind.STANDARD, Product.Kind.STANDARD.label),
@@ -98,7 +98,7 @@ class ProductDetailForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # UI order: продукт, комплект, компонент.
+        # UI order: виріб, комплект, компонент.
         self.fields["kind"].choices = [
             (Product.Kind.STANDARD, Product.Kind.STANDARD.label),
             (Product.Kind.BUNDLE, Product.Kind.BUNDLE.label),
@@ -125,7 +125,7 @@ class ProductDetailForm(forms.ModelForm):
         # If the product already has materials, type changes are blocked to prevent
         # confusing/invalid mixes. Remove materials first.
         if has_materials and current_kind in (Product.Kind.STANDARD, Product.Kind.COMPONENT):
-            self.add_error("kind", "Спочатку видали матеріали продукту.")
+            self.add_error("kind", "Спочатку видали матеріали виробу.")
             return cleaned
 
         # If the product is a bundle (комплект), you must remove components first before changing type.
@@ -214,7 +214,7 @@ class ProductMaterialForm(forms.ModelForm):
             and not self.instance.pk
             and ProductMaterial.objects.filter(product=self.product, material=material).exists()
         ):
-            self.add_error("material", "Для цього продукту цей матеріал вже додано.")
+            self.add_error("material", "Для цього виробу цей матеріал вже додано.")
             return cleaned
 
         if unit and not quantity_per_unit:

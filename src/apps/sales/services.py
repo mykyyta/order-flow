@@ -40,7 +40,7 @@ def create_sales_order(
         product = Product.objects.only("id", "kind").get(pk=product_id)
         if product.kind == Product.Kind.COMPONENT:
             raise ValueError(
-                "Цей продукт не можна продавати окремо. Використай його як компонент комплекту."
+                "Цей виріб не можна продавати окремо. Використай його як компонент комплекту."
             )
         variant_id = line_data.get("variant_id")
         if variant_id is None:

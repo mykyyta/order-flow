@@ -73,7 +73,7 @@ class ProductListView(LoginRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
         products = list(context.get("products") or [])
 
-        context["page_title"] = "Продукти"
+        context["page_title"] = "Вироби"
         context["show_page_header"] = False
         context["product_add_url"] = reverse("product_add")
 
@@ -173,7 +173,7 @@ def products_archive(request):
         request,
         "catalog/products_archive.html",
         {
-            "page_title": "Архів продуктів",
+            "page_title": "Архів виробів",
             "items": products,
             "back_url": reverse_lazy("products"),
             "empty_message": "Архів порожній.",
@@ -216,7 +216,7 @@ class ProductDetailUpdateView(LoginRequiredMixin, UpdateView):
         context = super().get_context_data(**kwargs)
         context["page_title"] = self.object.name
         context["back_url"] = reverse_lazy("products")
-        context["back_label"] = "Продукти"
+        context["back_label"] = "Вироби"
 
         actions = []
         if self.object.archived_at:
@@ -274,7 +274,7 @@ class ProductDetailUpdateView(LoginRequiredMixin, UpdateView):
         with transaction.atomic():
             response = super().form_valid(form)
             self._sync_product_material_roles(product=self.object)
-        messages.success(self.request, "Готово! Продукт оновлено.")
+        messages.success(self.request, "Готово! Виріб оновлено.")
         return response
 
     def get_success_url(self):
@@ -529,7 +529,7 @@ def product_archive(request, pk: int):
     if product.archived_at is None:
         product.archived_at = timezone.now()
         product.save(update_fields=["archived_at"])
-        messages.success(request, "Готово! Продукт відправлено в архів.")
+        messages.success(request, "Готово! Виріб відправлено в архів.")
     return redirect("product_edit", pk=pk)
 
 
@@ -540,7 +540,7 @@ def product_unarchive(request, pk: int):
     if product.archived_at is not None:
         product.archived_at = None
         product.save(update_fields=["archived_at"])
-        messages.success(request, "Готово! Продукт відновлено з архіву.")
+        messages.success(request, "Готово! Виріб відновлено з архіву.")
     return redirect("product_edit", pk=pk)
 
 
@@ -588,5 +588,5 @@ def product_material_delete(request, pk: int, pm_pk: int):
         return redirect("product_material_edit", pk=pk, pm_pk=pm_pk)
 
     pm.delete()
-    messages.success(request, "Готово! Матеріал видалено з продукту.")
+    messages.success(request, "Готово! Матеріал видалено з виробу.")
     return redirect("product_edit", pk=pk)
