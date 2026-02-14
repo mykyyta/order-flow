@@ -2,7 +2,7 @@
 {% load order_ui %}
 
 {% block form_content %}
-{% include "partials/tabs.html" with tabs=tabs active=active_tab %}
+{% include "partials/tabs.html" with tabs=tabs active=active_tab variant="segmented" %}
 
 <div class="space-y-4 mt-3">
     <div class="card">
@@ -97,4 +97,3 @@
     </div>
 </div>
 {% endblock %}
-

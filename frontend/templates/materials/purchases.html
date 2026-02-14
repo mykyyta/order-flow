@@ -1,7 +1,7 @@
 {% extends "base_list_page.html" %}
 
 {% block filters %}
-{% include "partials/tabs.html" with tabs=tabs active=active_tab %}
+{% include "partials/tabs.html" with tabs=tabs active=active_tab variant="segmented" %}
 
 <div class="mt-3 flex items-center justify-between gap-2" x-data="{ open: false }">
     <div class="flex items-center gap-2">

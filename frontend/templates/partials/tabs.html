@@ -19,14 +19,32 @@ Parameters:
 {% endcomment %}
 
 {% with variant=variant|default:"underline" size=size|default:"md" %}
-<nav class="flex {% if variant == 'pills' %}gap-1{% else %}gap-4 border-b border-slate-200{% endif %}" aria-label="Tabs">
+<nav
+    class="
+        {% if variant == 'segmented' %}
+            inline-flex items-center rounded-lg sm:rounded-xl border border-slate-200 bg-slate-100 px-1 py-1
+        {% elif variant == 'pills' %}
+            flex gap-1
+        {% else %}
+            flex gap-4 border-b border-slate-200
+        {% endif %}
+    "
+    aria-label="Tabs"
+>
     {% for tab in tabs %}
     <a
         href="{{ tab.url }}"
         class="
             {% if size == 'sm' %}text-sm{% else %}text-sm{% endif %}
             font-medium transition-colors
-            {% if variant == 'pills' %}
+            {% if variant == 'segmented' %}
+                rounded-md px-3 py-1
+                {% if tab.id == active %}
+                    bg-white text-slate-900 shadow-sm
+                {% else %}
+                    text-slate-600 hover:bg-slate-50 hover:text-slate-900
+                {% endif %}
+            {% elif variant == 'pills' %}
                 rounded-md px-3 py-1.5
                 {% if tab.id == active %}
                     bg-teal-100 text-teal-800
@@ -53,7 +71,7 @@ Parameters:
     >
         {{ tab.label }}
         {% if tab.count %}
-        <span class="ml-1.5 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
+        <span class="ml-1.5 rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-600">
             {{ tab.count }}
         </span>
         {% endif %}
