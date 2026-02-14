@@ -12,15 +12,18 @@ Child templates override:
   - block archive_items: the items loop and rendering
 {% endcomment %}
 
+{% block title %}{% if page_title %}{{ page_title }}{% else %}{{ block.super }}{% endif %}{% endblock %}
+
 {% block content %}
 
 {% include "partials/messages.html" %}
 
 <div class="space-y-4">
     <div class="flex items-center justify-start gap-4">
-        <a href="{{ back_url }}" class="link-back">&larr; До активних</a>
+        <a href="{{ back_url }}" class="link-back">&larr; {{ back_label|default:"До активних" }}</a>
     </div>
 
+    {% block archive_body %}
     <div>
         {% if items %}
         <div class="flex flex-wrap gap-2">
@@ -30,6 +33,7 @@ Child templates override:
         {% include "partials/empty_state.html" with message=empty_message|default:"Архів порожній." %}
         {% endif %}
     </div>
+    {% endblock %}
 </div>
 
 {% endblock %}

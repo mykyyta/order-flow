@@ -23,6 +23,8 @@ Example usage:
   {% endblock %}
 {% endcomment %}
 
+{% block title %}{% if page_title %}{{ page_title }}{% else %}{{ block.super }}{% endif %}{% endblock %}
+
 {% block content %}
 {% include "partials/messages.html" %}
 

@@ -9,6 +9,8 @@ Optional context:
   - back_label: back link label (default: "Назад")
 {% endcomment %}
 
+{% block title %}{% if page_title %}{{ page_title }}{% else %}{{ block.super }}{% endif %}{% endblock %}
+
 {% block content %}
 {% include "partials/messages.html" %}
 <div class="mx-auto max-w-xl {% if page_title_center %}relative{% endif %}">

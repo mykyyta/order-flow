@@ -1,36 +1,27 @@
-{% extends "base.html" %}
+{% extends "base_archive_page.html" %}
 
-{% block title %}Архів кольорів{% endblock %}
-
-{% block content %}
-{% include "partials/messages.html" %}
-
-<div class="space-y-4">
-    <div class="flex items-center justify-start gap-4">
-        <a href="{{ back_url }}" class="link-back">&larr; До активних</a>
+{% block archive_body %}
+<div class="card">
+    {% if items %}
+    <ul class="divide-y divide-slate-100">
+        {% for color in items %}
+        <li class="flex items-center px-4 py-3">
+            <span class="text-xs font-mono text-slate-400 w-8">{{ color.code }}</span>
+            <span class="text-sm font-medium text-slate-900 flex-1 truncate">{{ color.name }}</span>
+            <form method="post" action="{% url 'material_color_unarchive' material.pk color.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="text-sm text-slate-500 hover:text-teal-600 transition-colors">
+                    Відновити
+                </button>
+            </form>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <div class="px-4 py-8">
+        {% include "partials/empty_state.html" with message=empty_message|default:"Архів порожній." %}
     </div>
-
-    <div class="card">
-        {% if items %}
-        <ul class="divide-y divide-slate-100">
-            {% for color in items %}
-            <li class="flex items-center px-4 py-3">
-                <span class="text-xs font-mono text-slate-400 w-8">{{ color.code }}</span>
-                <span class="text-sm font-medium text-slate-900 flex-1 truncate">{{ color.name }}</span>
-                <form method="post" action="{% url 'material_color_unarchive' material.pk color.pk %}">
-                    {% csrf_token %}
-                    <button type="submit" class="text-sm text-slate-500 hover:text-teal-600 transition-colors">
-                        Відновити
-                    </button>
-                </form>
-            </li>
-            {% endfor %}
-        </ul>
-        {% else %}
-        <div class="px-4 py-8">
-            {% include "partials/empty_state.html" with message=empty_message|default:"Архів порожній." %}
-        </div>
-        {% endif %}
-    </div>
+    {% endif %}
 </div>
 {% endblock %}
+
