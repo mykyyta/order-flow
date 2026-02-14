@@ -75,7 +75,7 @@
 
                 {# Page title #}
                 <div class="min-w-0 flex-1 px-2">
-                    {% if page_title and show_nav_title|default:True %}<h1 class="nav-page-title">{{ page_title }}</h1>{% endif %}
+                    {% if page_title and show_nav_title|default_if_none:True %}<h1 class="nav-page-title">{{ page_title }}</h1>{% endif %}
                 </div>
 
                 {# Desktop nav dropdowns #}
@@ -151,7 +151,7 @@
                 </div>
             </a>
             <div class="min-w-0 flex-1 px-2 text-right">
-                {% if page_title and show_nav_title|default:True %}<h1 class="nav-page-title">{{ page_title }}</h1>{% endif %}
+                {% if page_title and show_nav_title|default_if_none:True %}<h1 class="nav-page-title">{{ page_title }}</h1>{% endif %}
             </div>
         </div>
     </header>

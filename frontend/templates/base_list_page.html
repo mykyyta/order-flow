@@ -29,7 +29,7 @@ Example usage:
 
 <div class="space-y-4">
     {# Page header with title and actions #}
-    {% if show_page_header|default:True %}
+    {% if show_page_header|default_if_none:True %}
     <div class="flex items-center justify-between gap-4">
         <h1 class="text-xl font-semibold text-slate-900">
             {% block page_title_text %}{{ page_title }}{% endblock %}
