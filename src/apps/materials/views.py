@@ -23,7 +23,12 @@ class MaterialListCreateView(LoginRequiredMixin, View):
         return render(
             request,
             self.template_name,
-            {"page_title": "Матеріали", "materials": materials, "form": form},
+            {
+                "page_title": "Матеріали",
+                "show_page_header": False,
+                "materials": materials,
+                "form": form,
+            },
         )
 
     def post(self, request, *args, **kwargs):
@@ -35,7 +40,12 @@ class MaterialListCreateView(LoginRequiredMixin, View):
         return render(
             request,
             self.template_name,
-            {"page_title": "Матеріали", "materials": materials, "form": form},
+            {
+                "page_title": "Матеріали",
+                "show_page_header": False,
+                "materials": materials,
+                "form": form,
+            },
         )
 
 
@@ -57,25 +67,29 @@ class MaterialDetailView(LoginRequiredMixin, UpdateView):
         # Actions menu for material
         actions = []
         if self.object.archived_at:
-            actions.append({
-                "label": "Відновити",
-                "url": reverse("material_unarchive", kwargs={"pk": self.object.pk}),
-                "method": "post",
-                "icon": "restore",
-            })
+            actions.append(
+                {
+                    "label": "Відновити",
+                    "url": reverse("material_unarchive", kwargs={"pk": self.object.pk}),
+                    "method": "post",
+                    "icon": "restore",
+                }
+            )
         else:
-            actions.append({
-                "label": "В архів",
-                "url": reverse("material_archive", kwargs={"pk": self.object.pk}),
-                "method": "post",
-                "icon": "archive",
-            })
+            actions.append(
+                {
+                    "label": "В архів",
+                    "url": reverse("material_archive", kwargs={"pk": self.object.pk}),
+                    "method": "post",
+                    "icon": "archive",
+                }
+            )
         context["actions"] = actions
 
         # Colors list
-        context["colors"] = self.object.colors.filter(
-            archived_at__isnull=True
-        ).order_by(Lower("name"), "name", "code")
+        context["colors"] = self.object.colors.filter(archived_at__isnull=True).order_by(
+            Lower("name"), "name", "code"
+        )
         context["colors_archive_url"] = reverse(
             "material_colors_archive",
             kwargs={"pk": self.object.pk},

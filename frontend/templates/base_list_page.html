@@ -29,6 +29,7 @@ Example usage:
 
 <div class="space-y-4">
     {# Page header with title and actions #}
+    {% if show_page_header|default:True %}
     <div class="flex items-center justify-between gap-4">
         <h1 class="text-xl font-semibold text-slate-900">
             {% block page_title_text %}{{ page_title }}{% endblock %}
@@ -37,6 +38,7 @@ Example usage:
             {% block page_header_actions %}{% endblock %}
         </div>
     </div>
+    {% endif %}
 
     {# Filters (search, dropdowns, etc.) #}
     {% block filters %}{% endblock %}

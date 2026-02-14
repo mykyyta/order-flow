@@ -18,7 +18,9 @@ from .forms import (
 from .models import BundleComponent, Color, Product, ProductMaterial
 
 
-def _apply_product_material_role_change(*, product_id: int, product_material: ProductMaterial) -> None:
+def _apply_product_material_role_change(
+    *, product_id: int, product_material: ProductMaterial
+) -> None:
     product = Product.objects.select_for_update().get(pk=product_id)
 
     if product_material.role == ProductMaterial.Role.PRIMARY:
@@ -65,7 +67,7 @@ class ProductListCreateView(LoginRequiredMixin, View):
         return render(
             request,
             self.template_name,
-            {"page_title": "Моделі", "products": products, "form": form},
+            {"page_title": "Моделі", "show_page_header": False, "products": products, "form": form},
         )
 
     def post(self, request, *args, **kwargs):
@@ -77,7 +79,7 @@ class ProductListCreateView(LoginRequiredMixin, View):
         return render(
             request,
             self.template_name,
-            {"page_title": "Моделі", "products": products, "form": form},
+            {"page_title": "Моделі", "show_page_header": False, "products": products, "form": form},
         )
 
 
@@ -88,23 +90,21 @@ class ColorListCreateView(LoginRequiredMixin, ListView):
     context_object_name = "colors"
 
     def get_queryset(self):
-        return (
-            Color.objects.filter(archived_at__isnull=True)
-            .order_by(
-                models.Case(
-                    models.When(status="in_stock", then=0),
-                    models.When(status="low_stock", then=1),
-                    models.When(status="out_of_stock", then=2),
-                    default=3,
-                    output_field=models.IntegerField(),
-                ),
-                "name",
-            )
+        return Color.objects.filter(archived_at__isnull=True).order_by(
+            models.Case(
+                models.When(status="in_stock", then=0),
+                models.When(status="low_stock", then=1),
+                models.When(status="out_of_stock", then=2),
+                default=3,
+                output_field=models.IntegerField(),
+            ),
+            "name",
         )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["page_title"] = "Кольори"
+        context["show_page_header"] = False
         context["color_form"] = ColorForm()
         return context
 
@@ -130,9 +130,7 @@ class ColorDetailUpdateView(LoginRequiredMixin, UpdateView):
         context["form_id"] = "color-edit-form"
         context["cancel_url"] = reverse_lazy("colors")
         context["archive_url"] = reverse_lazy("color_archive", kwargs={"pk": self.object.pk})
-        context["unarchive_url"] = reverse_lazy(
-            "color_unarchive", kwargs={"pk": self.object.pk}
-        )
+        context["unarchive_url"] = reverse_lazy("color_unarchive", kwargs={"pk": self.object.pk})
         context["back_url"] = reverse_lazy("colors")
         context["back_label"] = "Назад до кольорів"
         context["archived_message"] = "Цей колір в архіві."
@@ -276,9 +274,9 @@ class ProductDetailUpdateView(LoginRequiredMixin, UpdateView):
                 defaults={"role": ProductMaterial.Role.PRIMARY},
             )
         else:
-            ProductMaterial.objects.filter(product=product, role=ProductMaterial.Role.PRIMARY).update(
-                role=ProductMaterial.Role.OTHER
-            )
+            ProductMaterial.objects.filter(
+                product=product, role=ProductMaterial.Role.PRIMARY
+            ).update(role=ProductMaterial.Role.OTHER)
 
         if product.secondary_material_id:
             ProductMaterial.objects.filter(
@@ -292,9 +290,9 @@ class ProductDetailUpdateView(LoginRequiredMixin, UpdateView):
                 defaults={"role": ProductMaterial.Role.SECONDARY},
             )
         else:
-            ProductMaterial.objects.filter(product=product, role=ProductMaterial.Role.SECONDARY).update(
-                role=ProductMaterial.Role.OTHER
-            )
+            ProductMaterial.objects.filter(
+                product=product, role=ProductMaterial.Role.SECONDARY
+            ).update(role=ProductMaterial.Role.OTHER)
 
 
 class ProductMaterialCreateView(LoginRequiredMixin, CreateView):
