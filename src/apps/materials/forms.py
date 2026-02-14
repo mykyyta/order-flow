@@ -192,6 +192,14 @@ class PurchaseOrderLineReceiveForm(forms.Form):
     )
 
 
+class PurchaseOrderStatusForm(forms.Form):
+    status = forms.ChoiceField(
+        choices=list(PurchaseOrder.Status.choices),
+        widget=forms.Select(attrs={"class": FORM_SELECT}),
+        label="Статус",
+    )
+
+
 class PurchaseRequestForm(forms.ModelForm):
     class Meta:
         model = PurchaseRequest

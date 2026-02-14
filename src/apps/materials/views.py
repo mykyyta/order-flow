@@ -19,11 +19,12 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 from apps.materials.forms import (
     MaterialColorForm,
     MaterialForm,
+    PurchaseAddFromOfferForm,
     PurchaseOrderFilterForm,
     PurchaseOrderStartForm,
     PurchaseOrderLineForm,
     PurchaseOrderLineReceiveForm,
-    PurchaseAddFromOfferForm,
+    PurchaseOrderStatusForm,
     PurchaseRequestForm,
     PurchaseRequestLineForm,
     PurchaseRequestLineOrderForm,
@@ -451,7 +452,6 @@ def purchase_start_material_offers(request, material_pk: int):
         "materials/purchase_start_material_offers.html",
         {
             "page_title": "Варіанти постачальників",
-            "page_title_center": True,
             "back_url": reverse("purchase_start_material"),
             "back_label": "Матеріали",
             "material": material,
@@ -608,7 +608,6 @@ def purchase_add_lines(request, pk: int):
         "materials/purchase_add_lines.html",
         {
             "page_title": f"Додати позиції · Замовлення #{purchase_order.id}",
-            "page_title_center": True,
             "back_url": reverse("purchases"),
             "back_label": "Закупівлі",
             "purchase_order": purchase_order,
@@ -634,6 +633,10 @@ def purchase_detail(request, pk: int):
         {"id": "requests", "label": "Заявки", "url": reverse("purchase_requests")},
     ]
 
+    actions = [
+        {"label": "Змінити статус", "url": reverse("purchase_status_edit", kwargs={"pk": purchase_order.pk})},
+    ]
+
     return render(
         request,
         "materials/purchase_detail.html",
@@ -650,6 +653,34 @@ def purchase_detail(request, pk: int):
                 "purchase_pick_request_line_for_order",
                 kwargs={"pk": purchase_order.pk},
             ),
+            "actions": actions,
+        },
+    )
+
+
+@login_required(login_url=reverse_lazy("auth_login"))
+def purchase_status_edit(request, pk: int):
+    purchase_order = get_object_or_404(PurchaseOrder.objects.select_related("supplier"), pk=pk)
+    if request.method == "POST":
+        form = PurchaseOrderStatusForm(request.POST)
+        if form.is_valid():
+            purchase_order.status = form.cleaned_data["status"]
+            purchase_order.save(update_fields=["status", "updated_at"])
+            messages.success(request, "Готово! Статус оновлено.")
+            return redirect("purchase_detail", pk=purchase_order.pk)
+    else:
+        form = PurchaseOrderStatusForm(initial={"status": purchase_order.status})
+
+    return render(
+        request,
+        "materials/purchase_status_form.html",
+        {
+            "page_title": "Статус замовлення",
+            "page_title_center": True,
+            "back_url": reverse("purchase_detail", kwargs={"pk": purchase_order.pk}),
+            "form": form,
+            "purchase_order": purchase_order,
+            "submit_label": "Застосувати",
         },
     )
 
@@ -677,7 +708,7 @@ def purchase_pick_request_line_for_order(request, pk: int):
         "materials/purchase_request_line_pick.html",
         {
             "page_title": "Додати з заявки",
-            "page_title_center": True,
+            "show_page_header": False,
             "back_url": reverse("purchase_detail", kwargs={"pk": purchase_order.pk}),
             "purchase_order": purchase_order,
             "page_obj": page_obj,

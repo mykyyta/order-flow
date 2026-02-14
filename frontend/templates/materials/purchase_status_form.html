@@ -1,0 +1,31 @@
+{% extends "base_form_page.html" %}
+
+{% block form_content %}
+<div class="space-y-4">
+    <div class="card">
+        <div class="px-4 py-3 border-b border-slate-100">
+            <h3 class="text-sm font-semibold text-slate-900">Замовлення</h3>
+        </div>
+        <div class="p-4 space-y-1">
+            {% include "partials/detail_field.html" with label="Постачальник" value=purchase_order.supplier.name %}
+            {% include "partials/detail_field.html" with label="№" value=purchase_order.id muted=True %}
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="px-4 py-3 border-b border-slate-100">
+            <h3 class="text-sm font-semibold text-slate-900">Статус</h3>
+        </div>
+        <div class="p-4">
+            <form method="post" class="space-y-4 m-0">
+                {% csrf_token %}
+                {% include "partials/form_field.html" with field=form.status label="Новий статус" %}
+                <button type="submit" class="btn-primary w-full min-h-[44px]">
+                    {{ submit_label|default:"Застосувати" }}
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
