@@ -190,6 +190,13 @@ class PurchaseOrderLine(models.Model):
         blank=True,
         related_name="purchase_order_lines",
     )
+    supplier_offer = models.ForeignKey(
+        "materials.SupplierMaterialOffer",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="purchase_order_lines",
+    )
     material = models.ForeignKey(
         Material,
         on_delete=models.PROTECT,
@@ -221,6 +228,11 @@ class PurchaseOrderLine(models.Model):
     def clean(self) -> None:
         if self.material_color and self.material_color.material_id != self.material_id:
             raise ValidationError("Material color must belong to selected material.")
+        if self.supplier_offer:
+            if self.supplier_offer.material_id != self.material_id:
+                raise ValidationError("Supplier offer must belong to selected material.")
+            if self.supplier_offer.material_color_id != self.material_color_id:
+                raise ValidationError("Supplier offer color must match selected material color.")
 
     def __str__(self) -> str:
         return f"PO #{self.purchase_order_id}: {self.material.name} {self.quantity} {self.unit}"

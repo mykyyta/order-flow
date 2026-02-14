@@ -1,0 +1,25 @@
+{% extends "base_form_page.html" %}
+
+{% block form_content %}
+<form method="post" class="space-y-4">
+    {% csrf_token %}
+
+    <div class="rounded-md bg-slate-50 px-3 py-2 text-sm text-slate-700">
+        Матеріал: <span class="font-medium">{{ material.name }}</span>
+        <span class="text-slate-400">·</span>
+        Одиниця складу: <span class="font-medium">{{ material.get_stock_unit_display }}</span>
+    </div>
+
+    {% include "partials/form_field.html" with field=form.supplier label="Постачальник" %}
+    {% include "partials/form_field.html" with field=form.material_color label="Колір (необов'язково)" %}
+    {% include "partials/form_field.html" with field=form.title label="Назва у постачальника" %}
+    {% include "partials/form_field.html" with field=form.sku label="SKU (необов'язково)" %}
+    {% include "partials/form_field.html" with field=form.url label="Посилання (необов'язково)" %}
+    {% include "partials/form_field.html" with field=form.price_per_unit label="Ціна (необов'язково)" %}
+    {% include "partials/form_field.html" with field=form.notes label="Коментар (необов'язково)" %}
+
+    <button type="submit" class="btn-primary w-full min-h-[44px]">
+        {{ submit_label|default:"Зберегти" }}
+    </button>
+</form>
+{% endblock %}

@@ -39,6 +39,11 @@
                         {{ line.material.name }}
                         {% if line.material_color %}· {{ line.material_color.name }}{% endif %}
                     </p>
+                    {% if line.supplier_offer %}
+                    <p class="text-xs text-slate-500">
+                        {{ line.supplier_offer.title }}
+                    </p>
+                    {% endif %}
                     <p class="text-xs text-slate-500">
                         {{ line.quantity }} {{ line.unit }}
                         {% if line.unit_price %}· {{ line.unit_price }}{% endif %}
@@ -65,4 +70,3 @@
     </div>
 </div>
 {% endblock %}
-

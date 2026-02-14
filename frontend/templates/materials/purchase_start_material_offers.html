@@ -1,0 +1,89 @@
+{% extends "base_detail_page.html" %}
+
+{% block page_header_actions %}
+<a href="{{ offer_add_url }}" class="btn-primary">+ Офер</a>
+{% endblock %}
+
+{% block detail_content %}
+<div class="card">
+    <div class="px-4 py-3 border-b border-slate-100">
+        <h3 class="text-sm font-semibold text-slate-900">
+            {{ material.name }}
+        </h3>
+        <p class="mt-1 text-xs text-slate-500">
+            Одиниця складу: {{ material.get_stock_unit_display }}
+        </p>
+    </div>
+
+    <div class="divide-y divide-slate-100">
+        {% for offer in offers %}
+        <div class="px-4 py-3">
+            <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div class="min-w-0">
+                    <div class="text-sm font-medium text-slate-900 truncate">
+                        {{ offer.supplier.name }}
+                        <span class="text-slate-400">·</span>
+                        <span class="text-slate-700">
+                            {{ offer.title }}
+                            {% if offer.material_color %}· {{ offer.material_color.name }}{% endif %}
+                        </span>
+                    </div>
+                    <div class="mt-0.5 text-xs text-slate-500 truncate">
+                        {% if offer.sku %}SKU: {{ offer.sku }}{% else %}—{% endif %}
+                        {% if offer.url %}
+                            <span class="text-slate-400">·</span>
+                            <a href="{{ offer.url }}" target="_blank" rel="noreferrer" class="hover:underline">
+                                Відкрити
+                            </a>
+                        {% endif %}
+                        {% if offer.price_per_unit %}
+                            <span class="text-slate-400">·</span>
+                            {{ offer.price_per_unit }} {{ offer.currency }}
+                        {% endif %}
+                    </div>
+                </div>
+
+                <form method="post" action="{% url 'purchase_add_from_offer' offer.id %}" class="m-0 flex items-stretch gap-2">
+                    {% csrf_token %}
+                    <input
+                        type="number"
+                        name="quantity"
+                        step="0.001"
+                        min="0.001"
+                        placeholder="К-сть"
+                        class="form-input w-28"
+                        required
+                    >
+                    <input
+                        type="number"
+                        name="unit_price"
+                        step="0.01"
+                        min="0"
+                        placeholder="Ціна"
+                        class="form-input w-28"
+                    >
+                    <button type="submit" class="btn-secondary">Додати</button>
+                </form>
+            </div>
+        </div>
+        {% empty %}
+        <div class="p-4">
+            {% include "partials/empty_state.html" with message="Оферів немає. Додай хоча б один варіант постачальника." %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block detail_sidebar %}
+<div class="card">
+    <div class="px-4 py-3 border-b border-slate-100">
+        <h3 class="text-sm font-semibold text-slate-900">Підказка</h3>
+    </div>
+    <div class="p-4 space-y-2 text-sm text-slate-600">
+        <p>Офер: як ця позиція називається у конкретного постачальника, з посиланням і SKU.</p>
+        <p>Після додавання буде створено чернетку замовлення і відкриється екран додавання позицій.</p>
+    </div>
+</div>
+{% endblock %}
+

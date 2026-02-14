@@ -7,6 +7,7 @@ from apps.accounts.tests.conftest import UserFactory
 from apps.materials.models import (
     Material,
     MaterialStock,
+    SupplierMaterialOffer,
     MaterialUnit,
     PurchaseOrder,
     PurchaseOrderLine,
@@ -314,3 +315,79 @@ def test_supplier_add_with_next_purchase_add_redirects_with_supplier_prefilled(c
 
     created = Supplier.objects.get(name="Wizard Supplier")
     assert response["Location"] == f"{next_url}?supplier={created.pk}"
+
+
+@pytest.mark.django_db(transaction=True)
+def test_purchase_start_material_renders_materials(client):
+    user = UserFactory()
+    client.force_login(user, backend=AUTH_BACKEND)
+    material = Material.objects.create(name="Material Start", stock_unit=MaterialUnit.PIECE)
+
+    response = client.get(reverse("purchase_start_material"))
+    assert response.status_code == 200
+    assert material.name.encode() in response.content
+
+
+@pytest.mark.django_db(transaction=True)
+def test_purchase_start_material_offers_renders_offers(client):
+    user = UserFactory()
+    client.force_login(user, backend=AUTH_BACKEND)
+    supplier = Supplier.objects.create(name="Offer Supplier")
+    material = Material.objects.create(name="Offer Material", stock_unit=MaterialUnit.PIECE)
+    offer = SupplierMaterialOffer.objects.create(
+        supplier=supplier,
+        material=material,
+        unit=MaterialUnit.PIECE,
+        title="Offer Title",
+        sku="SKU-1",
+        url="https://example.com/item",
+        price_per_unit=Decimal("12.34"),
+    )
+
+    response = client.get(reverse("purchase_start_material_offers", kwargs={"material_pk": material.pk}))
+    assert response.status_code == 200
+    assert supplier.name.encode() in response.content
+    assert offer.title.encode() in response.content
+
+
+@pytest.mark.django_db(transaction=True)
+def test_purchase_add_from_offer_creates_purchase_order_and_line(client):
+    user = UserFactory()
+    client.force_login(user, backend=AUTH_BACKEND)
+    supplier = Supplier.objects.create(name="Offer Create Supplier")
+    material = Material.objects.create(name="Offer Create Material", stock_unit=MaterialUnit.PIECE)
+    offer = SupplierMaterialOffer.objects.create(
+        supplier=supplier,
+        material=material,
+        unit=MaterialUnit.PIECE,
+        title="Offer Create Title",
+        price_per_unit=Decimal("9.99"),
+    )
+
+    response = client.post(
+        reverse("purchase_add_from_offer", kwargs={"offer_pk": offer.pk}),
+        data={"quantity": "2.000"},
+    )
+    assert response.status_code == 302
+
+    po = PurchaseOrder.objects.get()
+    line = PurchaseOrderLine.objects.get(purchase_order=po)
+    assert po.supplier_id == supplier.pk
+    assert line.material_id == material.pk
+    assert line.supplier_offer_id == offer.pk
+    assert line.unit_price == Decimal("9.99")
+
+
+@pytest.mark.django_db(transaction=True)
+def test_supplier_offer_add_creates_offer_and_redirects_back_to_offers(client):
+    user = UserFactory()
+    client.force_login(user, backend=AUTH_BACKEND)
+    supplier = Supplier.objects.create(name="Offer Add Supplier")
+    material = Material.objects.create(name="Offer Add Material", stock_unit=MaterialUnit.PIECE)
+
+    response = client.post(
+        reverse("supplier_offer_add", kwargs={"material_pk": material.pk}),
+        data={"supplier": supplier.pk, "title": "New Offer", "url": "https://example.com/new"},
+    )
+    assert response.status_code == 302
+    assert SupplierMaterialOffer.objects.filter(material=material, supplier=supplier, title="New Offer").exists()

@@ -24,6 +24,17 @@
                         {{ line.material.name }}
                         {% if line.material_color %}· {{ line.material_color.name }}{% endif %}
                     </p>
+                    {% if line.supplier_offer %}
+                    <p class="text-xs text-slate-500">
+                        {{ line.supplier_offer.title }}
+                        {% if line.supplier_offer.url %}
+                            <span class="text-slate-400">·</span>
+                            <a href="{{ line.supplier_offer.url }}" target="_blank" rel="noreferrer" class="hover:underline">
+                                Відкрити
+                            </a>
+                        {% endif %}
+                    </p>
+                    {% endif %}
                     <p class="text-xs text-slate-500">
                         {{ line.received_quantity }} / {{ line.quantity }} {{ line.unit }}
                     </p>

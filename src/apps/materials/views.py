@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -21,10 +23,12 @@ from apps.materials.forms import (
     PurchaseOrderStartForm,
     PurchaseOrderLineForm,
     PurchaseOrderLineReceiveForm,
+    PurchaseAddFromOfferForm,
     PurchaseRequestForm,
     PurchaseRequestLineForm,
     PurchaseRequestLineOrderForm,
     SupplierForm,
+    SupplierMaterialOfferForm,
 )
 from apps.materials.models import (
     Material,
@@ -34,6 +38,7 @@ from apps.materials.models import (
     PurchaseRequest,
     PurchaseRequestLine,
     Supplier,
+    SupplierMaterialOffer,
 )
 from apps.materials.services import receive_purchase_order_line
 from apps.warehouses.services import get_default_warehouse
@@ -400,9 +405,130 @@ def purchases_list(request):
             "search_query": search_query,
             "status": status,
             "purchase_add_url": reverse("purchase_add"),
+            "purchase_start_material_url": reverse("purchase_start_material"),
             "clear_url": reverse("purchases"),
         },
     )
+
+
+@login_required(login_url=reverse_lazy("auth_login"))
+def purchase_start_material(request):
+    search_query = (request.GET.get("q") or "").strip()
+    queryset = Material.objects.filter(archived_at__isnull=True).order_by(Lower("name"), "name")
+    if search_query:
+        queryset = queryset.filter(name__icontains=search_query)
+
+    paginator = Paginator(queryset, 50)
+    page_obj = paginator.get_page(request.GET.get("page"))
+
+    return render(
+        request,
+        "materials/purchase_start_material.html",
+        {
+            "page_title": "Замовити матеріал",
+            "back_url": reverse("purchases"),
+            "back_label": "Закупівлі",
+            "page_obj": page_obj,
+            "search_query": search_query,
+        },
+    )
+
+
+@login_required(login_url=reverse_lazy("auth_login"))
+def purchase_start_material_offers(request, material_pk: int):
+    material = get_object_or_404(Material, pk=material_pk, archived_at__isnull=True)
+    offers = list(
+        SupplierMaterialOffer.objects.filter(material=material, archived_at__isnull=True)
+        .select_related("supplier", "material_color")
+        .order_by(Lower("supplier__name"), "supplier__name", "id")
+    )
+
+    return render(
+        request,
+        "materials/purchase_start_material_offers.html",
+        {
+            "page_title": "Варіанти постачальників",
+            "page_title_center": True,
+            "back_url": reverse("purchase_start_material"),
+            "back_label": "Матеріали",
+            "material": material,
+            "offers": offers,
+            "offer_add_url": reverse("supplier_offer_add", kwargs={"material_pk": material.pk}),
+        },
+    )
+
+
+@login_required(login_url=reverse_lazy("auth_login"))
+def supplier_offer_add(request, material_pk: int):
+    material = get_object_or_404(Material, pk=material_pk, archived_at__isnull=True)
+    if request.method == "POST":
+        form = SupplierMaterialOfferForm(request.POST, material=material)
+        if form.is_valid():
+            offer: SupplierMaterialOffer = form.save(commit=False)
+            offer.material = material
+            offer.unit = material.stock_unit
+            offer.save()
+            messages.success(request, "Готово! Офер додано.")
+            return redirect("purchase_start_material_offers", material_pk=material.pk)
+    else:
+        form = SupplierMaterialOfferForm(material=material)
+
+    return render(
+        request,
+        "materials/supplier_offer_create.html",
+        {
+            "page_title": "Новий офер",
+            "page_title_center": True,
+            "back_url": reverse("purchase_start_material_offers", kwargs={"material_pk": material.pk}),
+            "back_label": "Назад",
+            "form": form,
+            "material": material,
+            "submit_label": "Додати",
+        },
+    )
+
+
+@login_required(login_url=reverse_lazy("auth_login"))
+@require_POST
+def purchase_add_from_offer(request, offer_pk: int):
+    offer = get_object_or_404(
+        SupplierMaterialOffer.objects.select_related("supplier", "material", "material_color"),
+        pk=offer_pk,
+        archived_at__isnull=True,
+    )
+    form = PurchaseAddFromOfferForm(request.POST)
+    if not form.is_valid():
+        messages.error(request, "Упс. Перевір кількість.")
+        return redirect("purchase_start_material_offers", material_pk=offer.material_id)
+
+    if offer.unit != offer.material.stock_unit:
+        expected = offer.material.get_stock_unit_display()
+        messages.error(request, f"Офер має невірну одиницю. Очікується: {expected}.")
+        return redirect("purchase_start_material_offers", material_pk=offer.material_id)
+
+    quantity: Decimal = form.cleaned_data["quantity"]
+    unit_price = form.cleaned_data.get("unit_price")
+    if unit_price is None:
+        unit_price = offer.price_per_unit
+
+    with transaction.atomic():
+        purchase_order = PurchaseOrder.objects.create(
+            supplier=offer.supplier,
+            status=PurchaseOrder.Status.DRAFT,
+            created_by=request.user,
+        )
+        PurchaseOrderLine.objects.create(
+            purchase_order=purchase_order,
+            supplier_offer=offer,
+            material=offer.material,
+            material_color=offer.material_color,
+            quantity=quantity,
+            unit=offer.material.stock_unit,
+            unit_price=unit_price,
+        )
+
+    messages.success(request, "Готово! Додано в замовлення.")
+    return redirect("purchase_add_lines", pk=purchase_order.pk)
 
 
 @login_required(login_url=reverse_lazy("auth_login"))
@@ -439,6 +565,7 @@ def purchase_add(request):
             "supplier_add_url": _append_query_params(
                 reverse("supplier_add"), {"next": reverse("purchase_add")}
             ),
+            "purchase_start_material_url": reverse("purchase_start_material"),
         },
     )
 
@@ -450,7 +577,7 @@ def purchase_add_lines(request, pk: int):
         pk=pk,
     )
     lines = list(
-        purchase_order.lines.select_related("material", "material_color").order_by("id")
+        purchase_order.lines.select_related("material", "material_color", "supplier_offer").order_by("id")
     )
 
     if request.method == "POST":
@@ -489,7 +616,7 @@ def purchase_detail(request, pk: int):
         pk=pk,
     )
     lines = list(
-        purchase_order.lines.select_related("material", "material_color").order_by("id")
+        purchase_order.lines.select_related("material", "material_color", "supplier_offer").order_by("id")
     )
 
     tabs = [

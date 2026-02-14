@@ -13,6 +13,7 @@ from apps.materials.models import (
     PurchaseRequest,
     PurchaseRequestLine,
     Supplier,
+    SupplierMaterialOffer,
 )
 
 FORM_INPUT = "form-input"
@@ -86,6 +87,60 @@ class SupplierForm(forms.ModelForm):
         widgets = {
             "name": forms.TextInput(attrs={"class": FORM_INPUT, "placeholder": "Назва постачальника"}),
         }
+
+
+class SupplierMaterialOfferForm(forms.ModelForm):
+    class Meta:
+        model = SupplierMaterialOffer
+        fields = [
+            "supplier",
+            "material_color",
+            "title",
+            "sku",
+            "url",
+            "price_per_unit",
+            "notes",
+        ]
+        widgets = {
+            "supplier": forms.Select(attrs={"class": FORM_SELECT}),
+            "material_color": forms.Select(attrs={"class": FORM_SELECT}),
+            "title": forms.TextInput(attrs={"class": FORM_INPUT, "placeholder": "Назва у магазині"}),
+            "sku": forms.TextInput(attrs={"class": FORM_INPUT, "placeholder": "SKU (необов'язково)"}),
+            "url": forms.URLInput(attrs={"class": FORM_INPUT, "placeholder": "Посилання (необов'язково)"}),
+            "price_per_unit": forms.NumberInput(attrs={"class": FORM_INPUT, "step": "0.01", "min": "0"}),
+            "notes": forms.Textarea(attrs={"class": FORM_TEXTAREA, "rows": 2}),
+        }
+
+    def __init__(self, *args, material: Material | None = None, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        if material is not None:
+            self.fields["material_color"].queryset = material.colors.filter(archived_at__isnull=True).order_by(
+                "name",
+                "code",
+                "id",
+            )
+
+    def clean_title(self) -> str:
+        title: str = (self.cleaned_data.get("title") or "").strip()
+        if not title:
+            raise forms.ValidationError("Вкажи назву позиції у постачальника.")
+        return title
+
+
+class PurchaseAddFromOfferForm(forms.Form):
+    quantity = forms.DecimalField(
+        min_value=Decimal("0.001"),
+        decimal_places=3,
+        widget=forms.NumberInput(attrs={"class": FORM_INPUT, "step": "0.001", "min": "0.001"}),
+        label="Кількість",
+    )
+    unit_price = forms.DecimalField(
+        required=False,
+        min_value=Decimal("0.00"),
+        decimal_places=2,
+        widget=forms.NumberInput(attrs={"class": FORM_INPUT, "step": "0.01", "min": "0"}),
+        label="Ціна за одиницю (необов'язково)",
+    )
 
 
 class PurchaseOrderLineForm(forms.ModelForm):
