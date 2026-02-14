@@ -4,15 +4,9 @@
 <form method="post" class="space-y-4">
     {% csrf_token %}
     {% include "partials/form_field.html" with field=form.supplier label="Постачальник" %}
-    {% include "partials/form_field.html" with field=form.status label="Статус" %}
-    {% include "partials/form_field.html" with field=form.external_ref label="Номер/посилання" %}
-    {% include "partials/form_field.html" with field=form.tracking_number label="Трек/ТТН" %}
-    {% include "partials/form_field.html" with field=form.expected_at label="Очікується" %}
-    {% include "partials/form_field.html" with field=form.notes label="Коментар" %}
 
     <button type="submit" class="btn-primary w-full min-h-[44px]">
         {{ submit_label|default:"Зберегти" }}
     </button>
 </form>
 {% endblock %}
-

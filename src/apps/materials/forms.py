@@ -71,15 +71,22 @@ class PurchaseOrderForm(forms.ModelForm):
         }
 
 
+class PurchaseOrderStartForm(forms.Form):
+    supplier = forms.ModelChoiceField(
+        queryset=Supplier.objects.filter(archived_at__isnull=True).order_by("name"),
+        widget=forms.Select(attrs={"class": FORM_SELECT}),
+        label="Постачальник",
+    )
+
+
 class PurchaseOrderLineForm(forms.ModelForm):
     class Meta:
         model = PurchaseOrderLine
-        fields = ["material", "material_color", "quantity", "unit", "unit_price", "notes"]
+        fields = ["material", "material_color", "quantity", "unit_price", "notes"]
         widgets = {
             "material": forms.Select(attrs={"class": FORM_SELECT}),
             "material_color": forms.Select(attrs={"class": FORM_SELECT}),
             "quantity": forms.NumberInput(attrs={"class": FORM_INPUT, "step": "0.001", "min": "0.001"}),
-            "unit": forms.Select(attrs={"class": FORM_SELECT}),
             "unit_price": forms.NumberInput(attrs={"class": FORM_INPUT, "step": "0.01", "min": "0"}),
             "notes": forms.TextInput(attrs={"class": FORM_INPUT}),
         }
@@ -88,12 +95,8 @@ class PurchaseOrderLineForm(forms.ModelForm):
         cleaned = super().clean()
         material: Material | None = cleaned.get("material")
         material_color: MaterialColor | None = cleaned.get("material_color")
-        unit: str | None = cleaned.get("unit")
         if material and material_color and material_color.material_id != material.id:
             self.add_error("material_color", "Колір має належати вибраному матеріалу.")
-        if material and unit and unit != material.stock_unit:
-            expected = material.get_stock_unit_display()
-            self.add_error("unit", f"Одиниця має відповідати одиниці складу матеріалу ({expected}).")
         return cleaned
 
 

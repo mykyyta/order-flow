@@ -81,6 +81,57 @@ def test_purchase_line_receive_adds_stock(client):
 
 
 @pytest.mark.django_db(transaction=True)
+def test_purchase_add_step1_renders_supplier_only(client):
+    user = UserFactory()
+    client.force_login(user, backend=AUTH_BACKEND)
+    Supplier.objects.create(name="Shop Wizard")
+
+    response = client.get(reverse("purchase_add"))
+    assert response.status_code == 200
+    assert "Постачальник".encode() in response.content
+    assert "Трек/ТТН".encode() not in response.content
+    assert "Очікується".encode() not in response.content
+
+
+@pytest.mark.django_db(transaction=True)
+def test_purchase_add_step1_creates_draft_and_redirects_to_step2(client):
+    user = UserFactory()
+    client.force_login(user, backend=AUTH_BACKEND)
+    supplier = Supplier.objects.create(name="Shop Wizard Create")
+
+    response = client.post(reverse("purchase_add"), data={"supplier": supplier.pk})
+    assert response.status_code == 302
+
+    po = PurchaseOrder.objects.get()
+    assert po.supplier_id == supplier.pk
+    assert po.status == PurchaseOrder.Status.DRAFT
+    assert response["Location"] == reverse("purchase_add_lines", kwargs={"pk": po.pk})
+
+
+@pytest.mark.django_db(transaction=True)
+def test_purchase_add_lines_step2_adds_line_and_redirects_back(client):
+    user = UserFactory()
+    client.force_login(user, backend=AUTH_BACKEND)
+    supplier = Supplier.objects.create(name="Shop Wizard Lines")
+    material = Material.objects.create(name="Clasp", stock_unit=MaterialUnit.PIECE)
+
+    po = PurchaseOrder.objects.create(supplier=supplier, status=PurchaseOrder.Status.DRAFT, created_by=user)
+
+    response = client.get(reverse("purchase_add_lines", kwargs={"pk": po.pk}))
+    assert response.status_code == 200
+
+    response = client.post(
+        reverse("purchase_add_lines", kwargs={"pk": po.pk}),
+        data={"material": material.pk, "quantity": "2.000", "unit_price": "10.00"},
+    )
+    assert response.status_code == 302
+    assert response["Location"] == reverse("purchase_add_lines", kwargs={"pk": po.pk})
+
+    line = PurchaseOrderLine.objects.get(purchase_order=po)
+    assert line.unit == material.stock_unit
+
+
+@pytest.mark.django_db(transaction=True)
 def test_purchase_requests_list_renders_requests(client):
     user = UserFactory()
     client.force_login(user, backend=AUTH_BACKEND)

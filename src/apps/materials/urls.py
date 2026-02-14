@@ -13,6 +13,7 @@ from apps.materials.views import (
     material_colors_archive,
     materials_archive,
     purchase_add,
+    purchase_add_lines,
     purchase_detail,
     purchase_line_add,
     purchase_line_receive,
@@ -67,6 +68,7 @@ urlpatterns = [
     # Purchase orders
     path("purchases/", purchases_list, name="purchases"),
     path("purchases/add/", purchase_add, name="purchase_add"),
+    path("purchases/<int:pk>/add-lines/", purchase_add_lines, name="purchase_add_lines"),
     path("purchases/<int:pk>/", purchase_detail, name="purchase_detail"),
     path("purchases/<int:pk>/status/", purchase_set_status, name="purchase_set_status"),
     path("purchases/<int:pk>/lines/add/", purchase_line_add, name="purchase_line_add"),

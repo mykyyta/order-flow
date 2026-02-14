@@ -118,6 +118,7 @@ NAV_SECTIONS = [
                 "active_on": (
                     "purchases",
                     "purchase_add",
+                    "purchase_add_lines",
                     "purchase_detail",
                     "purchase_set_status",
                     "purchase_line_add",

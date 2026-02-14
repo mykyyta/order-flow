@@ -15,7 +15,7 @@ from apps.materials.forms import (
     MaterialColorForm,
     MaterialForm,
     PurchaseOrderFilterForm,
-    PurchaseOrderForm,
+    PurchaseOrderStartForm,
     PurchaseOrderLineForm,
     PurchaseOrderLineReceiveForm,
     PurchaseRequestForm,
@@ -341,15 +341,17 @@ def purchases_list(request):
 @login_required(login_url=reverse_lazy("auth_login"))
 def purchase_add(request):
     if request.method == "POST":
-        form = PurchaseOrderForm(request.POST)
+        form = PurchaseOrderStartForm(request.POST)
         if form.is_valid():
-            purchase_order: PurchaseOrder = form.save(commit=False)
-            purchase_order.created_by = request.user
-            purchase_order.save()
+            purchase_order = PurchaseOrder.objects.create(
+                supplier=form.cleaned_data["supplier"],
+                status=PurchaseOrder.Status.DRAFT,
+                created_by=request.user,
+            )
             messages.success(request, "Готово! Замовлення створено.")
-            return redirect("purchase_detail", pk=purchase_order.pk)
+            return redirect("purchase_add_lines", pk=purchase_order.pk)
     else:
-        form = PurchaseOrderForm(initial={"status": PurchaseOrder.Status.DRAFT})
+        form = PurchaseOrderStartForm()
 
     return render(
         request,
@@ -360,6 +362,45 @@ def purchase_add(request):
             "back_url": reverse("purchases"),
             "form": form,
             "submit_label": "Створити",
+        },
+    )
+
+
+@login_required(login_url=reverse_lazy("auth_login"))
+def purchase_add_lines(request, pk: int):
+    purchase_order = get_object_or_404(
+        PurchaseOrder.objects.select_related("supplier"),
+        pk=pk,
+    )
+    lines = list(
+        purchase_order.lines.select_related("material", "material_color").order_by("id")
+    )
+
+    if request.method == "POST":
+        form = PurchaseOrderLineForm(request.POST)
+        if form.is_valid():
+            line: PurchaseOrderLine = form.save(commit=False)
+            line.purchase_order = purchase_order
+            line.unit = line.material.stock_unit
+            line.save()
+            messages.success(request, "Готово! Позицію додано.")
+            return redirect("purchase_add_lines", pk=purchase_order.pk)
+    else:
+        form = PurchaseOrderLineForm()
+
+    return render(
+        request,
+        "materials/purchase_add_lines.html",
+        {
+            "page_title": f"Додати позиції · Замовлення #{purchase_order.id}",
+            "page_title_center": True,
+            "back_url": reverse("purchases"),
+            "back_label": "Закупівлі",
+            "purchase_order": purchase_order,
+            "lines": lines,
+            "form": form,
+            "submit_label": "Додати",
+            "done_url": reverse("purchase_detail", kwargs={"pk": purchase_order.pk}),
         },
     )
 
@@ -455,6 +496,7 @@ def purchase_line_add(request, pk: int):
         if form.is_valid():
             line: PurchaseOrderLine = form.save(commit=False)
             line.purchase_order = purchase_order
+            line.unit = line.material.stock_unit
             line.save()
             messages.success(request, "Готово! Позицію додано.")
             return redirect("purchase_detail", pk=purchase_order.pk)
