@@ -28,18 +28,18 @@
                                 <p class="truncate text-sm font-medium text-slate-900">{{ row.component.name }}</p>
                             </div>
                             <p class="shrink-0 text-xs text-slate-500">x{{ row.quantity }}</p>
-                        </div>
-                        <div class="space-y-3">
-                            {% with bf=form|get_form_field:row.primary_field_name %}
-                            {% include "partials/form_field.html" with field=bf label="Колір" %}
-                            {% endwith %}
-                            {% if row.show_secondary %}
-                            {% with bf=form|get_form_field:row.secondary_field_name %}
-                            {% include "partials/form_field.html" with field=bf label="Додатковий" %}
-                            {% endwith %}
-                            {% endif %}
-                            {% if row.embroidery_field_name %}
-                            {% with bf=form|get_form_field:row.embroidery_field_name %}
+	                        </div>
+	                        <div class="space-y-3">
+	                            {% with bf=form|get_form_field:row.primary_field_name %}
+	                            {% include "partials/form_field.html" with field=bf %}
+	                            {% endwith %}
+	                            {% if row.show_secondary %}
+	                            {% with bf=form|get_form_field:row.secondary_field_name %}
+	                            {% include "partials/form_field.html" with field=bf %}
+	                            {% endwith %}
+	                            {% endif %}
+	                            {% if row.embroidery_field_name %}
+	                            {% with bf=form|get_form_field:row.embroidery_field_name %}
                             <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
                                 {% include "partials/form_checkbox_option.html" with field=bf label="Вишивка" %}
                             </div>
@@ -52,12 +52,12 @@
                 {% else %}
                 <p class="text-sm text-slate-500">Спочатку додай компоненти в бандл.</p>
                 {% endif %}
-            {% else %}
-            {% include "partials/form_field.html" with field=form.primary_material_color label="Колір" %}
-            {% if form.show_secondary_material_color %}
-            {% include "partials/form_field.html" with field=form.secondary_material_color label="Додатковий" %}
-            {% endif %}
-            {% endif %}
+	            {% else %}
+	            {% include "partials/form_field.html" with field=form.primary_material_color %}
+	            {% if form.show_secondary_material_color %}
+	            {% include "partials/form_field.html" with field=form.secondary_material_color %}
+	            {% endif %}
+	            {% endif %}
 
             <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
                 {% include "partials/form_checkbox_option.html" with field=form.is_etsy label="Etsy" %}
