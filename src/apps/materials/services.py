@@ -249,12 +249,13 @@ def receive_purchase_order_line(
     if quantity_decimal <= Decimal("0"):
         raise ValueError("Quantity must be greater than 0")
 
-    po_line = PurchaseOrderLine.objects.select_for_update().select_related(
-        "purchase_order",
-        "material",
-        "material_color",
-        "request_line",
-    ).get(pk=purchase_order_line.pk)
+    # PostgreSQL doesn't allow `FOR UPDATE` to lock rows from the nullable side of an OUTER JOIN.
+    # `material_color` and `request_line` are nullable, so we avoid joining them in the locking query.
+    po_line = (
+        PurchaseOrderLine.objects.select_for_update()
+        .select_related("purchase_order", "material")
+        .get(pk=purchase_order_line.pk)
+    )
 
     if po_line.unit != po_line.material.stock_unit:
         expected = po_line.material.get_stock_unit_display()
