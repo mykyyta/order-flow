@@ -280,3 +280,37 @@ def test_purchase_detail_shows_add_from_request_button(client):
     response = client.get(reverse("purchase_detail", kwargs={"pk": po.pk}))
     assert response.status_code == 200
     assert reverse("purchase_pick_request_line_for_order", kwargs={"pk": po.pk}).encode() in response.content
+
+
+@pytest.mark.django_db(transaction=True)
+def test_suppliers_list_renders_suppliers(client):
+    user = UserFactory()
+    client.force_login(user, backend=AUTH_BACKEND)
+    supplier = Supplier.objects.create(name="Supplier UI List")
+
+    response = client.get(reverse("suppliers"))
+    assert response.status_code == 200
+    assert supplier.name.encode() in response.content
+
+
+@pytest.mark.django_db(transaction=True)
+def test_supplier_add_creates_and_redirects_to_suppliers(client):
+    user = UserFactory()
+    client.force_login(user, backend=AUTH_BACKEND)
+
+    response = client.post(reverse("supplier_add"), data={"name": "New Supplier"})
+    assert response.status_code == 302
+    assert Supplier.objects.filter(name="New Supplier").exists()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_supplier_add_with_next_purchase_add_redirects_with_supplier_prefilled(client):
+    user = UserFactory()
+    client.force_login(user, backend=AUTH_BACKEND)
+
+    next_url = reverse("purchase_add")
+    response = client.post(f"{reverse('supplier_add')}?next={next_url}", data={"name": "Wizard Supplier"})
+    assert response.status_code == 302
+
+    created = Supplier.objects.get(name="Wizard Supplier")
+    assert response["Location"] == f"{next_url}?supplier={created.pk}"

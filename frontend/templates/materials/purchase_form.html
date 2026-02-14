@@ -5,6 +5,15 @@
     {% csrf_token %}
     {% include "partials/form_field.html" with field=form.supplier label="Постачальник" %}
 
+    {% if supplier_add_url %}
+    <div class="text-sm text-slate-600">
+        Немає в списку?
+        <a href="{{ supplier_add_url }}" class="font-medium text-teal-700 hover:underline">
+            Додати постачальника
+        </a>
+    </div>
+    {% endif %}
+
     <button type="submit" class="btn-primary w-full min-h-[44px]">
         {{ submit_label|default:"Зберегти" }}
     </button>

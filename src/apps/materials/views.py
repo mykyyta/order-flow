@@ -4,12 +4,15 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Q
+from django.http import HttpRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, ListView, UpdateView
 from django.db.models.functions import Lower
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from apps.materials.forms import (
     MaterialColorForm,
@@ -21,6 +24,7 @@ from apps.materials.forms import (
     PurchaseRequestForm,
     PurchaseRequestLineForm,
     PurchaseRequestLineOrderForm,
+    SupplierForm,
 )
 from apps.materials.models import (
     Material,
@@ -281,11 +285,74 @@ def material_color_unarchive(request, pk: int, color_pk: int):
 
 @login_required(login_url=reverse_lazy("auth_login"))
 def suppliers_list(request):
-    """Placeholder view for suppliers list."""
+    search_query = (request.GET.get("q") or "").strip()
+    queryset = Supplier.objects.filter(archived_at__isnull=True).order_by(Lower("name"), "name")
+    if search_query:
+        queryset = queryset.filter(name__icontains=search_query)
+
+    paginator = Paginator(queryset, 50)
+    page_obj = paginator.get_page(request.GET.get("page"))
+
     return render(
         request,
         "materials/suppliers.html",
-        {"page_title": "Постачальники"},
+        {
+            "page_title": "Постачальники",
+            "page_obj": page_obj,
+            "search_query": search_query,
+            "supplier_add_url": reverse("supplier_add"),
+        },
+    )
+
+
+def _safe_next_url(request: HttpRequest, raw_next_url: str | None) -> str:
+    if not raw_next_url:
+        return reverse("suppliers")
+    if not url_has_allowed_host_and_scheme(
+        raw_next_url,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        return reverse("suppliers")
+    return raw_next_url
+
+
+def _append_query_params(url: str, params: dict[str, str]) -> str:
+    split = urlsplit(url)
+    query = dict(parse_qsl(split.query, keep_blank_values=True))
+    query.update(params)
+    return urlunsplit((split.scheme, split.netloc, split.path, urlencode(query), split.fragment))
+
+
+@login_required(login_url=reverse_lazy("auth_login"))
+def supplier_add(request):
+    raw_next_url = (request.GET.get("next") or "").strip()
+    next_url = _safe_next_url(request, raw_next_url)
+
+    if request.method == "POST":
+        form = SupplierForm(request.POST)
+        if form.is_valid():
+            supplier: Supplier = form.save()
+            messages.success(request, "Готово! Постачальника додано.")
+
+            if next_url == reverse("purchase_add"):
+                return redirect(_append_query_params(next_url, {"supplier": str(supplier.pk)}))
+
+            return redirect(next_url)
+    else:
+        form = SupplierForm()
+
+    return render(
+        request,
+        "materials/supplier_create.html",
+        {
+            "page_title": "Новий постачальник",
+            "page_title_center": True,
+            "back_url": next_url,
+            "back_label": "Назад",
+            "form": form,
+            "submit_label": "Додати",
+        },
     )
 
 
@@ -340,6 +407,10 @@ def purchases_list(request):
 
 @login_required(login_url=reverse_lazy("auth_login"))
 def purchase_add(request):
+    supplier_id = None
+    if request.GET.get("supplier") and str(request.GET.get("supplier")).isdigit():
+        supplier_id = int(request.GET.get("supplier"))
+
     if request.method == "POST":
         form = PurchaseOrderStartForm(request.POST)
         if form.is_valid():
@@ -351,7 +422,10 @@ def purchase_add(request):
             messages.success(request, "Готово! Замовлення створено.")
             return redirect("purchase_add_lines", pk=purchase_order.pk)
     else:
-        form = PurchaseOrderStartForm()
+        initial = {}
+        if supplier_id and Supplier.objects.filter(pk=supplier_id, archived_at__isnull=True).exists():
+            initial["supplier"] = supplier_id
+        form = PurchaseOrderStartForm(initial=initial)
 
     return render(
         request,
@@ -362,6 +436,9 @@ def purchase_add(request):
             "back_url": reverse("purchases"),
             "form": form,
             "submit_label": "Створити",
+            "supplier_add_url": _append_query_params(
+                reverse("supplier_add"), {"next": reverse("purchase_add")}
+            ),
         },
     )
 

@@ -26,6 +26,7 @@ from apps.materials.views import (
     purchase_requests_list,
     purchase_set_status,
     purchases_list,
+    supplier_add,
     suppliers_list,
     purchase_pick_request_line_for_order,
 )
@@ -65,6 +66,7 @@ urlpatterns = [
     ),
     # Suppliers
     path("suppliers/", suppliers_list, name="suppliers"),
+    path("suppliers/add/", supplier_add, name="supplier_add"),
     # Purchase orders
     path("purchases/", purchases_list, name="purchases"),
     path("purchases/add/", purchase_add, name="purchase_add"),

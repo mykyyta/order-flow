@@ -1,7 +1,51 @@
 {% extends "base_list_page.html" %}
 
+{% block page_header_actions %}
+<a href="{{ supplier_add_url }}" class="btn-primary">+ Постачальник</a>
+{% endblock %}
+
+{% block filters %}
+<form method="get" class="m-0 flex w-full flex-nowrap items-stretch gap-2">
+    <div class="min-w-0 flex-1">
+        <input
+            type="text"
+            name="q"
+            value="{{ search_query }}"
+            placeholder="Пошук: назва"
+            class="form-input"
+        >
+    </div>
+    <button type="submit" class="btn-secondary shrink-0 px-4">Шукати</button>
+    <a
+        href="{% url 'suppliers' %}"
+        class="btn-secondary flex h-10 w-10 shrink-0 items-center justify-center rounded-md px-0 {% if not search_query %}pointer-events-none opacity-40{% endif %}"
+        aria-label="Очистити пошук"
+        title="Очистити"
+    >
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+    </a>
+</form>
+{% endblock %}
+
 {% block list_content %}
-<div class="empty-state">
-    <p>Скоро тут з'явиться список постачальників.</p>
+<div class="card">
+    {% for supplier in page_obj.object_list %}
+    <div class="border-b border-slate-100 last:border-b-0">
+        <div class="flex items-center gap-3 px-3 py-2">
+            <div class="min-w-0 flex-1">
+                <div class="truncate text-sm font-medium text-slate-800">
+                    {{ supplier.name }}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    {% include "partials/empty_state.html" with message="Поки що постачальників немає." %}
+    {% endfor %}
 </div>
 {% endblock %}
+
+{% block list_footer %}
+{% include "partials/pagination.html" with page_obj=page_obj %}
+{% endblock %}
+

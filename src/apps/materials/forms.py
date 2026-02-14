@@ -79,6 +79,15 @@ class PurchaseOrderStartForm(forms.Form):
     )
 
 
+class SupplierForm(forms.ModelForm):
+    class Meta:
+        model = Supplier
+        fields = ["name"]
+        widgets = {
+            "name": forms.TextInput(attrs={"class": FORM_INPUT, "placeholder": "Назва постачальника"}),
+        }
+
+
 class PurchaseOrderLineForm(forms.ModelForm):
     class Meta:
         model = PurchaseOrderLine

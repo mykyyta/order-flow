@@ -110,7 +110,7 @@ NAV_SECTIONS = [
             {
                 "url_name": "suppliers",
                 "label": "Постачальники",
-                "active_on": ("suppliers",),
+                "active_on": ("suppliers", "supplier_add"),
             },
             {
                 "url_name": "purchases",
