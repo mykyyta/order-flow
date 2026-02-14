@@ -9,7 +9,7 @@ from django.core.management import call_command
 from django.core.management.base import CommandError
 
 from apps.catalog.models import Product
-from apps.materials.models import MaterialColor
+from apps.materials.models import MaterialColor, Supplier, SupplierMaterialOffer
 from apps.production.domain.status import STATUS_DONE
 from apps.production.models import ProductionOrder, ProductionOrderStatusHistory
 
@@ -140,3 +140,5 @@ def test_bootstrap_local_creates_admin_user_and_catalog():
     assert user.check_password("local-pass-12345")
     assert Product.objects.exists()
     assert MaterialColor.objects.exists()
+    assert Supplier.objects.exists()
+    assert SupplierMaterialOffer.objects.exists()

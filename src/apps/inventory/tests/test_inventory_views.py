@@ -62,6 +62,28 @@ def test_inventory_materials_adjustment_add_creates_stock(client):
 
 
 @pytest.mark.django_db(transaction=True)
+def test_inventory_materials_adjustment_add_requires_color_when_material_has_colors(client):
+    user = UserFactory()
+    client.force_login(user, backend=AUTH_BACKEND)
+    warehouse = get_default_warehouse()
+
+    mat = Material.objects.create(name="Color Required Felt", stock_unit="m")
+    MaterialColor.objects.create(material=mat, name="Green", code=7)
+
+    response = client.post(
+        reverse("inventory_materials_add"),
+        data={
+            "material": str(mat.id),
+            "material_color": "",
+            "quantity": "1.0",
+        },
+    )
+    assert response.status_code == 200
+    assert MaterialStock.objects.filter(warehouse=warehouse, material=mat).count() == 0
+    assert "Обери колір".encode() in response.content
+
+
+@pytest.mark.django_db(transaction=True)
 def test_inventory_products_adjustment_add_creates_stock(client):
     user = UserFactory()
     client.force_login(user, backend=AUTH_BACKEND)

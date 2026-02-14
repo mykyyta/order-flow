@@ -5,7 +5,13 @@ from django.core.management import call_command
 from django.core.management.base import BaseCommand
 
 from apps.catalog.models import Product
-from apps.materials.models import Material, MaterialColor, MaterialUnit
+from apps.materials.models import (
+    Material,
+    MaterialColor,
+    MaterialUnit,
+    Supplier,
+    SupplierMaterialOffer,
+)
 from apps.user_settings.models import NotificationSetting
 
 
@@ -71,13 +77,29 @@ class Command(BaseCommand):
         return user, created
 
     def _ensure_catalog(self) -> None:
-        primary_material, _ = Material.objects.get_or_create(
+        felt, _ = Material.objects.get_or_create(
             name="Повсть",
             defaults={"stock_unit": MaterialUnit.SQUARE_METER},
         )
-        if not primary_material.stock_unit:
-            primary_material.stock_unit = MaterialUnit.SQUARE_METER
-            primary_material.save(update_fields=["stock_unit", "updated_at"])
+        if not felt.stock_unit:
+            felt.stock_unit = MaterialUnit.SQUARE_METER
+            felt.save(update_fields=["stock_unit", "updated_at"])
+
+        leather, _ = Material.objects.get_or_create(
+            name="Шкіра",
+            defaults={"stock_unit": MaterialUnit.SQUARE_METER},
+        )
+        if not leather.stock_unit:
+            leather.stock_unit = MaterialUnit.SQUARE_METER
+            leather.save(update_fields=["stock_unit", "updated_at"])
+
+        glue, _ = Material.objects.get_or_create(
+            name="Клей",
+            defaults={"stock_unit": MaterialUnit.MILLILITER},
+        )
+        if not glue.stock_unit:
+            glue.stock_unit = MaterialUnit.MILLILITER
+            glue.save(update_fields=["stock_unit", "updated_at"])
 
         product_names = [
             "Сумка клатч",
@@ -89,22 +111,77 @@ class Command(BaseCommand):
         for name in product_names:
             product, _ = Product.objects.get_or_create(
                 name=name,
-                defaults={"primary_material": primary_material},
+                defaults={"primary_material": felt},
             )
             if product.primary_material_id is None:
-                product.primary_material = primary_material
+                product.primary_material = felt
                 product.save(update_fields=["primary_material"])
 
-        color_values = [
-            ("Чорний", 1001),
-            ("Білий", 1002),
-            ("Синій", 1003),
-            ("Червоний", 1004),
-            ("Зелений", 1005),
-        ]
-        for name, code in color_values:
-            MaterialColor.objects.get_or_create(
-                material=primary_material,
-                code=code,
-                defaults={"name": name},
-            )
+        felt_black, _ = MaterialColor.objects.get_or_create(
+            material=felt,
+            code=1001,
+            defaults={"name": "Чорний"},
+        )
+        felt_white, _ = MaterialColor.objects.get_or_create(
+            material=felt,
+            code=1002,
+            defaults={"name": "Білий"},
+        )
+        leather_black, _ = MaterialColor.objects.get_or_create(
+            material=leather,
+            code=2001,
+            defaults={"name": "Чорний"},
+        )
+
+        # Minimal suppliers + offers for procurement UX.
+        woolberry, _ = Supplier.objects.get_or_create(name="Woolberry")
+        rozetka, _ = Supplier.objects.get_or_create(name="Rozetka")
+
+        SupplierMaterialOffer.objects.get_or_create(
+            supplier=woolberry,
+            material=felt,
+            material_color=felt_black,
+            unit=felt.stock_unit,
+            defaults={
+                "title": "Повсть чорна (Woolberry)",
+                "url": "",
+                "sku": "",
+                "price_per_unit": None,
+            },
+        )
+        SupplierMaterialOffer.objects.get_or_create(
+            supplier=woolberry,
+            material=felt,
+            material_color=felt_white,
+            unit=felt.stock_unit,
+            defaults={
+                "title": "Повсть біла (Woolberry)",
+                "url": "",
+                "sku": "",
+                "price_per_unit": None,
+            },
+        )
+        SupplierMaterialOffer.objects.get_or_create(
+            supplier=rozetka,
+            material=leather,
+            material_color=leather_black,
+            unit=leather.stock_unit,
+            defaults={
+                "title": "Шкіра чорна (Rozetka)",
+                "url": "",
+                "sku": "",
+                "price_per_unit": None,
+            },
+        )
+        SupplierMaterialOffer.objects.get_or_create(
+            supplier=rozetka,
+            material=glue,
+            material_color=None,
+            unit=glue.stock_unit,
+            defaults={
+                "title": "Клей (Rozetka)",
+                "url": "",
+                "sku": "",
+                "price_per_unit": None,
+            },
+        )

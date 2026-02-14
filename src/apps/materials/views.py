@@ -506,6 +506,10 @@ def purchase_add_from_offer(request, offer_pk: int):
         messages.error(request, f"Офер має невірну одиницю. Очікується: {expected}.")
         return redirect("purchase_start_material_offers", material_pk=offer.material_id)
 
+    if offer.material.colors.filter(archived_at__isnull=True).exists() and offer.material_color_id is None:
+        messages.error(request, "Офер без кольору. Додай офер з вибраним кольором.")
+        return redirect("purchase_start_material_offers", material_pk=offer.material_id)
+
     quantity: Decimal = form.cleaned_data["quantity"]
     unit_price = form.cleaned_data.get("unit_price")
     if unit_price is None:

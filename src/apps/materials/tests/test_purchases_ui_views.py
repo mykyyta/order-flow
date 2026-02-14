@@ -6,6 +6,7 @@ from django.urls import reverse
 from apps.accounts.tests.conftest import UserFactory
 from apps.materials.models import (
     Material,
+    MaterialColor,
     MaterialStock,
     SupplierMaterialOffer,
     MaterialUnit,
@@ -391,3 +392,61 @@ def test_supplier_offer_add_creates_offer_and_redirects_back_to_offers(client):
     )
     assert response.status_code == 302
     assert SupplierMaterialOffer.objects.filter(material=material, supplier=supplier, title="New Offer").exists()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_purchase_add_lines_requires_color_when_material_has_colors(client):
+    user = UserFactory()
+    client.force_login(user, backend=AUTH_BACKEND)
+    supplier = Supplier.objects.create(name="Color Required Supplier")
+    material = Material.objects.create(name="Color Required Material", stock_unit=MaterialUnit.PIECE)
+    MaterialColor.objects.create(material=material, name="Black", code=1)
+
+    po = PurchaseOrder.objects.create(supplier=supplier, status=PurchaseOrder.Status.DRAFT, created_by=user)
+    response = client.post(
+        reverse("purchase_add_lines", kwargs={"pk": po.pk}),
+        data={"material": material.pk, "material_color": "", "quantity": "1.000", "unit_price": ""},
+    )
+    assert response.status_code == 200
+    assert PurchaseOrderLine.objects.filter(purchase_order=po).count() == 0
+    assert "Обери колір".encode() in response.content
+
+
+@pytest.mark.django_db(transaction=True)
+def test_supplier_offer_add_requires_color_when_material_has_colors(client):
+    user = UserFactory()
+    client.force_login(user, backend=AUTH_BACKEND)
+    supplier = Supplier.objects.create(name="Offer Color Required Supplier")
+    material = Material.objects.create(name="Offer Color Required Material", stock_unit=MaterialUnit.PIECE)
+    MaterialColor.objects.create(material=material, name="Blue", code=2)
+
+    response = client.post(
+        reverse("supplier_offer_add", kwargs={"material_pk": material.pk}),
+        data={"supplier": supplier.pk, "material_color": "", "title": "Offer Without Color"},
+    )
+    assert response.status_code == 200
+    assert SupplierMaterialOffer.objects.filter(title="Offer Without Color").count() == 0
+    assert "Обери колір".encode() in response.content
+
+
+@pytest.mark.django_db(transaction=True)
+def test_purchase_add_from_offer_blocks_uncolored_offer_for_colored_material(client):
+    user = UserFactory()
+    client.force_login(user, backend=AUTH_BACKEND)
+    supplier = Supplier.objects.create(name="Offer Uncolored Supplier")
+    material = Material.objects.create(name="Offer Uncolored Material", stock_unit=MaterialUnit.PIECE)
+    MaterialColor.objects.create(material=material, name="Red", code=3)
+    offer = SupplierMaterialOffer.objects.create(
+        supplier=supplier,
+        material=material,
+        material_color=None,
+        unit=MaterialUnit.PIECE,
+        title="Bad Offer",
+    )
+
+    response = client.post(
+        reverse("purchase_add_from_offer", kwargs={"offer_pk": offer.pk}),
+        data={"quantity": "1.000"},
+    )
+    assert response.status_code == 302
+    assert PurchaseOrder.objects.count() == 0

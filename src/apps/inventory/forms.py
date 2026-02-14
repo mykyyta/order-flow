@@ -40,6 +40,9 @@ class MaterialStockAdjustmentForm(forms.Form):
         material_color: MaterialColor | None = cleaned.get("material_color")
         if material and material_color and material_color.material_id != material.id:
             self.add_error("material_color", "Колір має належати вибраному матеріалу.")
+        if material and material_color is None:
+            if material.colors.filter(archived_at__isnull=True).exists():
+                self.add_error("material_color", "Обери колір.")
         return cleaned
 
 

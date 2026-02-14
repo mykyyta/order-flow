@@ -113,12 +113,23 @@ class SupplierMaterialOfferForm(forms.ModelForm):
 
     def __init__(self, *args, material: Material | None = None, **kwargs) -> None:
         super().__init__(*args, **kwargs)
+        self._material = material
         if material is not None:
             self.fields["material_color"].queryset = material.colors.filter(archived_at__isnull=True).order_by(
                 "name",
                 "code",
                 "id",
             )
+
+    def clean(self) -> dict:
+        cleaned = super().clean()
+        material = self._material
+        material_color: MaterialColor | None = cleaned.get("material_color")
+        if material is not None:
+            has_colors = material.colors.filter(archived_at__isnull=True).exists()
+            if has_colors and material_color is None:
+                self.add_error("material_color", "Обери колір.")
+        return cleaned
 
     def clean_title(self) -> str:
         title: str = (self.cleaned_data.get("title") or "").strip()
@@ -161,6 +172,9 @@ class PurchaseOrderLineForm(forms.ModelForm):
         material_color: MaterialColor | None = cleaned.get("material_color")
         if material and material_color and material_color.material_id != material.id:
             self.add_error("material_color", "Колір має належати вибраному матеріалу.")
+        if material and material_color is None:
+            if material.colors.filter(archived_at__isnull=True).exists():
+                self.add_error("material_color", "Обери колір.")
         return cleaned
 
 
@@ -217,6 +231,9 @@ class PurchaseRequestLineForm(forms.ModelForm):
         material_color: MaterialColor | None = cleaned.get("material_color")
         if material and material_color and material_color.material_id != material.id:
             self.add_error("material_color", "Колір має належати вибраному матеріалу.")
+        if material and material_color is None:
+            if material.colors.filter(archived_at__isnull=True).exists():
+                self.add_error("material_color", "Обери колір.")
         return cleaned
 
 
