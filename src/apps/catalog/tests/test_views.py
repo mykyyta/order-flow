@@ -68,9 +68,9 @@ def test_product_create_flow_and_grouped_list(client):
     assert b"Wallet" in response.content
     assert b"Set" in response.content
     assert b"Strap" in response.content
-    assert "Модель".encode() in response.content
-    assert "Бандл".encode() in response.content
-    assert "Компонент".encode() in response.content
+    assert "Моделі".encode() in response.content
+    assert "Комплекти".encode() in response.content
+    assert "Компоненти".encode() in response.content
 
 
 @pytest.mark.django_db(transaction=True)
@@ -155,7 +155,7 @@ def test_bundle_product_detail_shows_components_section(client):
 
     response = client.get(reverse("product_edit", kwargs={"pk": bundle.pk}))
     assert response.status_code == 200
-    assert "Компоненти бандла".encode() in response.content
+    assert "Компоненти комплекту".encode() in response.content
     assert reverse("bundle_component_add", kwargs={"pk": bundle.pk}).encode() in response.content
 
 

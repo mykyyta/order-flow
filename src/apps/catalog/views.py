@@ -417,7 +417,7 @@ class BundleComponentCreateView(LoginRequiredMixin, CreateView):
     def dispatch(self, request, *args, **kwargs):
         self.product = get_object_or_404(Product, pk=kwargs["pk"])
         if self.product.kind != Product.Kind.BUNDLE:
-            messages.error(request, "Компоненти можна додавати лише для бандлів.")
+            messages.error(request, "Компоненти можна додавати лише для комплектів.")
             return redirect("product_edit", pk=self.product.pk)
         return super().dispatch(request, *args, **kwargs)
 
@@ -469,7 +469,7 @@ class BundleComponentUpdateView(LoginRequiredMixin, UpdateView):
     def dispatch(self, request, *args, **kwargs):
         self.product = get_object_or_404(Product, pk=kwargs["pk"])
         if self.product.kind != Product.Kind.BUNDLE:
-            messages.error(request, "Компоненти можна редагувати лише для бандлів.")
+            messages.error(request, "Компоненти можна редагувати лише для комплектів.")
             return redirect("product_edit", pk=self.product.pk)
         return super().dispatch(request, *args, **kwargs)
 
@@ -518,7 +518,7 @@ def bundle_component_delete(request, pk: int, bc_pk: int):
     product = get_object_or_404(Product, pk=pk)
     component = get_object_or_404(BundleComponent, pk=bc_pk, bundle=product)
     component.delete()
-    messages.success(request, "Готово! Компонент видалено з бандла.")
+    messages.success(request, "Готово! Компонент видалено з комплекту.")
     return redirect("product_edit", pk=pk)
 
 

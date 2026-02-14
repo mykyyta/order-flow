@@ -49,7 +49,7 @@
 {% if product.kind == "bundle" %}
 <div class="card mt-4">
     <div class="flex items-center justify-between px-4 py-3 border-b border-slate-100">
-        <h3 class="text-sm font-semibold text-slate-900">Компоненти бандла</h3>
+        <h3 class="text-sm font-semibold text-slate-900">Компоненти комплекту</h3>
         {% if bundle_component_add_url %}
         <a href="{{ bundle_component_add_url }}" class="text-sm font-medium text-teal-600 hover:text-teal-700">
             + Додати
@@ -130,7 +130,7 @@
     <div class="px-4 py-8 text-center">
         {% if product.kind == "bundle" %}
         <p class="text-sm text-slate-500">
-            Для бандлів матеріали задаються на рівні компонентів.
+            Для комплектів матеріали задаються на рівні компонентів.
         </p>
         {% else %}
         <p class="text-sm text-slate-500">Матеріалів ще немає.</p>

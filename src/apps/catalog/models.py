@@ -8,7 +8,7 @@ class Product(models.Model):
     class Kind(models.TextChoices):
         STANDARD = "standard", "Модель"
         COMPONENT = "component", "Компонент"
-        BUNDLE = "bundle", "Бандл"
+        BUNDLE = "bundle", "Комплект"
 
     name = models.CharField(max_length=255, unique=True)
     section = models.CharField(max_length=255, blank=True, db_index=True)

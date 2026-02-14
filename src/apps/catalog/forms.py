@@ -94,7 +94,7 @@ class ProductDetailForm(forms.ModelForm):
         ):
             self.add_error(
                 "kind",
-                "Для бандла матеріали не задаються. Видали матеріали або зміни тип продукту.",
+                "Для комплекту матеріали не задаються. Видали матеріали або зміни тип продукту.",
             )
         return cleaned
 
@@ -146,7 +146,7 @@ class ProductMaterialForm(forms.ModelForm):
         if self.product and self.product.kind == Product.Kind.BUNDLE:
             self.add_error(
                 "material",
-                "Для бандлів матеріали не задаються. Додай матеріали для компонентів бандла.",
+                "Для комплектів матеріали не задаються. Додай матеріали для компонентів комплекту.",
             )
             return cleaned
 
@@ -221,14 +221,14 @@ class BundleComponentForm(forms.ModelForm):
             return cleaned
 
         if self.bundle.kind != Product.Kind.BUNDLE:
-            self.add_error("component", "Компоненти можна додавати лише до бандлів.")
+            self.add_error("component", "Компоненти можна додавати лише до комплектів.")
             return cleaned
 
         if component and component.kind == Product.Kind.BUNDLE:
-            self.add_error("component", "Компонентом не може бути бандл.")
+            self.add_error("component", "Компонентом не може бути комплект.")
             return cleaned
         if component and component.pk == self.bundle.pk:
-            self.add_error("component", "Бандл не може містити сам себе.")
+            self.add_error("component", "Комплект не може містити сам себе.")
             return cleaned
 
         if (

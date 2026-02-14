@@ -124,19 +124,23 @@ class OrderForm(forms.ModelForm):
         if self.instance and self.instance.pk and self.instance.variant_id:
             self.initial["product"] = self.instance.product_id
             self.initial["primary_material_color"] = self.instance.variant.primary_material_color_id
-            self.initial["secondary_material_color"] = self.instance.variant.secondary_material_color_id
+            self.initial["secondary_material_color"] = (
+                self.instance.variant.secondary_material_color_id
+            )
             if self.instance.variant.primary_material_color_id:
-                self.fields["primary_material_color"].queryset = (
-                    self.fields["primary_material_color"].queryset
-                    | MaterialColor.objects.filter(pk=self.instance.variant.primary_material_color_id)
+                self.fields["primary_material_color"].queryset = self.fields[
+                    "primary_material_color"
+                ].queryset | MaterialColor.objects.filter(
+                    pk=self.instance.variant.primary_material_color_id
                 )
                 self.fields["primary_material_color"].queryset = self.fields[
                     "primary_material_color"
                 ].queryset.order_by("name")
             if self.instance.variant.secondary_material_color_id:
-                self.fields["secondary_material_color"].queryset = (
-                    self.fields["secondary_material_color"].queryset
-                    | MaterialColor.objects.filter(pk=self.instance.variant.secondary_material_color_id)
+                self.fields["secondary_material_color"].queryset = self.fields[
+                    "secondary_material_color"
+                ].queryset | MaterialColor.objects.filter(
+                    pk=self.instance.variant.secondary_material_color_id
                 )
                 self.fields["secondary_material_color"].queryset = self.fields[
                     "secondary_material_color"
@@ -168,7 +172,9 @@ class OrderForm(forms.ModelForm):
     def _init_bundle_component_color_fields(self, *, bundle: Product) -> None:
         components = list(
             BundleComponent.objects.filter(bundle=bundle)
-            .select_related("component", "component__primary_material", "component__secondary_material")
+            .select_related(
+                "component", "component__primary_material", "component__secondary_material"
+            )
             .order_by("-is_primary", "id")
         )
         for bc in components:
@@ -208,8 +214,12 @@ class OrderForm(forms.ModelForm):
                     "quantity": bc.quantity,
                     "primary_field_name": primary_field_name,
                     "secondary_field_name": secondary_field_name,
-                    "embroidery_field_name": embroidery_field_name if component.allows_embroidery else None,
-                    "show_secondary": bool(component.secondary_material_id and secondary_qs.exists()),
+                    "embroidery_field_name": embroidery_field_name
+                    if component.allows_embroidery
+                    else None,
+                    "show_secondary": bool(
+                        component.secondary_material_id and secondary_qs.exists()
+                    ),
                 }
             )
 
@@ -228,7 +238,7 @@ class OrderForm(forms.ModelForm):
 
         if product.kind == Product.Kind.BUNDLE:
             if not self.bundle_component_rows:
-                self.add_error("product", "Спочатку додай компоненти в бандл.")
+                self.add_error("product", "Спочатку додай компоненти в комплект.")
                 return cleaned_data
             self._clean_bundle_component_colors(bundle=product, cleaned_data=cleaned_data)
             return cleaned_data
@@ -239,10 +249,13 @@ class OrderForm(forms.ModelForm):
                 self.add_error(
                     "primary_material_color",
                     "Для цієї моделі основний колір недоступний.",
-            )
+                )
             return cleaned_data
 
-        if primary_material_color and primary_material_color.material_id != product.primary_material_id:
+        if (
+            primary_material_color
+            and primary_material_color.material_id != product.primary_material_id
+        ):
             self.add_error(
                 "primary_material_color",
                 "Обраний колір не належить до матеріалу моделі.",
@@ -327,14 +340,22 @@ class OrderForm(forms.ModelForm):
                 ).exists()
             )
             if requires_primary and primary is None:
-                self.add_error(primary_name, f"Обери основний колір для компонента: {component.name}.")
+                self.add_error(
+                    primary_name, f"Обери основний колір для компонента: {component.name}."
+                )
                 continue
-            if primary and component.primary_material_id and primary.material_id != component.primary_material_id:
+            if (
+                primary
+                and component.primary_material_id
+                and primary.material_id != component.primary_material_id
+            ):
                 self.add_error(primary_name, "Обраний колір не належить до матеріалу компонента.")
                 continue
 
             if secondary and not component.secondary_material_id:
-                self.add_error(secondary_name, "Для цього компонента другорядний колір недоступний.")
+                self.add_error(
+                    secondary_name, "Для цього компонента другорядний колір недоступний."
+                )
                 continue
             if (
                 secondary

@@ -39,7 +39,9 @@ def create_sales_order(
         product_id = int(line_data["product_id"])
         product = Product.objects.only("id", "kind").get(pk=product_id)
         if product.kind == Product.Kind.COMPONENT:
-            raise ValueError("Цей продукт не можна продавати окремо. Використай його як компонент бандла.")
+            raise ValueError(
+                "Цей продукт не можна продавати окремо. Використай його як компонент комплекту."
+            )
         variant_id = line_data.get("variant_id")
         if variant_id is None:
             variant = resolve_or_create_variant(
@@ -56,7 +58,9 @@ def create_sales_order(
             variant_id=variant_id,
             bundle_preset_id=line_data.get("bundle_preset_id"),
             quantity=int(line_data.get("quantity", 1)),
-            production_mode=str(line_data.get("production_mode", SalesOrderLine.ProductionMode.AUTO)),
+            production_mode=str(
+                line_data.get("production_mode", SalesOrderLine.ProductionMode.AUTO)
+            ),
         )
 
         if line.is_bundle:

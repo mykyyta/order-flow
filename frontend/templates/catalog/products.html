@@ -23,7 +23,7 @@
         <div class="space-y-6">
             {% if standard_products %}
             <section class="space-y-3">
-                <h2 class="section-title">Модель</h2>
+                <h2 class="section-title">Моделі</h2>
                 <div class="flex flex-wrap gap-2">
                     {% for product in standard_products %}
                     <a href="{% url 'product_edit' product.id %}" class="catalog-chip-link catalog-chip-availability-in">{{ product.name }}</a>
@@ -34,7 +34,7 @@
 
             {% if bundle_products %}
             <section class="space-y-3">
-                <h2 class="section-title">Бандл</h2>
+                <h2 class="section-title">Комплекти</h2>
                 <div class="flex flex-wrap gap-2">
                     {% for product in bundle_products %}
                     <a href="{% url 'product_edit' product.id %}" class="catalog-chip-link catalog-chip-availability-in">{{ product.name }}</a>
@@ -45,7 +45,7 @@
 
             {% if component_products %}
             <section class="space-y-3">
-                <h2 class="section-title">Компонент</h2>
+                <h2 class="section-title">Компоненти</h2>
                 <div class="flex flex-wrap gap-2">
                     {% for product in component_products %}
                     <a href="{% url 'product_edit' product.id %}" class="catalog-chip-link catalog-chip-availability-in">{{ product.name }}</a>
