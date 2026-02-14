@@ -83,9 +83,14 @@ class PurchaseOrderStartForm(forms.Form):
 class SupplierForm(forms.ModelForm):
     class Meta:
         model = Supplier
-        fields = ["name"]
+        fields = ["name", "contact_name", "phone", "email", "website", "notes"]
         widgets = {
             "name": forms.TextInput(attrs={"class": FORM_INPUT, "placeholder": "Назва постачальника"}),
+            "contact_name": forms.TextInput(attrs={"class": FORM_INPUT, "placeholder": "Контакт (необов'язково)"}),
+            "phone": forms.TextInput(attrs={"class": FORM_INPUT, "placeholder": "Телефон (необов'язково)"}),
+            "email": forms.EmailInput(attrs={"class": FORM_INPUT, "placeholder": "Email (необов'язково)"}),
+            "website": forms.URLInput(attrs={"class": FORM_INPUT, "placeholder": "Сайт (необов'язково)"}),
+            "notes": forms.Textarea(attrs={"class": FORM_TEXTAREA, "rows": 3}),
         }
 
 

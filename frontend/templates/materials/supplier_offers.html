@@ -100,7 +100,12 @@
 {% block list_content %}
 {% for offer in page_obj.object_list %}
 <div class="border-b border-slate-100 last:border-b-0">
-    <div class="flex items-center gap-3 px-3 py-2">
+    <div class="relative flex items-center gap-3 px-3 py-2">
+        <a
+            href="{% url 'supplier_offer_detail' offer.id %}?next={% url 'supplier_offers' %}"
+            class="absolute inset-0"
+            aria-label="Офер: {{ offer.title|default:'—' }}"
+        ></a>
         <div class="min-w-0 flex-1">
             <div class="truncate text-sm font-medium text-slate-800">
                 {{ offer.title|default:"—" }}
@@ -114,7 +119,7 @@
             </div>
         </div>
         {% if offer.url %}
-        <div class="shrink-0">
+        <div class="shrink-0 relative z-10">
             <a href="{{ offer.url }}" target="_blank" rel="noreferrer" class="btn-secondary">Відкрити</a>
         </div>
         {% endif %}

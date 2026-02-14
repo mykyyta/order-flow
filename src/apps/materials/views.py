@@ -290,6 +290,100 @@ def material_color_unarchive(request, pk: int, color_pk: int):
 # Supplier and Purchase Order views
 
 
+class SupplierDetailView(LoginRequiredMixin, UpdateView):
+    login_url = reverse_lazy("auth_login")
+    model = Supplier
+    form_class = SupplierForm
+    template_name = "materials/supplier_detail.html"
+    context_object_name = "supplier"
+
+    def get_queryset(self):
+        return Supplier.objects.filter(archived_at__isnull=True)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        supplier: Supplier = self.object
+        offers = list(
+            supplier.offers.filter(archived_at__isnull=True)
+            .select_related("material", "material_color")
+            .order_by(Lower("material__name"), "material__name", "-created_at")
+        )
+        context.update(
+            {
+                "page_title": supplier.name,
+                "back_url": reverse("suppliers"),
+                "back_label": "Постачальники",
+                "offers": offers,
+                "purchase_create_url": reverse("supplier_purchase_create", kwargs={"pk": supplier.pk}),
+                "offer_add_url": _append_query_params(
+                    reverse("supplier_offer_start"),
+                    {
+                        "supplier": str(supplier.pk),
+                        "next": reverse("supplier_detail", kwargs={"pk": supplier.pk}),
+                    },
+                ),
+            }
+        )
+        return context
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, "Готово! Збережено.")
+        return response
+
+    def get_success_url(self):
+        return reverse("supplier_detail", kwargs={"pk": self.object.pk})
+
+
+class SupplierOfferDetailView(LoginRequiredMixin, UpdateView):
+    login_url = reverse_lazy("auth_login")
+    model = SupplierMaterialOffer
+    form_class = SupplierMaterialOfferForm
+    template_name = "materials/supplier_offer_detail.html"
+    context_object_name = "offer"
+
+    def get_queryset(self):
+        return (
+            SupplierMaterialOffer.objects.filter(archived_at__isnull=True)
+            .select_related("supplier", "material", "material_color")
+            .order_by("-created_at")
+        )
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["material"] = self.object.material
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        offer: SupplierMaterialOffer = self.object
+        raw_next = (self.request.GET.get("next") or "").strip()
+        fallback = reverse("supplier_detail", kwargs={"pk": offer.supplier_id})
+        next_url = _safe_next_url(self.request, raw_next, fallback=fallback)
+
+        context.update(
+            {
+                "page_title": offer.title or "Офер",
+                "back_url": next_url,
+                "back_label": "Назад",
+                "supplier": offer.supplier,
+                "material": offer.material,
+                "next_url": next_url,
+            }
+        )
+        return context
+
+    def form_valid(self, form):
+        offer = form.save(commit=False)
+        offer.unit = offer.material.stock_unit
+        offer.save()
+        messages.success(self.request, "Готово! Збережено.")
+
+        raw_next = (self.request.POST.get("next") or self.request.GET.get("next") or "").strip()
+        fallback = reverse("supplier_detail", kwargs={"pk": offer.supplier_id})
+        return redirect(_safe_next_url(self.request, raw_next, fallback=fallback))
+
+
 @login_required(login_url=reverse_lazy("auth_login"))
 def suppliers_list(request):
     search_query = (request.GET.get("q") or "").strip()
@@ -379,32 +473,6 @@ def supplier_offers_list(request):
             "page_obj": page_obj,
             "search_query": search_query,
             "offer_add_url": reverse("supplier_offer_start"),
-        },
-    )
-
-
-@login_required(login_url=reverse_lazy("auth_login"))
-def supplier_detail(request, pk: int):
-    supplier = get_object_or_404(Supplier.objects.filter(archived_at__isnull=True), pk=pk)
-    offers = list(
-        supplier.offers.filter(archived_at__isnull=True)
-        .select_related("material", "material_color")
-        .order_by(Lower("material__name"), "material__name", "-created_at")
-    )
-    return render(
-        request,
-        "materials/supplier_detail.html",
-        {
-            "page_title": supplier.name,
-            "page_title_center": True,
-            "back_url": reverse("suppliers"),
-            "supplier": supplier,
-            "offers": offers,
-            "purchase_create_url": reverse("supplier_purchase_create", kwargs={"pk": supplier.pk}),
-            "offer_add_url": _append_query_params(
-                reverse("supplier_offer_start"),
-                {"supplier": str(supplier.pk), "next": reverse("supplier_detail", kwargs={"pk": supplier.pk})},
-            ),
         },
     )
 

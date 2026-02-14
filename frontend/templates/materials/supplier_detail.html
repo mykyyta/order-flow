@@ -1,73 +1,70 @@
-{% extends "base_form_page.html" %}
+{% extends "base_detail_page.html" %}
 
-{% block form_content %}
-<div class="space-y-4">
-    <div class="card">
-        <div class="px-4 py-3 border-b border-slate-100 flex items-start justify-between gap-3">
-            <div class="min-w-0">
-                <h3 class="text-sm font-semibold text-slate-900 truncate">
-                    {{ supplier.name }}
-                </h3>
-                <p class="mt-1 text-xs text-slate-500">
-                    Постачальник
-                </p>
-            </div>
-            <form method="post" action="{{ purchase_create_url }}" class="m-0 shrink-0">
-                {% csrf_token %}
-                <button type="submit" class="btn-primary">Нове замовлення</button>
-            </form>
-        </div>
+{% block page_title_text %}{{ supplier.name }}{% endblock %}
 
-        <div class="p-4 space-y-1">
-            {% if supplier.website %}
-            {% include "partials/detail_field.html" with label="Сайт" value=supplier.website href=supplier.website %}
-            {% endif %}
-            {% if supplier.phone %}
-            {% include "partials/detail_field.html" with label="Телефон" value=supplier.phone muted=True %}
-            {% endif %}
-            {% if supplier.email %}
-            {% include "partials/detail_field.html" with label="Email" value=supplier.email muted=True %}
-            {% endif %}
-            {% if supplier.notes %}
-            <div class="pt-2">
-                <p class="text-xs font-medium uppercase tracking-wider text-slate-400">Нотатки</p>
-                <p class="mt-1 text-sm text-slate-600 whitespace-pre-line">{{ supplier.notes }}</p>
-            </div>
-            {% endif %}
-        </div>
-    </div>
+{% block page_header_actions %}
+<form method="post" action="{{ purchase_create_url }}" class="m-0">
+    {% csrf_token %}
+    <button type="submit" class="btn-primary">Нове замовлення</button>
+</form>
+{% endblock %}
 
-    <div class="card">
-        <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between gap-3">
-            <h3 class="text-sm font-semibold text-slate-900">Офери</h3>
-            <a href="{{ offer_add_url }}" class="btn-secondary">Додати офер</a>
-        </div>
-        <div class="divide-y divide-slate-100">
-            {% for offer in offers %}
-            <div class="px-4 py-3">
-                <div class="flex items-start justify-between gap-3">
-                    <div class="min-w-0">
-                        <p class="truncate text-sm font-medium text-slate-900">
-                            {{ offer.material.name }}
-                            {% if offer.material_color %}· {{ offer.material_color.name }}{% endif %}
-                        </p>
-                        <p class="text-xs text-slate-500 truncate">
-                            {{ offer.title|default:"—" }}
-                            {% if offer.sku %}<span class="text-slate-400">·</span> SKU: {{ offer.sku }}{% endif %}
-                            {% if offer.price_per_unit %}<span class="text-slate-400">·</span> {{ offer.price_per_unit }} {{ offer.currency }}{% endif %}
-                        </p>
-                    </div>
-                    {% if offer.url %}
-                    <a href="{{ offer.url }}" target="_blank" rel="noreferrer" class="btn-secondary shrink-0">
-                        Відкрити
-                    </a>
-                    {% endif %}
-                </div>
-            </div>
-            {% empty %}
-            {% include "partials/empty_state.html" with message="Поки що оферів немає." %}
-            {% endfor %}
-        </div>
+{% block detail_layout %}{% endblock %}{# Single column on all screens #}
+
+{% block detail_content %}
+<div class="card">
+    <div class="p-4 sm:p-5">
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            {% include "partials/form_field.html" with field=form.name label="Назва" %}
+            {% include "partials/form_field.html" with field=form.contact_name label="Контакт" %}
+            {% include "partials/form_field.html" with field=form.phone label="Телефон" %}
+            {% include "partials/form_field.html" with field=form.email label="Email" %}
+            {% include "partials/form_field.html" with field=form.website label="Сайт" %}
+            {% include "partials/form_field.html" with field=form.notes label="Нотатки" %}
+            <button type="submit" class="btn-primary">Зберегти</button>
+        </form>
     </div>
 </div>
+
+<div class="card mt-4">
+    <div class="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+        <h3 class="text-sm font-semibold text-slate-900">Офери</h3>
+        <a href="{{ offer_add_url }}" class="text-sm font-medium text-teal-600 hover:text-teal-700">
+            + Додати
+        </a>
+    </div>
+
+    {% if offers %}
+    <ul class="divide-y divide-slate-100">
+        {% for offer in offers %}
+        <a
+            href="{% url 'supplier_offer_detail' offer.pk %}?next={% url 'supplier_detail' supplier.pk %}"
+            class="flex items-center gap-3 px-4 py-3 hover:bg-slate-50/80 transition-colors group"
+            aria-label="Офер: {{ offer.title|default:'—' }}"
+        >
+            <div class="min-w-0 flex-1">
+                <div class="truncate text-sm font-medium text-slate-900">
+                    {{ offer.title|default:"—" }}
+                </div>
+                <div class="mt-0.5 text-xs text-slate-500 truncate">
+                    {{ offer.material.name }}{% if offer.material_color %} · {{ offer.material_color.name }}{% endif %}
+                </div>
+            </div>
+            <svg class="w-4 h-4 text-slate-300 group-hover:text-slate-400 transition-colors" fill="none"
+                 stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+        </a>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <div class="px-4 py-8 text-center">
+        <p class="text-sm text-slate-500">Поки що оферів немає.</p>
+    </div>
+    {% endif %}
+</div>
 {% endblock %}
+
+{% block detail_sidebar %}{% endblock %}{# No sidebar #}
+

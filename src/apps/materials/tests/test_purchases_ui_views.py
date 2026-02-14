@@ -327,6 +327,7 @@ def test_supplier_offers_list_renders_offers(client):
     assert material.name.encode() in response.content
     assert offer.title.encode() in response.content
     assert reverse("supplier_offer_start").encode() in response.content
+    assert reverse("supplier_offer_detail", kwargs={"pk": offer.pk}).encode() in response.content
 
 
 @pytest.mark.django_db(transaction=True)
@@ -343,6 +344,45 @@ def test_supplier_detail_renders_and_purchase_create_creates_order(client):
     assert response.status_code == 302
     po = PurchaseOrder.objects.get()
     assert po.supplier_id == supplier.pk
+
+
+@pytest.mark.django_db(transaction=True)
+def test_supplier_offer_detail_renders_and_updates(client):
+    user = UserFactory()
+    client.force_login(user, backend=AUTH_BACKEND)
+    supplier = Supplier.objects.create(name="Offer Detail Supplier")
+    material = Material.objects.create(name="Offer Detail Material", stock_unit=MaterialUnit.PIECE)
+    offer = SupplierMaterialOffer.objects.create(
+        supplier=supplier,
+        material=material,
+        unit=MaterialUnit.PIECE,
+        title="Offer Detail Title",
+    )
+
+    response = client.get(
+        reverse("supplier_offer_detail", kwargs={"pk": offer.pk}) + f"?next={reverse('supplier_offers')}"
+    )
+    assert response.status_code == 200
+    assert offer.title.encode() in response.content
+    assert material.name.encode() in response.content
+
+    response = client.post(
+        reverse("supplier_offer_detail", kwargs={"pk": offer.pk}) + f"?next={reverse('supplier_offers')}",
+        data={
+            "supplier": supplier.pk,
+            "material_color": "",
+            "title": "Offer Detail Title Updated",
+            "sku": "",
+            "url": "",
+            "price_per_unit": "",
+            "notes": "",
+            "next": reverse("supplier_offers"),
+        },
+    )
+    assert response.status_code == 302
+    assert response["Location"] == reverse("supplier_offers")
+    offer.refresh_from_db()
+    assert offer.title == "Offer Detail Title Updated"
 
 
 @pytest.mark.django_db(transaction=True)

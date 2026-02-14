@@ -1,0 +1,39 @@
+{% extends "base_detail_page.html" %}
+
+{% block page_title_text %}{{ offer.title|default:"Офер" }}{% endblock %}
+
+{% block page_header_actions %}
+{% if offer.url %}
+<a href="{{ offer.url }}" target="_blank" rel="noreferrer" class="btn-secondary">Відкрити</a>
+{% endif %}
+{% endblock %}
+
+{% block detail_layout %}{% endblock %}{# Single column on all screens #}
+
+{% block detail_content %}
+<div class="card">
+    <div class="p-4 sm:p-5">
+        <div class="rounded-md bg-slate-50 px-3 py-2 text-sm text-slate-700">
+            Матеріал: <span class="font-medium">{{ material.name }}</span>
+        </div>
+
+        <form method="post" class="mt-4 space-y-4">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ next_url }}">
+
+            {% include "partials/form_field.html" with field=form.supplier label="Постачальник" %}
+            {% include "partials/form_field.html" with field=form.material_color label="Колір" %}
+            {% include "partials/form_field.html" with field=form.title label="Назва" %}
+            {% include "partials/form_field.html" with field=form.sku label="SKU" %}
+            {% include "partials/form_field.html" with field=form.url label="Посилання" %}
+            {% include "partials/form_field.html" with field=form.price_per_unit label="Ціна" %}
+            {% include "partials/form_field.html" with field=form.notes label="Нотатки" %}
+
+            <button type="submit" class="btn-primary">Зберегти</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block detail_sidebar %}{% endblock %}{# No sidebar #}
+

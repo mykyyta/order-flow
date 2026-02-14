@@ -4,10 +4,14 @@
 <form method="post" class="space-y-4">
     {% csrf_token %}
     {% include "partials/form_field.html" with field=form.name label="Назва" %}
+    {% include "partials/form_field.html" with field=form.contact_name label="Контакт" %}
+    {% include "partials/form_field.html" with field=form.phone label="Телефон" %}
+    {% include "partials/form_field.html" with field=form.email label="Email" %}
+    {% include "partials/form_field.html" with field=form.website label="Сайт" %}
+    {% include "partials/form_field.html" with field=form.notes label="Нотатки" %}
 
     <button type="submit" class="btn-primary w-full min-h-[44px]">
         {{ submit_label|default:"Додати" }}
     </button>
 </form>
 {% endblock %}
-
