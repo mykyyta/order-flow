@@ -292,11 +292,18 @@ def test_suppliers_list_renders_suppliers(client):
     user = UserFactory()
     client.force_login(user, backend=AUTH_BACKEND)
     supplier = Supplier.objects.create(name="Supplier UI List")
+    material = Material.objects.create(name="Supplier UI Material", stock_unit=MaterialUnit.PIECE)
+    SupplierMaterialOffer.objects.create(
+        supplier=supplier,
+        material=material,
+        unit=MaterialUnit.PIECE,
+    )
 
     response = client.get(reverse("suppliers"))
     assert response.status_code == 200
     assert response.context["show_page_header"] is False
     assert supplier.name.encode() in response.content
+    assert material.name.encode() in response.content
     assert reverse("supplier_detail", kwargs={"pk": supplier.pk}).encode() in response.content
 
 

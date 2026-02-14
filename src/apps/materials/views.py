@@ -300,6 +300,28 @@ def suppliers_list(request):
     paginator = Paginator(queryset, 50)
     page_obj = paginator.get_page(request.GET.get("page"))
 
+    supplier_ids = [s.id for s in page_obj.object_list]
+    if supplier_ids:
+        offers = (
+            SupplierMaterialOffer.objects.filter(
+                archived_at__isnull=True,
+                supplier_id__in=supplier_ids,
+            )
+            .select_related("material")
+            .only("supplier_id", "material__name")
+            .order_by(Lower("material__name"), "material__name")
+        )
+        supplier_materials: dict[int, set[str]] = {}
+        for offer in offers:
+            supplier_materials.setdefault(offer.supplier_id, set()).add(offer.material.name)
+
+        for supplier in page_obj.object_list:
+            names = supplier_materials.get(supplier.id, set())
+            supplier.material_names = sorted(names, key=str.lower)  # type: ignore[attr-defined]
+    else:
+        for supplier in page_obj.object_list:
+            supplier.material_names = []  # type: ignore[attr-defined]
+
     active_offers_count = SupplierMaterialOffer.objects.filter(archived_at__isnull=True).count()
     tabs = [
         {"id": "suppliers", "label": "Постачальники", "url": reverse("suppliers")},

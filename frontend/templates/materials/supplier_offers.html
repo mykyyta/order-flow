@@ -103,15 +103,14 @@
     <div class="flex items-center gap-3 px-3 py-2">
         <div class="min-w-0 flex-1">
             <div class="truncate text-sm font-medium text-slate-800">
-                {{ offer.supplier.name }}
-                <span class="text-slate-400">·</span>
-                {{ offer.material.name }}
-                {% if offer.material_color %}<span class="text-slate-400">·</span> {{ offer.material_color.name }}{% endif %}
+                {{ offer.title|default:"—" }}
             </div>
             <div class="mt-0.5 text-xs text-slate-500 truncate">
-                {{ offer.title|default:"—" }}
-                {% if offer.sku %}<span class="text-slate-400">·</span> SKU: {{ offer.sku }}{% endif %}
-                {% if offer.price_per_unit %}<span class="text-slate-400">·</span> {{ offer.price_per_unit }} {{ offer.currency }}{% endif %}
+                <a href="{% url 'supplier_detail' offer.supplier_id %}" class="hover:underline">
+                    {{ offer.supplier.name }}
+                </a>
+                <span class="text-slate-400">·</span>
+                {{ offer.material.name }}
             </div>
         </div>
         {% if offer.url %}
@@ -119,9 +118,6 @@
             <a href="{{ offer.url }}" target="_blank" rel="noreferrer" class="btn-secondary">Відкрити</a>
         </div>
         {% endif %}
-    </div>
-    <div class="px-3 pb-2 text-xs text-slate-500">
-        <a href="{% url 'supplier_detail' offer.supplier_id %}" class="hover:underline">Постачальник</a>
     </div>
 </div>
 {% empty %}
