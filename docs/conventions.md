@@ -198,6 +198,24 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
 
 ### Forms
 
+
+## Templates (UI)
+
+### Base templates
+
+За замовчуванням сторінки мають розширювати один з базових шаблонів:
+- `base_list_page.html` — списки/таблиці
+- `base_detail_page.html` — детал-сторінки
+- `base_form_page.html` — одна форма в картці
+- `base_archive_page.html` — архіви
+- `base_drawer_page.html` — drawer/підформи
+
+### Page-level flags (контекст)
+
+- `show_page_header` (для `base_list_page.html`): ховає in-content `h1` і actions (корисно для chips-сторінок).
+- `back_url` + `back_label`: back-link рендериться в base-шаблоні, не дублюй вручну.
+- У шаблонах для boolean-флагів використовуй `default_if_none`, а не `default`, щоб `False` не перетворювався на `True`.
+
 ```python
 class OrderForm(forms.ModelForm):
     class Meta:

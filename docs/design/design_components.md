@@ -21,7 +21,8 @@
 |----|----------------------|
 | **Контент за замовчуванням** | Base вже дає `.main-content` (max-width 672px, по центру). Нічого додавати не треба. |
 | **Центрована сторінка** (вхід, нове замовлення) | У view передати `page_title_center=True`. Base дасть `.main-centered` і внутрішній `max-w-2xl`. |
-| **Сторінка з однією формою в картці** | Розширюй **`base_form_page.html`** замість `base.html`. Перевизнач блоки `form_content` (форма) і при потребі `form_page_footer` (наприклад посилання «Назад»). Приклад: створення замовлення, редагування замовлення, зміна пароля. |
+| **Сторінка з однією формою в картці** | Розширюй **`base_form_page.html`** замість `base.html`. Перевизнач блок `form_content` (форма). Для "Назад" передай у view `back_url` (+ опційно `back_label`). Приклад: створення замовлення, редагування замовлення, зміна пароля. |
+| **Список без in-content заголовка** (chips-сторінки) | Розширюй **`base_list_page.html`** і передай `show_page_header=False`, якщо заголовок у контенті зайвий (назва вже є в навбарі). |
 | **Вужча колонка для форми вручну** | Якщо не підходить base_form_page (наприклад кілька карток): `div.mx-auto.max-w-xl` → `div.card` → `div.form-card-body`. Приклад: профіль. |
 | **Навігація** | Пункти меню з одного списку: `NAV_ITEMS` у `orders/templatetags/order_ui.py`, у base — `{% get_nav_items as nav_items %}` і цикл з `{% include "partials/nav_item.html" %}` (variant=desktop|mobile). Новий пункт — один запис у NAV_ITEMS. |
 
@@ -115,6 +116,7 @@
 ### Нова сторінка з однією формою в картці
 - [ ] Шаблон: **`{% extends "base_form_page.html" %}`**. Перевизначити `{% block form_content %}` (форма) і при потребі `{% block form_page_footer %}` (наприклад link-back).
 - [ ] View: передати `page_title`; для центрованого екрану — `page_title_center=True`.
+- [ ] Для "Назад": у view передати `back_url` (+ опційно `back_label`) і не дублювати link-back вручну.
 - [ ] Поля: `form-label` + `form-input`/`form-select`/`form-textarea`/`form-checkbox` + під полем `form-error` при помилках.
 - [ ] Кнопки: `btn-primary` (submit), `btn-secondary` (скасувати/назад).
 
