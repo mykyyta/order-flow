@@ -169,6 +169,7 @@
             {% block content %}{% endblock %}
         </div>
     </main>
+    {% include "partials/modal_confirm.html" with id="global-confirm-modal" title="Підтвердити дію?" confirm_label="Так" cancel_label="Скасувати" %}
     <script src="{% static 'js/app.js' %}"></script>
     {% block extra_js %}{% endblock %}
 </body>

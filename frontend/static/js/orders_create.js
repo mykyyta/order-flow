@@ -31,8 +31,25 @@ document.addEventListener("DOMContentLoaded", function () {
     if (changeProductLink && orderForm) {
         changeProductLink.addEventListener("click", function (event) {
             if (!isFormDirty(orderForm)) return;
+            event.preventDefault();
+            if (typeof window.pultConfirm === "function") {
+                window
+                    .pultConfirm({
+                        title: "Втрата даних",
+                        message: "Введені дані буде втрачено. Продовжити?",
+                        confirmLabel: "Продовжити",
+                        cancelLabel: "Скасувати",
+                    })
+                    .then(function (ok) {
+                        if (!ok) return;
+                        if (typeof window.showNavLoading === "function") window.showNavLoading();
+                        window.location.href = changeProductLink.href;
+                    });
+                return;
+            }
+
             const ok = window.confirm("Введені дані буде втрачено. Продовжити?");
-            if (!ok) event.preventDefault();
+            if (ok) window.location.href = changeProductLink.href;
         });
     }
 

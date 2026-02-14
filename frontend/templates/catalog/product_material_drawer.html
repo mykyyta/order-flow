@@ -21,7 +21,10 @@
         {% csrf_token %}
         <button type="submit"
                 class="text-sm text-slate-500 hover:text-red-600 transition-colors"
-                onclick="return confirm('Видалити матеріал з продукту?')">
+                data-confirm="Видалити матеріал з продукту?"
+                data-confirm-title="Видалити?"
+                data-confirm-confirm-label="Видалити"
+                data-confirm-cancel-label="Скасувати">
             Видалити
         </button>
     </form>

@@ -1,4 +1,24 @@
 document.addEventListener("DOMContentLoaded", function () {
+  function $(selector, root) {
+    return (root || document).querySelector(selector);
+  }
+
+  /* Modal confirmation (global) */
+  var confirmModal = document.getElementById("global-confirm-modal");
+  var confirmTitle = confirmModal ? $("#global-confirm-modal-title", confirmModal) : null;
+  var confirmMessage = confirmModal ? $("#global-confirm-modal-message", confirmModal) : null;
+  var confirmButton = confirmModal ? $(".js-modal-confirm", confirmModal) : null;
+  var cancelButton = confirmModal ? $(".js-modal-cancel", confirmModal) : null;
+
+  var confirmDefaults = {
+    title: confirmTitle ? confirmTitle.textContent : "",
+    confirmLabel: confirmButton ? confirmButton.textContent : "",
+    cancelLabel: cancelButton ? cancelButton.textContent : "",
+  };
+  var pendingConfirmAction = null;
+  var pendingCancelAction = null;
+  var pendingFocusRestore = null;
+
   /* Show loading overlay on same-origin navigation (links and forms) so user gets immediate feedback on tap */
   function isSameOrigin(url) {
     if (!url || url.startsWith("#")) return false;
@@ -22,6 +42,134 @@ document.addEventListener("DOMContentLoaded", function () {
     if (overlay) overlay.setAttribute("aria-hidden", "true");
   }
   window.hideNavLoading = hideNavLoading;
+  window.showNavLoading = showNavLoading;
+
+  function closeConfirmModal() {
+    if (!confirmModal) return;
+    confirmModal.setAttribute("aria-hidden", "true");
+    confirmModal.classList.add("hidden");
+    pendingConfirmAction = null;
+    pendingCancelAction = null;
+    if (confirmTitle) confirmTitle.textContent = confirmDefaults.title;
+    if (confirmButton) confirmButton.textContent = confirmDefaults.confirmLabel;
+    if (cancelButton) cancelButton.textContent = confirmDefaults.cancelLabel;
+    if (pendingFocusRestore && typeof pendingFocusRestore.focus === "function") {
+      pendingFocusRestore.focus();
+    }
+    pendingFocusRestore = null;
+  }
+
+  function openConfirmModal(opts) {
+    if (!confirmModal || !confirmMessage) return;
+    if (typeof window.hideNavLoading === "function") window.hideNavLoading();
+
+    confirmMessage.textContent = (opts && opts.message) || "";
+    if (confirmTitle) confirmTitle.textContent = (opts && opts.title) || confirmDefaults.title;
+    if (confirmButton) {
+      confirmButton.textContent =
+        (opts && opts.confirmLabel) || confirmDefaults.confirmLabel || "Так";
+    }
+    if (cancelButton) {
+      cancelButton.textContent =
+        (opts && opts.cancelLabel) || confirmDefaults.cancelLabel || "Скасувати";
+    }
+
+    confirmModal.setAttribute("aria-hidden", "false");
+    confirmModal.classList.remove("hidden");
+    if (confirmButton) confirmButton.focus();
+  }
+
+  // Promise API for custom scripts (e.g. create order dirty form warning).
+  window.pultConfirm = function (opts) {
+    return new Promise(function (resolve) {
+      if (!confirmModal) {
+        resolve(window.confirm((opts && opts.message) || "Продовжити?"));
+        return;
+      }
+      pendingFocusRestore = document.activeElement;
+      pendingConfirmAction = function () {
+        resolve(true);
+      };
+      pendingCancelAction = function () {
+        resolve(false);
+      };
+      openConfirmModal(opts);
+    });
+  };
+
+  if (confirmModal) {
+    confirmModal.addEventListener("click", function (e) {
+      if (e.target !== confirmModal) return;
+      var onCancel = pendingCancelAction;
+      closeConfirmModal();
+      if (typeof onCancel === "function") onCancel();
+    });
+    if (cancelButton) {
+      cancelButton.addEventListener("click", function () {
+        var onCancel = pendingCancelAction;
+        closeConfirmModal();
+        if (typeof onCancel === "function") onCancel();
+      });
+    }
+    if (confirmButton) {
+      confirmButton.addEventListener("click", function () {
+        var action = pendingConfirmAction;
+        closeConfirmModal();
+        if (typeof action === "function") action();
+      });
+    }
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && confirmModal.getAttribute("aria-hidden") === "false") {
+        var onCancel = pendingCancelAction;
+        closeConfirmModal();
+        if (typeof onCancel === "function") onCancel();
+      }
+    });
+  }
+
+  // Capture phase to prevent nav-loading from showing before we open the modal.
+  document.addEventListener(
+    "click",
+    function (e) {
+      if (!confirmModal) return;
+      if (e.button !== 0) return;
+      var el = e.target.closest("[data-confirm]");
+      if (!el) return;
+      if (el.closest(".modal-overlay")) return;
+
+      var message = (el.getAttribute("data-confirm") || "").trim();
+      if (!message) return;
+
+      e.preventDefault();
+      e.stopImmediatePropagation();
+
+      var title = el.getAttribute("data-confirm-title") || confirmDefaults.title;
+      var confirmLabel = el.getAttribute("data-confirm-confirm-label") || confirmDefaults.confirmLabel;
+      var cancelLabel = el.getAttribute("data-confirm-cancel-label") || confirmDefaults.cancelLabel;
+
+      pendingFocusRestore = el;
+      pendingConfirmAction = function () {
+        // If inside a form button, submit that form.
+        var form = el.closest("form");
+        if (form) {
+          var action = (form.getAttribute("action") || "").trim();
+          if (!action || action === "#") action = window.location.href;
+          if (isSameOrigin(action)) showNavLoading();
+          form.submit();
+          return;
+        }
+        // Otherwise navigate if it's a link.
+        if (el.tagName === "A" && el.href) {
+          if (isSameOrigin(el.href)) showNavLoading();
+          window.location.href = el.href;
+        }
+      };
+      pendingCancelAction = function () {};
+      openConfirmModal({ message: message, title: title, confirmLabel: confirmLabel, cancelLabel: cancelLabel });
+    },
+    true
+  );
+
   document.addEventListener("click", function (e) {
     var link = e.target.closest("a[href]");
     if (!link) return;

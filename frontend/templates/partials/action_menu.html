@@ -76,7 +76,7 @@ Parameters:
                 <button
                     type="submit"
                     class="action-menu-item w-full text-left {% if item.danger %}text-red-600 hover:bg-red-50{% endif %}"
-                    {% if item.confirm %}onclick="return confirm('{{ item.confirm }}')"{% endif %}
+                    {% if item.confirm %}data-confirm="{{ item.confirm }}"{% endif %}
                 >
                     {% if item.icon %}{% include "partials/action_menu_icon.html" with icon=item.icon %}{% endif %}
                     {{ item.label }}
@@ -86,7 +86,7 @@ Parameters:
             <a
                 href="{{ item.url }}"
                 class="action-menu-item {% if item.danger %}text-red-600 hover:bg-red-50{% endif %}"
-                {% if item.confirm %}onclick="return confirm('{{ item.confirm }}')"{% endif %}
+                {% if item.confirm %}data-confirm="{{ item.confirm }}"{% endif %}
             >
                 {% if item.icon %}{% include "partials/action_menu_icon.html" with icon=item.icon %}{% endif %}
                 {{ item.label }}
