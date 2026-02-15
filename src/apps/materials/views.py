@@ -1186,9 +1186,12 @@ def purchase_line_receive(request, pk: int, line_pk: int):
         purchase_order=purchase_order,
     )
     warehouse = get_default_warehouse()
+    if line.remaining_quantity <= Decimal("0.000"):
+        messages.info(request, "Нічого приймати: позиція вже отримана.")
+        return redirect("purchase_detail", pk=purchase_order.pk)
 
     if request.method == "POST":
-        form = PurchaseOrderLineReceiveForm(request.POST)
+        form = PurchaseOrderLineReceiveForm(request.POST, remaining_quantity=line.remaining_quantity)
         if form.is_valid():
             try:
                 receive_purchase_order_line(
@@ -1204,7 +1207,7 @@ def purchase_line_receive(request, pk: int, line_pk: int):
                 messages.success(request, "Готово! Прийнято на склад.")
                 return redirect("purchase_detail", pk=purchase_order.pk)
     else:
-        form = PurchaseOrderLineReceiveForm()
+        form = PurchaseOrderLineReceiveForm(remaining_quantity=line.remaining_quantity)
 
     return render(
         request,

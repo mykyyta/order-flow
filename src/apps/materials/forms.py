@@ -207,17 +207,50 @@ class PurchaseOrderLineForm(forms.ModelForm):
 
 
 class PurchaseOrderLineReceiveForm(forms.Form):
+    receive_all = forms.BooleanField(
+        required=False,
+        initial=True,
+        widget=forms.CheckboxInput(attrs={"class": "form-checkbox"}),
+        label="Прийняти все",
+    )
     quantity = forms.DecimalField(
+        required=False,
         min_value=Decimal("0.001"),
         decimal_places=3,
-        widget=forms.NumberInput(attrs={"class": FORM_INPUT, "step": "0.001"}),
+        widget=forms.NumberInput(
+            attrs={"class": FORM_INPUT, "step": "0.001", "min": "0.001", "placeholder": "Кількість"}
+        ),
         label="Кількість",
     )
     notes = forms.CharField(
         required=False,
-        widget=forms.Textarea(attrs={"class": FORM_TEXTAREA, "rows": 2}),
+        widget=forms.Textarea(attrs={"class": FORM_TEXTAREA, "rows": 2, "placeholder": "Необов'язково"}),
         label="Коментар",
     )
+
+    def __init__(self, *args, remaining_quantity: Decimal, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self._remaining_quantity = remaining_quantity
+
+        if not self.is_bound:
+            self.fields["quantity"].initial = remaining_quantity
+
+    def clean(self) -> dict:
+        cleaned = super().clean()
+        receive_all: bool = bool(cleaned.get("receive_all"))
+        qty: Decimal | None = cleaned.get("quantity")
+
+        if receive_all:
+            cleaned["quantity"] = self._remaining_quantity
+            return cleaned
+
+        if qty is None:
+            self.add_error("quantity", "Вкажи кількість.")
+            return cleaned
+
+        if qty > self._remaining_quantity:
+            self.add_error("quantity", "Не може бути більше ніж залишилось.")
+        return cleaned
 
 
 class PurchaseOrderStatusForm(forms.Form):

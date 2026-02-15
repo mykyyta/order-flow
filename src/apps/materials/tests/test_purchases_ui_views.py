@@ -123,6 +123,33 @@ def test_purchase_line_receive_adds_stock(client):
 
 
 @pytest.mark.django_db(transaction=True)
+def test_purchase_line_receive_all_accepts_remaining_by_default(client):
+    user = UserFactory()
+    client.force_login(user, backend=AUTH_BACKEND)
+    warehouse = get_default_warehouse()
+    supplier = Supplier.objects.create(name="Shop Receive All")
+    material = Material.objects.create(name="Felt", stock_unit=MaterialUnit.SQUARE_METER)
+
+    po = PurchaseOrder.objects.create(supplier=supplier, status=PurchaseOrder.Status.SENT, created_by=user)
+    line = PurchaseOrderLine.objects.create(
+        purchase_order=po,
+        material=material,
+        quantity=Decimal("5.000"),
+        unit=MaterialUnit.SQUARE_METER,
+        unit_price=Decimal("1.00"),
+    )
+
+    response = client.post(
+        reverse("purchase_line_receive", kwargs={"pk": po.pk, "line_pk": line.pk}),
+        data={"receive_all": "on"},
+    )
+    assert response.status_code == 302
+
+    stock = MaterialStock.objects.get(warehouse=warehouse, material=material, unit=MaterialUnit.SQUARE_METER)
+    assert stock.quantity == Decimal("5.000")
+
+
+@pytest.mark.django_db(transaction=True)
 def test_purchase_add_step1_renders_supplier_only(client):
     user = UserFactory()
     client.force_login(user, backend=AUTH_BACKEND)
