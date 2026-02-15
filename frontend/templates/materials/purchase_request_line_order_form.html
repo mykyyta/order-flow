@@ -16,9 +16,22 @@
         </div>
     </div>
 
-        <form method="post" class="space-y-4">
+    {% if not has_offers %}
+    <div class="card">
+        <div class="p-4">
+            <p class="text-sm text-slate-700">
+                Немає оферів під цю позицію.
+            </p>
+            <a href="{{ offer_add_url }}" class="btn-primary mt-3 w-full min-h-[44px]">
+                Додати офер
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    <form method="post" class="space-y-4">
         {% csrf_token %}
-        {% include "partials/form_field.html" with field=form.supplier label="Постачальник" %}
+        {% include "partials/form_field.html" with field=form.supplier_offer label="Офер" %}
         {% include "partials/form_field.html" with field=form.purchase_order label="Додати в чернетку" %}
         {% include "partials/form_field.html" with field=form.quantity label="Кількість" %}
         {% include "partials/form_field.html" with field=form.unit_price label="Ціна" %}

@@ -857,6 +857,9 @@ def supplier_offer_start(request):
     supplier_id = None
     if request.GET.get("supplier") and str(request.GET.get("supplier")).isdigit():
         supplier_id = int(request.GET.get("supplier"))
+    material_id = None
+    if request.GET.get("material") and str(request.GET.get("material")).isdigit():
+        material_id = int(request.GET.get("material"))
 
     next_url = _safe_next_url(
         request,
@@ -876,6 +879,8 @@ def supplier_offer_start(request):
         initial = {}
         if supplier_id and Supplier.objects.filter(pk=supplier_id, archived_at__isnull=True).exists():
             initial["supplier"] = supplier_id
+        if material_id and Material.objects.filter(pk=material_id, archived_at__isnull=True).exists():
+            initial["material"] = material_id
         form = SupplierMaterialOfferStartForm(initial=initial)
 
     return render(
@@ -1415,26 +1420,43 @@ def purchase_request_line_order(request, line_pk: int):
     if request.GET.get("purchase_order") and str(request.GET.get("purchase_order")).isdigit():
         purchase_order_id = int(request.GET.get("purchase_order"))
 
+    offers_qs = SupplierMaterialOffer.objects.filter(
+        archived_at__isnull=True,
+        material_id=line.material_id,
+    )
+    if line.material_color_id is not None:
+        offers_qs = offers_qs.filter(material_color_id=line.material_color_id)
+    else:
+        offers_qs = offers_qs.filter(material_color__isnull=True)
+    if supplier_id is not None:
+        offers_qs = offers_qs.filter(supplier_id=supplier_id)
+    has_offers = offers_qs.exists()
+
     if request.method == "POST":
-        form = PurchaseRequestLineOrderForm(request.POST)
+        form = PurchaseRequestLineOrderForm(request.POST, line=line, supplier_id=supplier_id)
         if form.is_valid():
-            supplier: Supplier = form.cleaned_data["supplier"]
+            offer: SupplierMaterialOffer = form.cleaned_data["supplier_offer"]
             with transaction.atomic():
                 purchase_order = form.cleaned_data.get("purchase_order")
                 if purchase_order is None:
                     purchase_order = PurchaseOrder.objects.create(
-                        supplier=supplier,
+                        supplier=offer.supplier,
                         status=PurchaseOrder.Status.DRAFT,
                         created_by=request.user,
                     )
+
+                unit_price = form.cleaned_data.get("unit_price")
+                if unit_price is None:
+                    unit_price = offer.price_per_unit
                 po_line = PurchaseOrderLine.objects.create(
                     purchase_order=purchase_order,
                     request_line=line,
-                    material=line.material,
-                    material_color=line.material_color,
+                    supplier_offer=offer,
+                    material=offer.material,
+                    material_color=offer.material_color,
                     quantity=form.cleaned_data["quantity"],
                     unit=line.material.stock_unit,
-                    unit_price=form.cleaned_data.get("unit_price"),
+                    unit_price=unit_price,
                     notes=form.cleaned_data.get("notes") or "",
                 )
 
@@ -1450,7 +1472,26 @@ def purchase_request_line_order(request, line_pk: int):
         }
         if purchase_order_id is not None:
             initial["purchase_order"] = purchase_order_id
-        form = PurchaseRequestLineOrderForm(initial=initial, supplier_id=supplier_id)
+        offer_initial = None
+        offer_ids = list(offers_qs.values_list("id", flat=True)[:2])
+        if len(offer_ids) == 1:
+            offer_initial = offer_ids[0]
+        if offer_initial is not None:
+            initial["supplier_offer"] = offer_initial
+
+        form = PurchaseRequestLineOrderForm(initial=initial, line=line, supplier_id=supplier_id)
+
+    current_url = request.get_full_path()
+    if supplier_id is not None:
+        offer_add_url = _append_query_params(
+            reverse("supplier_offer_add", kwargs={"material_pk": line.material_id}),
+            {"supplier": str(supplier_id), "next": current_url},
+        )
+    else:
+        offer_add_url = _append_query_params(
+            reverse("supplier_offer_start"),
+            {"material": str(line.material_id), "next": current_url},
+        )
 
     return render(
         request,
@@ -1462,6 +1503,8 @@ def purchase_request_line_order(request, line_pk: int):
             "form": form,
             "line": line,
             "submit_label": "Додати",
+            "offer_add_url": offer_add_url,
+            "has_offers": has_offers,
         },
     )
 

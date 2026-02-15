@@ -274,10 +274,10 @@ class PurchaseRequestLineForm(forms.ModelForm):
 
 
 class PurchaseRequestLineOrderForm(forms.Form):
-    supplier = forms.ModelChoiceField(
-        queryset=Supplier.objects.filter(archived_at__isnull=True).order_by("name"),
+    supplier_offer = forms.ModelChoiceField(
+        queryset=SupplierMaterialOffer.objects.none(),
         widget=forms.Select(attrs={"class": FORM_SELECT}),
-        label="Постачальник",
+        label="Офер",
     )
     purchase_order = forms.ModelChoiceField(
         queryset=PurchaseOrder.objects.none(),
@@ -305,16 +305,61 @@ class PurchaseRequestLineOrderForm(forms.Form):
         label="Коментар",
     )
 
-    def __init__(self, *args, supplier_id: int | None = None, **kwargs) -> None:
+    def __init__(
+        self,
+        *args,
+        line: PurchaseRequestLine,
+        supplier_id: int | None = None,
+        **kwargs,
+    ) -> None:
         super().__init__(*args, **kwargs)
 
-        supplier_from_data = None
-        if self.is_bound:
-            supplier_from_data = self.data.get(self.add_prefix("supplier"))
-        supplier_pk = supplier_id or (int(supplier_from_data) if supplier_from_data and supplier_from_data.isdigit() else None)
+        offers = SupplierMaterialOffer.objects.filter(
+            archived_at__isnull=True,
+            material_id=line.material_id,
+        ).select_related("supplier")
+        if line.material_color_id is not None:
+            offers = offers.filter(material_color_id=line.material_color_id)
+        else:
+            offers = offers.filter(material_color__isnull=True)
+        if supplier_id is not None:
+            offers = offers.filter(supplier_id=supplier_id)
+        self.fields["supplier_offer"].queryset = offers.order_by(
+            "supplier__name",
+            "title",
+            "id",
+        )
 
-        if supplier_pk:
-            self.fields["purchase_order"].queryset = PurchaseOrder.objects.filter(
-                supplier_id=supplier_pk,
-                status=PurchaseOrder.Status.DRAFT,
-            ).order_by("-created_at")
+        supplier_pk = None
+        if self.is_bound:
+            raw_offer_id = self.data.get(self.add_prefix("supplier_offer"))
+            if raw_offer_id and raw_offer_id.isdigit():
+                supplier_pk = (
+                    SupplierMaterialOffer.objects.filter(pk=int(raw_offer_id), archived_at__isnull=True)
+                    .values_list("supplier_id", flat=True)
+                    .first()
+                )
+
+        supplier_for_orders = supplier_pk or supplier_id
+        if supplier_for_orders is not None:
+            self.fields["purchase_order"].queryset = (
+                PurchaseOrder.objects.filter(
+                    supplier_id=supplier_for_orders,
+                    status=PurchaseOrder.Status.DRAFT,
+                )
+                .order_by("-created_at")
+            )
+
+    def clean(self) -> dict:
+        cleaned = super().clean()
+        offer: SupplierMaterialOffer | None = cleaned.get("supplier_offer")
+        if offer is None:
+            qs = self.fields["supplier_offer"].queryset
+            if qs is not None and hasattr(qs, "exists") and not qs.exists():
+                self.add_error("supplier_offer", "Немає оферів під цю позицію. Додай офер і спробуй ще раз.")
+            return cleaned
+
+        purchase_order: PurchaseOrder | None = cleaned.get("purchase_order")
+        if purchase_order is not None and purchase_order.supplier_id != offer.supplier_id:
+            self.add_error("purchase_order", "Чернетка має бути того ж постачальника, що й офер.")
+        return cleaned
