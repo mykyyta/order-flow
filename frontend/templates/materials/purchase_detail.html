@@ -23,7 +23,7 @@
                         </div>
                         {% if line.supplier_offer %}
                         <div class="mt-0.5 text-xs text-slate-500 truncate">
-                            {{ line.supplier_offer.title }}
+                            {{ line.supplier_offer.title|default:"—" }}
                         </div>
                         {% endif %}
                     </div>
