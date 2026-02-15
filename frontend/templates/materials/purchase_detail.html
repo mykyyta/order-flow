@@ -18,27 +18,43 @@
                         <div class="truncate text-sm font-medium text-slate-900">
                             {{ line.material.name }}
                             {% if line.material_color %}<span class="text-slate-400">·</span> {{ line.material_color.name }}{% endif %}
-                            <span class="text-slate-400">·</span>
-                            <span class="font-semibold tabular-nums">{{ line.quantity }}</span> {{ line.unit }}
                         </div>
-                        {% if line.supplier_offer %}
                         <div class="mt-0.5 text-xs text-slate-500 truncate">
-                            {{ line.supplier_offer.title|default:"—" }}
+                            <span class="text-slate-400">Залишилось:</span>
+                            <span class="font-semibold tabular-nums text-slate-700">{{ line.remaining_quantity }}</span>
+                            {{ line.unit }}
+                            {% if line.supplier_offer %}
+                                <span class="text-slate-400">·</span> {{ line.supplier_offer.title|default:"—" }}
+                            {% endif %}
                         </div>
-                        {% endif %}
                     </div>
 
                     <div class="shrink-0 flex items-center gap-2">
                         {% if line.unit != line.material.stock_unit and line.received_quantity == 0 %}
                             <form method="post" action="{% url 'purchase_line_fix_unit' purchase_order.id line.id %}" class="m-0">
                                 {% csrf_token %}
-                                <button type="submit" class="btn-secondary">
+                                <button type="submit" class="btn-secondary hidden sm:inline-flex">
                                     Виправити одиницю
+                                </button>
+                                <button type="submit" class="btn-secondary flex h-10 w-10 items-center justify-center px-0 sm:hidden" aria-label="Виправити одиницю" title="Виправити одиницю">
+                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2"
+                                         viewBox="0 0 24 24" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
                                 </button>
                             </form>
                         {% elif line.remaining_quantity > 0 %}
-                            <a href="{% url 'purchase_line_receive' purchase_order.id line.id %}" class="btn-secondary">
+                            <a href="{% url 'purchase_line_receive' purchase_order.id line.id %}" class="btn-secondary hidden sm:inline-flex">
                                 Прийняти
+                            </a>
+                            <a href="{% url 'purchase_line_receive' purchase_order.id line.id %}" class="btn-secondary flex h-10 w-10 items-center justify-center px-0 sm:hidden" aria-label="Прийняти" title="Прийняти">
+                                <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2"
+                                     viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v12"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M7 10l5 5 5-5"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 21h14"/>
+                                </svg>
                             </a>
                         {% else %}
                             {% include "partials/badge.html" with label="Ок" variant="success" size="sm" %}
