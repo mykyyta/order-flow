@@ -244,7 +244,7 @@ class PurchaseRequestEditForm(forms.ModelForm):
         fields = ["status", "notes"]
         widgets = {
             "status": forms.Select(attrs={"class": FORM_SELECT}),
-            "notes": forms.Textarea(attrs={"class": FORM_TEXTAREA, "rows": 3}),
+            "notes": forms.Textarea(attrs={"class": FORM_TEXTAREA, "rows": 3, "placeholder": "Необов'язково"}),
         }
 
 
@@ -259,24 +259,27 @@ class PurchaseRequestCreateForMaterialForm(forms.Form):
         required=False,
         min_value=Decimal("0.001"),
         decimal_places=3,
-        widget=forms.NumberInput(attrs={"class": FORM_INPUT, "step": "0.001", "min": "0.001"}),
+        widget=forms.NumberInput(
+            attrs={"class": FORM_INPUT, "step": "0.001", "min": "0.001", "placeholder": "Необов'язково"}
+        ),
         label="Кількість",
     )
     notes = forms.CharField(
         required=False,
-        widget=forms.Textarea(attrs={"class": FORM_TEXTAREA, "rows": 2}),
+        widget=forms.Textarea(attrs={"class": FORM_TEXTAREA, "rows": 2, "placeholder": "Необов'язково"}),
         label="Коментар",
     )
 
     def __init__(self, *args, material: Material, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self._material = material
-        colors_qs = material.colors.filter(archived_at__isnull=True).order_by("name", "code", "id")
+        colors_qs = material.colors.filter(archived_at__isnull=True).order_by("name", "id")
         has_colors = colors_qs.exists()
         if has_colors:
             self.fields["material_color"].required = True
             self.fields["material_color"].error_messages["required"] = "Обери колір."
             self.fields["material_color"].queryset = colors_qs
+            self.fields["material_color"].label_from_instance = lambda c: c.name
         else:
             # If the material has no colors, don't show this field at all.
             self.fields.pop("material_color", None)

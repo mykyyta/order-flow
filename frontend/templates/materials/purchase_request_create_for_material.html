@@ -11,12 +11,13 @@
         {% if has_colors %}
         {% include "partials/form_field.html" with field=form.material_color label="Колір" %}
         {% endif %}
-        {% include "partials/form_field.html" with field=form.requested_quantity label="Кількість (необов'язково)" show_optional_hint=False %}
-        {% include "partials/form_field.html" with field=form.notes label="Коментар (необов'язково)" show_optional_hint=False %}
-
-        <div class="text-xs text-slate-500">
-            Одиниця: {{ material.get_stock_unit_display }}
+        <div>
+            {% include "partials/form_field.html" with field=form.requested_quantity label="Кількість" show_optional_hint=False %}
+            <div class="mt-1 text-xs text-slate-500">
+                Одиниця: {{ material.get_stock_unit_display }}
+            </div>
         </div>
+        {% include "partials/form_field.html" with field=form.notes label="Коментар" show_optional_hint=False %}
 
         <button type="submit" class="btn-primary w-full min-h-[44px]">
             {{ submit_label|default:"Створити" }}

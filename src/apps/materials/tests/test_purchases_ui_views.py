@@ -192,6 +192,7 @@ def test_purchase_request_create_for_material_hides_color_field_when_no_colors(c
     assert response.status_code == 200
     assert "Колір".encode() not in response.content
     assert material.get_stock_unit_display().encode() in response.content
+    assert b"placeholder" in response.content
 
 
 @pytest.mark.django_db(transaction=True)
