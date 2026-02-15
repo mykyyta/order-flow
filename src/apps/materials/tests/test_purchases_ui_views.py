@@ -183,6 +183,33 @@ def test_purchase_request_edit_renders_and_updates(client):
 
 
 @pytest.mark.django_db(transaction=True)
+def test_purchase_request_create_for_material_hides_color_field_when_no_colors(client):
+    user = UserFactory()
+    client.force_login(user, backend=AUTH_BACKEND)
+    material = Material.objects.create(name="NoColor Felt", stock_unit=MaterialUnit.SQUARE_METER)
+
+    response = client.get(reverse("purchase_request_add_for_material", kwargs={"material_pk": material.pk}))
+    assert response.status_code == 200
+    assert "Колір".encode() not in response.content
+    assert material.get_stock_unit_display().encode() in response.content
+
+
+@pytest.mark.django_db(transaction=True)
+def test_purchase_request_create_for_material_requires_color_when_material_has_colors(client):
+    user = UserFactory()
+    client.force_login(user, backend=AUTH_BACKEND)
+    material = Material.objects.create(name="Color Felt", stock_unit=MaterialUnit.SQUARE_METER)
+    MaterialColor.objects.create(material=material, name="Red", code=1)
+
+    response = client.post(
+        reverse("purchase_request_add_for_material", kwargs={"material_pk": material.pk}),
+        data={"material_color": "", "requested_quantity": "", "notes": ""},
+    )
+    assert response.status_code == 200
+    assert "Обери колір".encode() in response.content
+
+
+@pytest.mark.django_db(transaction=True)
 def test_purchase_request_set_status_done_closes_open_lines(client):
     user = UserFactory()
     client.force_login(user, backend=AUTH_BACKEND)

@@ -271,21 +271,24 @@ class PurchaseRequestCreateForMaterialForm(forms.Form):
     def __init__(self, *args, material: Material, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self._material = material
-        self.fields["material_color"].queryset = material.colors.filter(archived_at__isnull=True).order_by(
-            "name",
-            "code",
-            "id",
-        )
+        colors_qs = material.colors.filter(archived_at__isnull=True).order_by("name", "code", "id")
+        has_colors = colors_qs.exists()
+        if has_colors:
+            self.fields["material_color"].required = True
+            self.fields["material_color"].error_messages["required"] = "Обери колір."
+            self.fields["material_color"].queryset = colors_qs
+        else:
+            # If the material has no colors, don't show this field at all.
+            self.fields.pop("material_color", None)
 
     def clean(self) -> dict:
         cleaned = super().clean()
         material = self._material
         material_color: MaterialColor | None = cleaned.get("material_color")
         has_colors = material.colors.filter(archived_at__isnull=True).exists()
-        if has_colors and material_color is None:
-            self.add_error("material_color", "Обери колір.")
-        if material_color is not None and material_color.material_id != material.id:
-            self.add_error("material_color", "Колір має належати вибраному матеріалу.")
+        if has_colors:
+            if material_color is not None and material_color.material_id != material.id:
+                self.add_error("material_color", "Колір має належати вибраному матеріалу.")
         return cleaned
 
 

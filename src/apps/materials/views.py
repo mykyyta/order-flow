@@ -1271,6 +1271,7 @@ def purchase_request_add(request):
 def purchase_request_add_for_material(request, material_pk: int):
     warehouse = get_default_warehouse()
     material = get_object_or_404(Material, pk=material_pk, archived_at__isnull=True)
+    has_colors = material.colors.filter(archived_at__isnull=True).exists()
 
     if request.method == "POST":
         form = PurchaseRequestCreateForMaterialForm(request.POST, material=material)
@@ -1304,6 +1305,7 @@ def purchase_request_add_for_material(request, material_pk: int):
             "back_url": reverse("purchase_request_add"),
             "back_label": "Матеріали",
             "material": material,
+            "has_colors": has_colors,
             "form": form,
             "submit_label": "Створити",
         },

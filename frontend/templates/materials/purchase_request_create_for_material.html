@@ -8,9 +8,15 @@
 
     <form method="post" class="space-y-4">
         {% csrf_token %}
+        {% if has_colors %}
         {% include "partials/form_field.html" with field=form.material_color label="Колір" %}
-        {% include "partials/form_field.html" with field=form.requested_quantity label="Кількість" %}
-        {% include "partials/form_field.html" with field=form.notes label="Коментар" %}
+        {% endif %}
+        {% include "partials/form_field.html" with field=form.requested_quantity label="Кількість (необов'язково)" show_optional_hint=False %}
+        {% include "partials/form_field.html" with field=form.notes label="Коментар (необов'язково)" show_optional_hint=False %}
+
+        <div class="text-xs text-slate-500">
+            Одиниця: {{ material.get_stock_unit_display }}
+        </div>
 
         <button type="submit" class="btn-primary w-full min-h-[44px]">
             {{ submit_label|default:"Створити" }}
@@ -18,4 +24,3 @@
     </form>
 </div>
 {% endblock %}
-
