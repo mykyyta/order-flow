@@ -66,12 +66,19 @@
                     {% endif %}
                 </div>
                 <div class="shrink-0 flex items-center gap-2">
-                    {% if line.remaining_quantity > 0 %}
-                    <a href="{% url 'purchase_line_receive' purchase_order.id line.id %}" class="btn-secondary">
-                        Прийняти
-                    </a>
+                    {% if line.unit != line.material.stock_unit and line.received_quantity == 0 %}
+                        <form method="post" action="{% url 'purchase_line_fix_unit' purchase_order.id line.id %}" class="m-0">
+                            {% csrf_token %}
+                            <button type="submit" class="btn-secondary">
+                                Виправити одиницю
+                            </button>
+                        </form>
+                    {% elif line.remaining_quantity > 0 %}
+                        <a href="{% url 'purchase_line_receive' purchase_order.id line.id %}" class="btn-secondary">
+                            Прийняти
+                        </a>
                     {% else %}
-                    {% include "partials/badge.html" with label="Ок" variant="success" size="sm" %}
+                        {% include "partials/badge.html" with label="Ок" variant="success" size="sm" %}
                     {% endif %}
                 </div>
             </div>
@@ -84,4 +91,3 @@
 {% endblock %}
 
 {% block detail_sidebar %}{% endblock %}{# No sidebar #}
-

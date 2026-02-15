@@ -141,6 +141,9 @@ def test_receive_purchase_order_line_rejects_unit_mismatch():
         unit=MaterialUnit.PIECE,
         unit_price=Decimal("1.00"),
     )
+    # Model save() normalizes PO line unit to stock unit; force a mismatch to keep the service check covered.
+    PurchaseOrderLine.objects.filter(pk=line.pk).update(unit=MaterialUnit.PIECE)
+    line.refresh_from_db()
     warehouse = get_default_warehouse()
 
     with pytest.raises(ValueError, match="Одиниця в замовленні не відповідає одиниці складу матеріалу"):

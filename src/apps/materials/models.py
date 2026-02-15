@@ -126,6 +126,14 @@ class SupplierMaterialOffer(models.Model):
     def clean(self) -> None:
         if self.material_color and self.material_color.material_id != self.material_id:
             raise ValidationError("Material color must belong to selected material.")
+        if self.unit and self.material_id and self.unit != self.material.stock_unit:
+            raise ValidationError("Offer unit must match material stock unit.")
+
+    def save(self, *args, **kwargs) -> None:
+        # Offers are always defined in the material stock unit (otherwise receiving becomes ambiguous).
+        if self.material_id:
+            self.unit = self.material.stock_unit
+        super().save(*args, **kwargs)
 
     def __str__(self) -> str:
         color_name = self.material_color.name if self.material_color else "-"
@@ -228,11 +236,19 @@ class PurchaseOrderLine(models.Model):
     def clean(self) -> None:
         if self.material_color and self.material_color.material_id != self.material_id:
             raise ValidationError("Material color must belong to selected material.")
+        if self.unit and self.material_id and self.unit != self.material.stock_unit:
+            raise ValidationError("Purchase order line unit must match material stock unit.")
         if self.supplier_offer:
             if self.supplier_offer.material_id != self.material_id:
                 raise ValidationError("Supplier offer must belong to selected material.")
             if self.supplier_offer.material_color_id != self.material_color_id:
                 raise ValidationError("Supplier offer color must match selected material color.")
+
+    def save(self, *args, **kwargs) -> None:
+        # Keep PO line units aligned with stock units, otherwise warehouse receiving fails.
+        if self.material_id:
+            self.unit = self.material.stock_unit
+        super().save(*args, **kwargs)
 
     def __str__(self) -> str:
         return f"PO #{self.purchase_order_id}: {self.material.name} {self.quantity} {self.unit}"
@@ -591,6 +607,16 @@ class PurchaseRequestLine(models.Model):
     def clean(self) -> None:
         if self.material_color and self.material_color.material_id != self.material_id:
             raise ValidationError("Material color must belong to selected material.")
+        if self.requested_quantity is not None and self.unit != self.material.stock_unit:
+            raise ValidationError("Request line unit must match material stock unit.")
+
+    def save(self, *args, **kwargs) -> None:
+        # Requests use stock units too. Keep nullability constraint satisfied.
+        if self.requested_quantity is None:
+            self.unit = None
+        else:
+            self.unit = self.material.stock_unit
+        super().save(*args, **kwargs)
 
     def __str__(self) -> str:
         color_name = self.material_color.name if self.material_color else "-"

@@ -1180,6 +1180,29 @@ def purchase_line_receive(request, pk: int, line_pk: int):
 
 
 @login_required(login_url=reverse_lazy("auth_login"))
+@require_POST
+def purchase_line_fix_unit(request, pk: int, line_pk: int):
+    purchase_order = get_object_or_404(PurchaseOrder, pk=pk)
+    line = get_object_or_404(
+        PurchaseOrderLine.objects.select_related("material", "purchase_order"),
+        pk=line_pk,
+        purchase_order=purchase_order,
+    )
+    if line.received_quantity > Decimal("0.000"):
+        messages.error(request, "Не можна змінити одиницю: по цій позиції вже є прийом.")
+        return redirect("purchase_detail", pk=purchase_order.pk)
+
+    expected = line.material.stock_unit
+    if line.unit == expected:
+        return redirect("purchase_detail", pk=purchase_order.pk)
+
+    line.unit = expected
+    line.save(update_fields=["unit", "updated_at"])
+    messages.success(request, "Готово! Одиницю виправлено під одиницю складу матеріалу.")
+    return redirect("purchase_detail", pk=purchase_order.pk)
+
+
+@login_required(login_url=reverse_lazy("auth_login"))
 def purchase_requests_list(request):
     search_query = (request.GET.get("q") or "").strip()
     queryset = PurchaseRequest.objects.select_related("warehouse").order_by("-created_at")
@@ -1278,6 +1301,10 @@ def purchase_request_line_add(request, pk: int):
         if form.is_valid():
             line: PurchaseRequestLine = form.save(commit=False)
             line.request = pr
+            if line.requested_quantity is not None:
+                line.unit = line.material.stock_unit
+            else:
+                line.unit = None
             line.save()
             messages.success(request, "Готово! Позицію додано.")
             return redirect("purchase_request_detail", pk=pr.pk)
@@ -1328,7 +1355,7 @@ def purchase_request_line_order(request, line_pk: int):
                     material=line.material,
                     material_color=line.material_color,
                     quantity=form.cleaned_data["quantity"],
-                    unit=form.cleaned_data["unit"],
+                    unit=line.material.stock_unit,
                     unit_price=form.cleaned_data.get("unit_price"),
                     notes=form.cleaned_data.get("notes") or "",
                 )
@@ -1342,7 +1369,6 @@ def purchase_request_line_order(request, line_pk: int):
     else:
         initial = {
             "quantity": line.requested_quantity,
-            "unit": line.unit,
         }
         if purchase_order_id is not None:
             initial["purchase_order"] = purchase_order_id

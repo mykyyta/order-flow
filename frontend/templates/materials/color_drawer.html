@@ -5,7 +5,7 @@
 {% block drawer_content %}
 <form method="post" class="space-y-4">
     {% csrf_token %}
-    {% include "partials/form_field.html" with field=form.code label="Код (необов'язково)" %}
+    {% include "partials/form_field.html" with field=form.code label="Код" %}
     {% include "partials/form_field.html" with field=form.name label="Назва" %}
     <button type="submit" class="btn-primary w-full">Зберегти</button>
 </form>

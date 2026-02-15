@@ -17,6 +17,7 @@ from apps.materials.views import (
     purchase_add_from_offer,
     PurchaseOrderDetailView,
     purchase_line_add,
+    purchase_line_fix_unit,
     purchase_line_receive,
     purchase_status_edit,
     purchase_start_material,
@@ -115,6 +116,11 @@ urlpatterns = [
         "purchases/<int:pk>/lines/<int:line_pk>/receive/",
         purchase_line_receive,
         name="purchase_line_receive",
+    ),
+    path(
+        "purchases/<int:pk>/lines/<int:line_pk>/fix-unit/",
+        purchase_line_fix_unit,
+        name="purchase_line_fix_unit",
     ),
     # Purchase requests
     path("purchase-requests/", purchase_requests_list, name="purchase_requests"),

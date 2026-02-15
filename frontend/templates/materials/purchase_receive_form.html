@@ -21,7 +21,7 @@
     <form method="post" class="space-y-4">
         {% csrf_token %}
         {% include "partials/form_field.html" with field=form.quantity label="Кількість" %}
-        {% include "partials/form_field.html" with field=form.notes label="Коментар (необов'язково)" %}
+        {% include "partials/form_field.html" with field=form.notes label="Коментар" %}
 
         <button type="submit" class="btn-primary w-full min-h-[44px]">
             {{ submit_label|default:"Прийняти" }}
@@ -29,4 +29,3 @@
     </form>
 </div>
 {% endblock %}
-

@@ -7,7 +7,6 @@ from django import forms
 from apps.materials.models import (
     Material,
     MaterialColor,
-    MaterialUnit,
     PurchaseOrder,
     PurchaseOrderLine,
     PurchaseRequest,
@@ -77,10 +76,10 @@ class PurchaseOrderEditForm(forms.ModelForm):
         model = PurchaseOrder
         fields = ["external_ref", "tracking_number", "expected_at", "notes"]
         widgets = {
-            "external_ref": forms.TextInput(attrs={"class": FORM_INPUT, "placeholder": "необов'язково"}),
-            "tracking_number": forms.TextInput(attrs={"class": FORM_INPUT, "placeholder": "необов'язково"}),
+            "external_ref": forms.TextInput(attrs={"class": FORM_INPUT}),
+            "tracking_number": forms.TextInput(attrs={"class": FORM_INPUT}),
             "expected_at": forms.DateInput(attrs={"class": FORM_INPUT, "type": "date"}),
-            "notes": forms.Textarea(attrs={"class": FORM_TEXTAREA, "rows": 3, "placeholder": "необов'язково"}),
+            "notes": forms.Textarea(attrs={"class": FORM_TEXTAREA, "rows": 3}),
         }
 
 
@@ -98,11 +97,11 @@ class SupplierForm(forms.ModelForm):
         fields = ["name", "contact_name", "phone", "email", "website", "notes"]
         widgets = {
             "name": forms.TextInput(attrs={"class": FORM_INPUT, "placeholder": "Назва постачальника"}),
-            "contact_name": forms.TextInput(attrs={"class": FORM_INPUT, "placeholder": "необов'язково"}),
-            "phone": forms.TextInput(attrs={"class": FORM_INPUT, "placeholder": "необов'язково"}),
-            "email": forms.EmailInput(attrs={"class": FORM_INPUT, "placeholder": "необов'язково"}),
-            "website": forms.URLInput(attrs={"class": FORM_INPUT, "placeholder": "необов'язково"}),
-            "notes": forms.Textarea(attrs={"class": FORM_TEXTAREA, "rows": 3, "placeholder": "необов'язково"}),
+            "contact_name": forms.TextInput(attrs={"class": FORM_INPUT}),
+            "phone": forms.TextInput(attrs={"class": FORM_INPUT}),
+            "email": forms.EmailInput(attrs={"class": FORM_INPUT}),
+            "website": forms.URLInput(attrs={"class": FORM_INPUT}),
+            "notes": forms.Textarea(attrs={"class": FORM_TEXTAREA, "rows": 3}),
         }
 
 
@@ -122,10 +121,10 @@ class SupplierMaterialOfferForm(forms.ModelForm):
             "supplier": forms.Select(attrs={"class": FORM_SELECT}),
             "material_color": forms.Select(attrs={"class": FORM_SELECT}),
             "title": forms.TextInput(attrs={"class": FORM_INPUT, "placeholder": "Назва у магазині"}),
-            "sku": forms.TextInput(attrs={"class": FORM_INPUT, "placeholder": "необов'язково"}),
-            "url": forms.URLInput(attrs={"class": FORM_INPUT, "placeholder": "необов'язково"}),
+            "sku": forms.TextInput(attrs={"class": FORM_INPUT}),
+            "url": forms.URLInput(attrs={"class": FORM_INPUT}),
             "price_per_unit": forms.NumberInput(attrs={"class": FORM_INPUT, "step": "0.01", "min": "0"}),
-            "notes": forms.Textarea(attrs={"class": FORM_TEXTAREA, "rows": 2, "placeholder": "необов'язково"}),
+            "notes": forms.Textarea(attrs={"class": FORM_TEXTAREA, "rows": 2}),
         }
 
     def __init__(self, *args, material: Material | None = None, **kwargs) -> None:
@@ -180,7 +179,7 @@ class PurchaseAddFromOfferForm(forms.Form):
         min_value=Decimal("0.00"),
         decimal_places=2,
         widget=forms.NumberInput(attrs={"class": FORM_INPUT, "step": "0.01", "min": "0"}),
-        label="Ціна за одиницю (необов'язково)",
+        label="Ціна за одиницю",
     )
 
 
@@ -218,7 +217,7 @@ class PurchaseOrderLineReceiveForm(forms.Form):
     notes = forms.CharField(
         required=False,
         widget=forms.Textarea(attrs={"class": FORM_TEXTAREA, "rows": 2}),
-        label="Коментар (необов'язково)",
+        label="Коментар",
     )
 
 
@@ -245,35 +244,26 @@ class PurchaseRequestEditForm(forms.ModelForm):
         model = PurchaseRequest
         fields = ["notes"]
         widgets = {
-            "notes": forms.Textarea(attrs={"class": FORM_TEXTAREA, "rows": 3, "placeholder": "необов'язково"}),
+            "notes": forms.Textarea(attrs={"class": FORM_TEXTAREA, "rows": 3}),
         }
 
 
 class PurchaseRequestLineForm(forms.ModelForm):
     class Meta:
         model = PurchaseRequestLine
-        fields = ["material", "material_color", "requested_quantity", "unit", "notes", "status"]
+        fields = ["material", "material_color", "requested_quantity", "notes", "status"]
         widgets = {
             "material": forms.Select(attrs={"class": FORM_SELECT}),
             "material_color": forms.Select(attrs={"class": FORM_SELECT}),
             "requested_quantity": forms.NumberInput(
                 attrs={"class": FORM_INPUT, "step": "0.001", "min": "0.001"}
             ),
-            "unit": forms.Select(attrs={"class": FORM_SELECT}),
             "notes": forms.Textarea(attrs={"class": FORM_TEXTAREA, "rows": 2}),
             "status": forms.Select(attrs={"class": FORM_SELECT}),
         }
 
     def clean(self) -> dict:
         cleaned = super().clean()
-        qty = cleaned.get("requested_quantity")
-        unit = cleaned.get("unit")
-        if (qty is None) ^ (unit is None):
-            if qty is None:
-                self.add_error("requested_quantity", "Вкажи кількість або очисть одиницю.")
-            if unit is None:
-                self.add_error("unit", "Вкажи одиницю або очисть кількість.")
-
         material: Material | None = cleaned.get("material")
         material_color: MaterialColor | None = cleaned.get("material_color")
         if material and material_color and material_color.material_id != material.id:
@@ -294,7 +284,7 @@ class PurchaseRequestLineOrderForm(forms.Form):
         queryset=PurchaseOrder.objects.none(),
         required=False,
         widget=forms.Select(attrs={"class": FORM_SELECT}),
-        label="Додати в замовлення (необов'язково)",
+        label="Додати в замовлення",
         help_text="Якщо не вибрати, буде створено нову чернетку.",
     )
     quantity = forms.DecimalField(
@@ -303,22 +293,17 @@ class PurchaseRequestLineOrderForm(forms.Form):
         widget=forms.NumberInput(attrs={"class": FORM_INPUT, "step": "0.001", "min": "0.001"}),
         label="Кількість",
     )
-    unit = forms.ChoiceField(
-        choices=MaterialUnit.choices,
-        widget=forms.Select(attrs={"class": FORM_SELECT}),
-        label="Одиниця",
-    )
     unit_price = forms.DecimalField(
         required=False,
         min_value=Decimal("0.00"),
         decimal_places=2,
         widget=forms.NumberInput(attrs={"class": FORM_INPUT, "step": "0.01", "min": "0"}),
-        label="Ціна за одиницю (необов'язково)",
+        label="Ціна за одиницю",
     )
     notes = forms.CharField(
         required=False,
         widget=forms.Textarea(attrs={"class": FORM_TEXTAREA, "rows": 2}),
-        label="Коментар (необов'язково)",
+        label="Коментар",
     )
 
     def __init__(self, *args, supplier_id: int | None = None, **kwargs) -> None:

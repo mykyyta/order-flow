@@ -30,7 +30,7 @@
             {% include "partials/detail_field.html" with label="Одиниця" value=locked_material.stock_unit muted=True %}
         </div>
     </div>
-    {% include "partials/form_field.html" with field=form.material_color label="Колір (необов'язково)" %}
+    {% include "partials/form_field.html" with field=form.material_color label="Колір" %}
     {% else %}
     {% include "partials/form_field.html" with field=form.material %}
     {% include "partials/form_field.html" with field=form.material_color %}

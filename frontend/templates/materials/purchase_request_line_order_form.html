@@ -12,18 +12,17 @@
             {% include "partials/detail_field.html" with label="Колір" value=line.material_color.name %}
             {% endif %}
             {% include "partials/detail_field.html" with label="Запит" value=line.requested_quantity muted=True %}
-            {% include "partials/detail_field.html" with label="Одиниця" value=line.unit muted=True %}
+            {% include "partials/detail_field.html" with label="Одиниця" value=line.material.get_stock_unit_display muted=True %}
         </div>
     </div>
 
-    <form method="post" class="space-y-4">
+        <form method="post" class="space-y-4">
         {% csrf_token %}
         {% include "partials/form_field.html" with field=form.supplier label="Постачальник" %}
-        {% include "partials/form_field.html" with field=form.purchase_order label="Додати в чернетку (необов'язково)" %}
+        {% include "partials/form_field.html" with field=form.purchase_order label="Додати в чернетку" %}
         {% include "partials/form_field.html" with field=form.quantity label="Кількість" %}
-        {% include "partials/form_field.html" with field=form.unit label="Одиниця" %}
-        {% include "partials/form_field.html" with field=form.unit_price label="Ціна (необов'язково)" %}
-        {% include "partials/form_field.html" with field=form.notes label="Коментар (необов'язково)" %}
+        {% include "partials/form_field.html" with field=form.unit_price label="Ціна" %}
+        {% include "partials/form_field.html" with field=form.notes label="Коментар" %}
 
         <button type="submit" class="btn-primary w-full min-h-[44px]">
             {{ submit_label|default:"Додати" }}
@@ -31,4 +30,3 @@
     </form>
 </div>
 {% endblock %}
-

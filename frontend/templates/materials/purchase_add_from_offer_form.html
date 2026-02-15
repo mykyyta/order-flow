@@ -31,7 +31,7 @@
             <form method="post" class="space-y-4 m-0">
                 {% csrf_token %}
                 {% include "partials/form_field.html" with field=form.quantity label="Кількість" %}
-                {% include "partials/form_field.html" with field=form.unit_price label="Ціна за одиницю (необов'язково)" %}
+                {% include "partials/form_field.html" with field=form.unit_price label="Ціна за одиницю" %}
 
                 <button type="submit" class="btn-primary w-full min-h-[44px]">
                     {{ submit_label|default:"Додати" }}
@@ -41,4 +41,3 @@
     </div>
 </div>
 {% endblock %}
-

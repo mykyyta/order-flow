@@ -14,4 +14,7 @@ Usage:
     {% if field.errors %}
     <p class="form-error">{{ field.errors.0 }}</p>
     {% endif %}
+    {% if not field.errors and not field.field.required and not field.value %}
+    <p class="mt-1 text-xs text-slate-400">необов'язково</p>
+    {% endif %}
 </div>
