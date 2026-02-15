@@ -18,24 +18,26 @@
     </div>
 
     <div class="card">
-        <div class="p-4 space-y-4">
-            <label class="inline-flex items-center gap-2 text-sm text-slate-800 select-none">
-                <input
-                    type="checkbox"
-                    name="{{ form.receive_all.html_name }}"
-                    class="form-checkbox"
-                    x-model="all"
-                    {% if form.receive_all.value != False %}checked{% endif %}
-                >
-                <span>Прийняти все</span>
-            </label>
+        <div class="p-4 space-y-3">
+            <div class="flex items-center justify-between gap-3">
+                <label class="inline-flex items-center gap-2 text-sm text-slate-800 select-none">
+                    <input
+                        type="checkbox"
+                        name="{{ form.receive_all.html_name }}"
+                        class="form-checkbox"
+                        x-model="all"
+                        {% if form.receive_all.value != False %}checked{% endif %}
+                    >
+                    <span>Прийняти все</span>
+                </label>
 
-            <div x-show="!all" x-cloak>
-                {% include "partials/form_field.html" with field=form.quantity label="Кількість" show_optional_hint=False %}
+                <button type="submit" class="btn-primary h-10 px-4 whitespace-nowrap">
+                    <span x-text="all ? 'Прийняти все' : 'Прийняти'">Прийняти все</span>
+                </button>
             </div>
 
-            <div x-show="all" x-cloak class="text-xs text-slate-500">
-                Кількість буде прийнята повністю.
+            <div x-show="!all" x-cloak class="pt-1">
+                {% include "partials/form_field.html" with field=form.quantity label="Кількість" show_optional_hint=False %}
             </div>
 
             <details class="group">
@@ -46,10 +48,6 @@
                     {% include "partials/form_field.html" with field=form.notes label="" show_optional_hint=False %}
                 </div>
             </details>
-
-            <button type="submit" class="btn-primary w-full min-h-[44px]">
-                <span x-text="all ? 'Прийняти все' : 'Прийняти'">Прийняти все</span>
-            </button>
         </div>
     </div>
 </form>
