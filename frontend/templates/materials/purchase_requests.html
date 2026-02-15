@@ -115,19 +115,26 @@
                     Заявка #{{ pr.id }}
                 {% endif %}
             </div>
-            <div class="mt-0.5 flex items-center justify-between gap-2 text-xs text-slate-500">
-                <span class="truncate">
-                    {% if line %}
-                        {% if line.requested_quantity is not None %}
-                            {{ line.requested_quantity }} {{ line.unit }}
+            <div class="mt-0.5 flex items-start justify-between gap-2 text-xs text-slate-500">
+                <div class="min-w-0 flex-1 space-y-0.5">
+                    <div class="truncate">
+                        {% if line %}
+                            {% if line.requested_quantity is not None %}
+                                {{ line.requested_quantity }} {{ line.unit }}
+                            {% else %}
+                                К-сть не вказана
+                            {% endif %}
                         {% else %}
-                            К-сть не вказана
+                            &nbsp;
                         {% endif %}
-                        <span class="text-slate-400">·</span>
+                    </div>
+                    {% if pr.notes %}
+                        <div class="truncate">{{ pr.notes }}</div>
+                    {% else %}
+                        <div class="h-4"></div>
                     {% endif %}
-                    {% if pr.notes %}{{ pr.notes }}{% else %}—{% endif %}
-                </span>
-                <span class="shrink-0">{{ pr.created_at|date:"d.m.Y" }}</span>
+                </div>
+                <div class="shrink-0">{{ pr.created_at|date:"d.m.Y" }}</div>
             </div>
         </a>
 
