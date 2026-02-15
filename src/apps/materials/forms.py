@@ -77,10 +77,10 @@ class PurchaseOrderEditForm(forms.ModelForm):
         model = PurchaseOrder
         fields = ["external_ref", "tracking_number", "expected_at", "notes"]
         widgets = {
-            "external_ref": forms.TextInput(attrs={"class": FORM_INPUT}),
-            "tracking_number": forms.TextInput(attrs={"class": FORM_INPUT}),
+            "external_ref": forms.TextInput(attrs={"class": FORM_INPUT, "placeholder": "необов'язково"}),
+            "tracking_number": forms.TextInput(attrs={"class": FORM_INPUT, "placeholder": "необов'язково"}),
             "expected_at": forms.DateInput(attrs={"class": FORM_INPUT, "type": "date"}),
-            "notes": forms.Textarea(attrs={"class": FORM_TEXTAREA, "rows": 3}),
+            "notes": forms.Textarea(attrs={"class": FORM_TEXTAREA, "rows": 3, "placeholder": "необов'язково"}),
         }
 
 
@@ -98,11 +98,11 @@ class SupplierForm(forms.ModelForm):
         fields = ["name", "contact_name", "phone", "email", "website", "notes"]
         widgets = {
             "name": forms.TextInput(attrs={"class": FORM_INPUT, "placeholder": "Назва постачальника"}),
-            "contact_name": forms.TextInput(attrs={"class": FORM_INPUT, "placeholder": "Контакт (необов'язково)"}),
-            "phone": forms.TextInput(attrs={"class": FORM_INPUT, "placeholder": "Телефон (необов'язково)"}),
-            "email": forms.EmailInput(attrs={"class": FORM_INPUT, "placeholder": "Email (необов'язково)"}),
-            "website": forms.URLInput(attrs={"class": FORM_INPUT, "placeholder": "Сайт (необов'язково)"}),
-            "notes": forms.Textarea(attrs={"class": FORM_TEXTAREA, "rows": 3}),
+            "contact_name": forms.TextInput(attrs={"class": FORM_INPUT, "placeholder": "необов'язково"}),
+            "phone": forms.TextInput(attrs={"class": FORM_INPUT, "placeholder": "необов'язково"}),
+            "email": forms.EmailInput(attrs={"class": FORM_INPUT, "placeholder": "необов'язково"}),
+            "website": forms.URLInput(attrs={"class": FORM_INPUT, "placeholder": "необов'язково"}),
+            "notes": forms.Textarea(attrs={"class": FORM_TEXTAREA, "rows": 3, "placeholder": "необов'язково"}),
         }
 
 
@@ -122,10 +122,10 @@ class SupplierMaterialOfferForm(forms.ModelForm):
             "supplier": forms.Select(attrs={"class": FORM_SELECT}),
             "material_color": forms.Select(attrs={"class": FORM_SELECT}),
             "title": forms.TextInput(attrs={"class": FORM_INPUT, "placeholder": "Назва у магазині"}),
-            "sku": forms.TextInput(attrs={"class": FORM_INPUT, "placeholder": "SKU (необов'язково)"}),
-            "url": forms.URLInput(attrs={"class": FORM_INPUT, "placeholder": "Посилання (необов'язково)"}),
+            "sku": forms.TextInput(attrs={"class": FORM_INPUT, "placeholder": "необов'язково"}),
+            "url": forms.URLInput(attrs={"class": FORM_INPUT, "placeholder": "необов'язково"}),
             "price_per_unit": forms.NumberInput(attrs={"class": FORM_INPUT, "step": "0.01", "min": "0"}),
-            "notes": forms.Textarea(attrs={"class": FORM_TEXTAREA, "rows": 2}),
+            "notes": forms.Textarea(attrs={"class": FORM_TEXTAREA, "rows": 2, "placeholder": "необов'язково"}),
         }
 
     def __init__(self, *args, material: Material | None = None, **kwargs) -> None:
@@ -245,7 +245,7 @@ class PurchaseRequestEditForm(forms.ModelForm):
         model = PurchaseRequest
         fields = ["notes"]
         widgets = {
-            "notes": forms.Textarea(attrs={"class": FORM_TEXTAREA, "rows": 3}),
+            "notes": forms.Textarea(attrs={"class": FORM_TEXTAREA, "rows": 3, "placeholder": "необов'язково"}),
         }
 
 

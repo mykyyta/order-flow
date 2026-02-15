@@ -21,9 +21,9 @@
             {% csrf_token %}
             <input type="hidden" name="next" value="{{ next_url }}">
 
+            {% include "partials/form_field.html" with field=form.title label="Назва" %}
             {% include "partials/form_field.html" with field=form.supplier label="Постачальник" %}
             {% include "partials/form_field.html" with field=form.material_color label="Колір" %}
-            {% include "partials/form_field.html" with field=form.title label="Назва" %}
             {% include "partials/form_field.html" with field=form.sku label="SKU" %}
             {% include "partials/form_field.html" with field=form.url label="Посилання" %}
             {% include "partials/form_field.html" with field=form.price_per_unit label="Ціна" %}
@@ -36,4 +36,3 @@
 {% endblock %}
 
 {% block detail_sidebar %}{% endblock %}{# No sidebar #}
-

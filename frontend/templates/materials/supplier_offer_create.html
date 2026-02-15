@@ -13,13 +13,13 @@
         Одиниця складу: <span class="font-medium">{{ material.get_stock_unit_display }}</span>
     </div>
 
+    {% include "partials/form_field.html" with field=form.title label="Назва" %}
     {% include "partials/form_field.html" with field=form.supplier label="Постачальник" %}
-    {% include "partials/form_field.html" with field=form.material_color label="Колір (необов'язково)" %}
-    {% include "partials/form_field.html" with field=form.title label="Назва у постачальника" %}
-    {% include "partials/form_field.html" with field=form.sku label="SKU (необов'язково)" %}
-    {% include "partials/form_field.html" with field=form.url label="Посилання (необов'язково)" %}
-    {% include "partials/form_field.html" with field=form.price_per_unit label="Ціна (необов'язково)" %}
-    {% include "partials/form_field.html" with field=form.notes label="Коментар (необов'язково)" %}
+    {% include "partials/form_field.html" with field=form.material_color label="Колір" %}
+    {% include "partials/form_field.html" with field=form.sku label="SKU" %}
+    {% include "partials/form_field.html" with field=form.url label="Посилання" %}
+    {% include "partials/form_field.html" with field=form.price_per_unit label="Ціна" %}
+    {% include "partials/form_field.html" with field=form.notes label="Коментар" %}
 
     <button type="submit" class="btn-primary w-full min-h-[44px]">
         {{ submit_label|default:"Зберегти" }}
