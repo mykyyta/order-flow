@@ -657,7 +657,11 @@ class PurchaseRequestDetailView(LoginRequiredMixin, UpdateView):
         lines = list(pr.lines.select_related("material", "material_color").order_by("id"))
 
         po_lines = list(
-            PurchaseOrderLine.objects.select_related("purchase_order", "purchase_order__supplier")
+            PurchaseOrderLine.objects.select_related(
+                "purchase_order",
+                "purchase_order__supplier",
+                "supplier_offer",
+            )
             .filter(request_line__request_id=pr.id)
             .order_by("id")
         )
@@ -725,21 +729,13 @@ class PurchaseRequestDetailView(LoginRequiredMixin, UpdateView):
                 }
             )
 
-        open_requests_count = PurchaseRequest.objects.filter(
-            status__in=[PurchaseRequest.Status.OPEN, PurchaseRequest.Status.IN_PROGRESS]
-        ).count()
-        tabs = [
-            {"id": "orders", "label": "Замовлення", "url": reverse("purchases")},
-            {"id": "requests", "label": "Заявки", "url": reverse("purchase_requests"), "count": open_requests_count},
-        ]
-
         context.update(
             {
                 "page_title": f"Заявка #{pr.id}",
+                "page_title_center": True,
                 "back_url": reverse("purchase_requests"),
                 "back_label": "Заявки",
-                "tabs": tabs,
-                "active_tab": "requests",
+                "show_form_frame": False,
                 "actions": actions,
                 "lines": lines,
                 "po_lines_by_request_line": po_lines_by_request_line,
