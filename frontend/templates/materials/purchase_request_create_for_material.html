@@ -1,0 +1,21 @@
+{% extends "base_form_page.html" %}
+
+{% block form_content %}
+<div class="space-y-3">
+    <div class="text-sm font-medium text-slate-900">
+        {{ material.name }}
+    </div>
+
+    <form method="post" class="space-y-4">
+        {% csrf_token %}
+        {% include "partials/form_field.html" with field=form.material_color label="Колір" %}
+        {% include "partials/form_field.html" with field=form.requested_quantity label="Кількість" %}
+        {% include "partials/form_field.html" with field=form.notes label="Коментар" %}
+
+        <button type="submit" class="btn-primary w-full min-h-[44px]">
+            {{ submit_label|default:"Створити" }}
+        </button>
+    </form>
+</div>
+{% endblock %}
+

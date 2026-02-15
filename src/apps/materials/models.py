@@ -594,6 +594,10 @@ class PurchaseRequestLine(models.Model):
 
     class Meta:
         constraints = [
+            models.UniqueConstraint(
+                fields=["request"],
+                name="materials_purchaserequestline_one_line_per_request",
+            ),
             models.CheckConstraint(
                 condition=(
                     (models.Q(requested_quantity__isnull=True) & models.Q(unit__isnull=True))

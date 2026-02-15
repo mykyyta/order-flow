@@ -13,6 +13,7 @@ from apps.materials.models import (
     PurchaseOrder,
     PurchaseOrderLine,
     PurchaseRequest,
+    PurchaseRequestLine,
     Supplier,
 )
 from apps.warehouses.services import get_default_warehouse
@@ -140,40 +141,45 @@ def test_purchase_requests_list_renders_requests(client):
     user = UserFactory()
     client.force_login(user, backend=AUTH_BACKEND)
     warehouse = get_default_warehouse()
+    material = Material.objects.create(name="Needle", stock_unit=MaterialUnit.PIECE)
 
     pr = PurchaseRequest.objects.create(warehouse=warehouse, created_by=user, notes="Need stuff")
+    PurchaseRequestLine.objects.create(request=pr, material=material)
 
     response = client.get(reverse("purchase_requests"))
     assert response.status_code == 200
     assert response.context["show_page_header"] is False
-    assert f"Заявка #{pr.id}".encode() in response.content
+    assert material.name.encode() in response.content
 
 
 @pytest.mark.django_db(transaction=True)
-def test_purchase_request_detail_renders_with_po_links_and_line_actions(client):
+def test_purchase_request_edit_renders_and_updates(client):
     user = UserFactory()
     client.force_login(user, backend=AUTH_BACKEND)
     warehouse = get_default_warehouse()
-    supplier = Supplier.objects.create(name="Shop PR Detail")
     material = Material.objects.create(name="Hook", stock_unit=MaterialUnit.PIECE)
 
     pr = PurchaseRequest.objects.create(warehouse=warehouse, created_by=user, notes="Need hooks")
-    line = pr.lines.create(material=material, requested_quantity=Decimal("2.000"), unit=MaterialUnit.PIECE)
-
-    po = PurchaseOrder.objects.create(supplier=supplier, status=PurchaseOrder.Status.DRAFT, created_by=user)
-    PurchaseOrderLine.objects.create(
-        purchase_order=po,
-        request_line=line,
+    PurchaseRequestLine.objects.create(
+        request=pr,
         material=material,
-        quantity=Decimal("2.000"),
+        requested_quantity=Decimal("2.000"),
         unit=MaterialUnit.PIECE,
-        unit_price=Decimal("1.00"),
     )
-
     response = client.get(reverse("purchase_request_detail", kwargs={"pk": pr.pk}))
     assert response.status_code == 200
-    assert material.name.encode() in response.content
-    assert reverse("purchase_detail", kwargs={"pk": po.pk}).encode() in response.content
+    assert "Статус".encode() in response.content
+    assert "Коментар".encode() in response.content
+
+    response = client.post(
+        reverse("purchase_request_detail", kwargs={"pk": pr.pk}),
+        data={"status": PurchaseRequest.Status.DONE, "notes": "Closed"},
+    )
+    assert response.status_code == 302
+    assert response["Location"] == reverse("purchase_requests")
+    pr.refresh_from_db()
+    assert pr.status == PurchaseRequest.Status.DONE
+    assert pr.notes == "Closed"
 
 
 @pytest.mark.django_db(transaction=True)
@@ -184,8 +190,7 @@ def test_purchase_request_set_status_done_closes_open_lines(client):
     material = Material.objects.create(name="Glue", stock_unit=MaterialUnit.PIECE)
 
     pr = PurchaseRequest.objects.create(warehouse=warehouse, created_by=user)
-    l1 = pr.lines.create(material=material, status="open")
-    l2 = pr.lines.create(material=material, status="ordered")
+    line = pr.lines.create(material=material, status="open")
 
     response = client.post(
         reverse("purchase_request_set_status", kwargs={"pk": pr.pk}),
@@ -194,11 +199,9 @@ def test_purchase_request_set_status_done_closes_open_lines(client):
     assert response.status_code == 302
 
     pr.refresh_from_db()
-    l1.refresh_from_db()
-    l2.refresh_from_db()
+    line.refresh_from_db()
     assert pr.status == "done"
-    assert l1.status == "done"
-    assert l2.status == "done"
+    assert line.status == "done"
 
 
 @pytest.mark.django_db(transaction=True)
@@ -209,8 +212,7 @@ def test_purchase_request_set_status_cancelled_cancels_open_lines(client):
     material = Material.objects.create(name="Rivets", stock_unit=MaterialUnit.PIECE)
 
     pr = PurchaseRequest.objects.create(warehouse=warehouse, created_by=user)
-    l1 = pr.lines.create(material=material, status="open")
-    l2 = pr.lines.create(material=material, status="ordered")
+    line = pr.lines.create(material=material, status="open")
 
     response = client.post(
         reverse("purchase_request_set_status", kwargs={"pk": pr.pk}),
@@ -219,11 +221,9 @@ def test_purchase_request_set_status_cancelled_cancels_open_lines(client):
     assert response.status_code == 302
 
     pr.refresh_from_db()
-    l1.refresh_from_db()
-    l2.refresh_from_db()
+    line.refresh_from_db()
     assert pr.status == "cancelled"
-    assert l1.status == "cancelled"
-    assert l2.status == "cancelled"
+    assert line.status == "cancelled"
 
 
 @pytest.mark.django_db(transaction=True)
@@ -234,19 +234,10 @@ def test_purchase_request_line_set_status_done_auto_closes_request_when_all_line
     material = Material.objects.create(name="Buckles", stock_unit=MaterialUnit.PIECE)
 
     pr = PurchaseRequest.objects.create(warehouse=warehouse, created_by=user)
-    l1 = pr.lines.create(material=material, status="open")
-    l2 = pr.lines.create(material=material, status="open")
+    line = pr.lines.create(material=material, status="open")
 
     response = client.post(
-        reverse("purchase_request_line_set_status", kwargs={"line_pk": l1.pk}),
-        data={"status": "done"},
-    )
-    assert response.status_code == 302
-    pr.refresh_from_db()
-    assert pr.status in {"open", "in_progress"}
-
-    response = client.post(
-        reverse("purchase_request_line_set_status", kwargs={"line_pk": l2.pk}),
+        reverse("purchase_request_line_set_status", kwargs={"line_pk": line.pk}),
         data={"status": "done"},
     )
     assert response.status_code == 302

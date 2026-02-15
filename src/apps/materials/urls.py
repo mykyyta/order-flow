@@ -24,6 +24,7 @@ from apps.materials.views import (
     purchase_start_material,
     purchase_start_material_offers,
     purchase_request_add,
+    purchase_request_add_for_material,
     PurchaseRequestDetailView,
     purchase_request_line_add,
     purchase_request_line_set_status,
@@ -127,6 +128,11 @@ urlpatterns = [
     # Purchase requests
     path("purchase-requests/", purchase_requests_list, name="purchase_requests"),
     path("purchase-requests/add/", purchase_request_add, name="purchase_request_add"),
+    path(
+        "purchase-requests/add/<int:material_pk>/",
+        purchase_request_add_for_material,
+        name="purchase_request_add_for_material",
+    ),
     path(
         "purchase-requests/<int:pk>/",
         PurchaseRequestDetailView.as_view(),

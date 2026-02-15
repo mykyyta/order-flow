@@ -241,10 +241,52 @@ class PurchaseRequestForm(forms.ModelForm):
 class PurchaseRequestEditForm(forms.ModelForm):
     class Meta:
         model = PurchaseRequest
-        fields = ["notes"]
+        fields = ["status", "notes"]
         widgets = {
+            "status": forms.Select(attrs={"class": FORM_SELECT}),
             "notes": forms.Textarea(attrs={"class": FORM_TEXTAREA, "rows": 3}),
         }
+
+
+class PurchaseRequestCreateForMaterialForm(forms.Form):
+    material_color = forms.ModelChoiceField(
+        queryset=MaterialColor.objects.none(),
+        required=False,
+        widget=forms.Select(attrs={"class": FORM_SELECT}),
+        label="Колір",
+    )
+    requested_quantity = forms.DecimalField(
+        required=False,
+        min_value=Decimal("0.001"),
+        decimal_places=3,
+        widget=forms.NumberInput(attrs={"class": FORM_INPUT, "step": "0.001", "min": "0.001"}),
+        label="Кількість",
+    )
+    notes = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={"class": FORM_TEXTAREA, "rows": 2}),
+        label="Коментар",
+    )
+
+    def __init__(self, *args, material: Material, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self._material = material
+        self.fields["material_color"].queryset = material.colors.filter(archived_at__isnull=True).order_by(
+            "name",
+            "code",
+            "id",
+        )
+
+    def clean(self) -> dict:
+        cleaned = super().clean()
+        material = self._material
+        material_color: MaterialColor | None = cleaned.get("material_color")
+        has_colors = material.colors.filter(archived_at__isnull=True).exists()
+        if has_colors and material_color is None:
+            self.add_error("material_color", "Обери колір.")
+        if material_color is not None and material_color.material_id != material.id:
+            self.add_error("material_color", "Колір має належати вибраному матеріалу.")
+        return cleaned
 
 
 class PurchaseRequestLineForm(forms.ModelForm):

@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Prefetch, Q
 from django.http import HttpRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
@@ -26,7 +26,7 @@ from apps.materials.forms import (
     PurchaseOrderLineForm,
     PurchaseOrderLineReceiveForm,
     PurchaseOrderStatusForm,
-    PurchaseRequestForm,
+    PurchaseRequestCreateForMaterialForm,
     PurchaseRequestEditForm,
     PurchaseRequestLineForm,
     PurchaseRequestLineOrderForm,
@@ -645,7 +645,7 @@ class PurchaseRequestDetailView(LoginRequiredMixin, UpdateView):
     login_url = reverse_lazy("auth_login")
     model = PurchaseRequest
     form_class = PurchaseRequestEditForm
-    template_name = "materials/purchase_request_detail.html"
+    template_name = "materials/purchase_request_form.html"
     context_object_name = "purchase_request"
 
     def get_queryset(self):
@@ -654,80 +654,6 @@ class PurchaseRequestDetailView(LoginRequiredMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         pr: PurchaseRequest = self.object
-        lines = list(pr.lines.select_related("material", "material_color").order_by("id"))
-
-        po_lines = list(
-            PurchaseOrderLine.objects.select_related(
-                "purchase_order",
-                "purchase_order__supplier",
-                "supplier_offer",
-            )
-            .filter(request_line__request_id=pr.id)
-            .order_by("id")
-        )
-        po_lines_by_request_line: dict[int, list[PurchaseOrderLine]] = {}
-        for po_line in po_lines:
-            if po_line.request_line_id is None:
-                continue
-            po_lines_by_request_line.setdefault(po_line.request_line_id, []).append(po_line)
-
-        line_action_items: dict[int, list[dict]] = {}
-        for line in lines:
-            if line.status in {PurchaseRequestLine.Status.DONE, PurchaseRequestLine.Status.CANCELLED}:
-                continue
-            line_action_items[line.id] = [
-                {
-                    "label": "Закрити",
-                    "url": reverse("purchase_request_line_set_status", kwargs={"line_pk": line.pk}),
-                    "method": "post",
-                    "icon": "check",
-                    "confirm": "Закрити позицію?",
-                    "extra_fields": {"status": PurchaseRequestLine.Status.DONE},
-                },
-                {"divider": True},
-                {
-                    "label": "Скасувати",
-                    "url": reverse("purchase_request_line_set_status", kwargs={"line_pk": line.pk}),
-                    "method": "post",
-                    "icon": "trash",
-                    "danger": True,
-                    "confirm": "Скасувати позицію?",
-                    "extra_fields": {"status": PurchaseRequestLine.Status.CANCELLED},
-                },
-            ]
-
-        actions = []
-        if pr.status not in {PurchaseRequest.Status.DONE, PurchaseRequest.Status.CANCELLED}:
-            actions.append(
-                {
-                    "label": "В роботу",
-                    "url": reverse("purchase_request_set_status", kwargs={"pk": pr.pk}),
-                    "method": "post",
-                    "extra_fields": {"status": PurchaseRequest.Status.IN_PROGRESS},
-                }
-            )
-            actions.append(
-                {
-                    "label": "Закрити",
-                    "url": reverse("purchase_request_set_status", kwargs={"pk": pr.pk}),
-                    "method": "post",
-                    "icon": "check",
-                    "confirm": "Закрити заявку?",
-                    "extra_fields": {"status": PurchaseRequest.Status.DONE},
-                }
-            )
-            actions.append({"divider": True})
-            actions.append(
-                {
-                    "label": "Скасувати",
-                    "url": reverse("purchase_request_set_status", kwargs={"pk": pr.pk}),
-                    "method": "post",
-                    "icon": "trash",
-                    "danger": True,
-                    "confirm": "Скасувати заявку?",
-                    "extra_fields": {"status": PurchaseRequest.Status.CANCELLED},
-                }
-            )
 
         context.update(
             {
@@ -735,12 +661,6 @@ class PurchaseRequestDetailView(LoginRequiredMixin, UpdateView):
                 "page_title_center": True,
                 "back_url": reverse("purchase_requests"),
                 "back_label": "Заявки",
-                "show_form_frame": False,
-                "actions": actions,
-                "lines": lines,
-                "po_lines_by_request_line": po_lines_by_request_line,
-                "line_action_items": line_action_items,
-                "line_add_url": reverse("purchase_request_line_add", kwargs={"pk": pr.pk}),
             }
         )
         return context
@@ -751,7 +671,7 @@ class PurchaseRequestDetailView(LoginRequiredMixin, UpdateView):
         return response
 
     def get_success_url(self):
-        return reverse("purchase_request_detail", kwargs={"pk": self.object.pk})
+        return reverse("purchase_requests")
 
 
 @login_required(login_url=reverse_lazy("auth_login"))
@@ -1284,7 +1204,12 @@ def purchase_line_fix_unit(request, pk: int, line_pk: int):
 @login_required(login_url=reverse_lazy("auth_login"))
 def purchase_requests_list(request):
     search_query = (request.GET.get("q") or "").strip()
-    queryset = PurchaseRequest.objects.select_related("warehouse").order_by("-created_at")
+    line_qs = PurchaseRequestLine.objects.select_related("material", "material_color").order_by("id")
+    queryset = (
+        PurchaseRequest.objects.select_related("warehouse")
+        .prefetch_related(Prefetch("lines", queryset=line_qs))
+        .order_by("-created_at")
+    )
     queryset = queryset.exclude(status=PurchaseRequest.Status.CANCELLED)
     if search_query:
         search_filters = Q(notes__icontains=search_query)
@@ -1320,26 +1245,65 @@ def purchase_requests_list(request):
 
 @login_required(login_url=reverse_lazy("auth_login"))
 def purchase_request_add(request):
-    warehouse = get_default_warehouse()
-    if request.method == "POST":
-        form = PurchaseRequestForm(request.POST)
-        if form.is_valid():
-            pr: PurchaseRequest = form.save(commit=False)
-            pr.created_by = request.user
-            pr.warehouse = warehouse
-            pr.save()
-            messages.success(request, "Готово! Заявку створено.")
-            return redirect("purchase_request_detail", pk=pr.pk)
-    else:
-        form = PurchaseRequestForm(initial={"status": PurchaseRequest.Status.OPEN})
+    search_query = (request.GET.get("q") or "").strip()
+    queryset = Material.objects.filter(archived_at__isnull=True).order_by(Lower("name"), "name")
+    if search_query:
+        queryset = queryset.filter(name__icontains=search_query)
+
+    paginator = Paginator(queryset, 50)
+    page_obj = paginator.get_page(request.GET.get("page"))
 
     return render(
         request,
-        "materials/purchase_request_form.html",
+        "materials/purchase_request_start_material.html",
+        {
+            "page_title": "Нова заявка",
+            "show_page_header": False,
+            "back_url": reverse("purchase_requests"),
+            "back_label": "Заявки",
+            "page_obj": page_obj,
+            "search_query": search_query,
+        },
+    )
+
+
+@login_required(login_url=reverse_lazy("auth_login"))
+def purchase_request_add_for_material(request, material_pk: int):
+    warehouse = get_default_warehouse()
+    material = get_object_or_404(Material, pk=material_pk, archived_at__isnull=True)
+
+    if request.method == "POST":
+        form = PurchaseRequestCreateForMaterialForm(request.POST, material=material)
+        if form.is_valid():
+            with transaction.atomic():
+                pr = PurchaseRequest.objects.create(
+                    warehouse=warehouse,
+                    status=PurchaseRequest.Status.OPEN,
+                    notes=form.cleaned_data.get("notes") or "",
+                    created_by=request.user,
+                )
+                PurchaseRequestLine.objects.create(
+                    request=pr,
+                    status=PurchaseRequestLine.Status.OPEN,
+                    material=material,
+                    material_color=form.cleaned_data.get("material_color"),
+                    requested_quantity=form.cleaned_data.get("requested_quantity"),
+                    notes="",
+                )
+            messages.success(request, "Готово! Заявку створено.")
+            return redirect("purchase_requests")
+    else:
+        form = PurchaseRequestCreateForMaterialForm(material=material)
+
+    return render(
+        request,
+        "materials/purchase_request_create_for_material.html",
         {
             "page_title": "Нова заявка",
             "page_title_center": True,
-            "back_url": reverse("purchase_requests"),
+            "back_url": reverse("purchase_request_add"),
+            "back_label": "Матеріали",
+            "material": material,
             "form": form,
             "submit_label": "Створити",
         },
@@ -1354,7 +1318,7 @@ def purchase_request_set_status(request, pk: int):
     valid_statuses = {value for value, _ in PurchaseRequest.Status.choices}
     if new_status not in valid_statuses:
         messages.error(request, "Упс. Невірний статус.")
-        return redirect("purchase_request_detail", pk=pk)
+        return redirect("purchase_requests")
 
     with transaction.atomic():
         pr.status = new_status
@@ -1369,12 +1333,15 @@ def purchase_request_set_status(request, pk: int):
             ).update(status=new_status, updated_at=now)
 
     messages.success(request, "Готово! Статус оновлено.")
-    return redirect("purchase_request_detail", pk=pk)
+    return redirect("purchase_requests")
 
 
 @login_required(login_url=reverse_lazy("auth_login"))
 def purchase_request_line_add(request, pk: int):
     pr = get_object_or_404(PurchaseRequest, pk=pk)
+    if pr.lines.exists():
+        messages.error(request, "У заявці може бути тільки 1 позиція.")
+        return redirect("purchase_request_detail", pk=pr.pk)
     if request.method == "POST":
         form = PurchaseRequestLineForm(request.POST)
         if form.is_valid():
@@ -1495,7 +1462,7 @@ def purchase_request_line_order(request, line_pk: int):
         {
             "page_title": "Замовити",
             "page_title_center": True,
-            "back_url": reverse("purchase_request_detail", kwargs={"pk": line.request_id}),
+            "back_url": reverse("purchase_requests"),
             "form": form,
             "line": line,
             "submit_label": "Додати",
@@ -1513,7 +1480,7 @@ def purchase_request_line_set_status(request, line_pk: int):
     allowed_statuses = {PurchaseRequestLine.Status.DONE, PurchaseRequestLine.Status.CANCELLED}
     if new_status not in allowed_statuses:
         messages.error(request, "Упс. Невірний статус.")
-        return redirect("purchase_request_detail", pk=line.request_id)
+        return redirect("purchase_requests")
 
     with transaction.atomic():
         line.status = new_status
@@ -1533,4 +1500,4 @@ def purchase_request_line_set_status(request, line_pk: int):
                 pr.save(update_fields=["status", "updated_at"])
 
     messages.success(request, "Готово! Статус оновлено.")
-    return redirect("purchase_request_detail", pk=line.request_id)
+    return redirect("purchase_requests")
