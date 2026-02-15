@@ -1236,7 +1236,11 @@ def purchase_requests_list(request):
     )
     queryset = queryset.exclude(status=PurchaseRequest.Status.CANCELLED)
     if search_query:
-        search_filters = Q(notes__icontains=search_query)
+        search_filters = (
+            Q(notes__icontains=search_query)
+            | Q(lines__material__name__icontains=search_query)
+            | Q(lines__material_color__name__icontains=search_query)
+        )
         if search_query.isdigit():
             search_filters |= Q(id=int(search_query))
         queryset = queryset.filter(search_filters)

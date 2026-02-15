@@ -188,6 +188,33 @@ def test_purchase_request_edit_renders_and_updates(client):
 
 
 @pytest.mark.django_db(transaction=True)
+def test_purchase_requests_list_search_filters_by_material_and_color(client):
+    user = UserFactory()
+    client.force_login(user, backend=AUTH_BACKEND)
+    warehouse = get_default_warehouse()
+
+    material = Material.objects.create(name="Felt", stock_unit=MaterialUnit.SQUARE_METER)
+    color = MaterialColor.objects.create(material=material, name="Green", code=2)
+
+    pr1 = PurchaseRequest.objects.create(warehouse=warehouse, created_by=user, notes="")
+    PurchaseRequestLine.objects.create(request=pr1, material=material, material_color=color)
+
+    pr2 = PurchaseRequest.objects.create(warehouse=warehouse, created_by=user, notes="")
+    other = Material.objects.create(name="Thread", stock_unit=MaterialUnit.PIECE)
+    PurchaseRequestLine.objects.create(request=pr2, material=other)
+
+    response = client.get(reverse("purchase_requests") + "?q=felt")
+    assert response.status_code == 200
+    assert f"Редагувати заявку #{pr1.id}".encode() in response.content
+    assert f"Редагувати заявку #{pr2.id}".encode() not in response.content
+
+    response = client.get(reverse("purchase_requests") + "?q=green")
+    assert response.status_code == 200
+    assert f"Редагувати заявку #{pr1.id}".encode() in response.content
+    assert f"Редагувати заявку #{pr2.id}".encode() not in response.content
+
+
+@pytest.mark.django_db(transaction=True)
 def test_purchase_request_create_for_material_hides_color_field_when_no_colors(client):
     user = UserFactory()
     client.force_login(user, backend=AUTH_BACKEND)
