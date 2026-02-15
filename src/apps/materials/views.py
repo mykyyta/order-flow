@@ -21,11 +21,13 @@ from apps.materials.forms import (
     MaterialForm,
     PurchaseAddFromOfferForm,
     PurchaseOrderFilterForm,
+    PurchaseOrderEditForm,
     PurchaseOrderStartForm,
     PurchaseOrderLineForm,
     PurchaseOrderLineReceiveForm,
     PurchaseOrderStatusForm,
     PurchaseRequestForm,
+    PurchaseRequestEditForm,
     PurchaseRequestLineForm,
     PurchaseRequestLineOrderForm,
     SupplierForm,
@@ -590,6 +592,179 @@ def purchases_list(request):
     )
 
 
+class PurchaseOrderDetailView(LoginRequiredMixin, UpdateView):
+    login_url = reverse_lazy("auth_login")
+    model = PurchaseOrder
+    form_class = PurchaseOrderEditForm
+    template_name = "materials/purchase_detail.html"
+    context_object_name = "purchase_order"
+
+    def get_queryset(self):
+        return PurchaseOrder.objects.select_related("supplier")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        purchase_order: PurchaseOrder = self.object
+        lines = list(
+            purchase_order.lines.select_related("material", "material_color", "supplier_offer").order_by("id")
+        )
+
+        open_requests_count = PurchaseRequest.objects.filter(
+            status__in=[PurchaseRequest.Status.OPEN, PurchaseRequest.Status.IN_PROGRESS]
+        ).count()
+        tabs = [
+            {"id": "orders", "label": "Замовлення", "url": reverse("purchases")},
+            {"id": "requests", "label": "Заявки", "url": reverse("purchase_requests"), "count": open_requests_count},
+        ]
+
+        actions = [
+            {"label": "Змінити статус", "url": reverse("purchase_status_edit", kwargs={"pk": purchase_order.pk})},
+        ]
+
+        context.update(
+            {
+                "page_title": f"Замовлення #{purchase_order.id}",
+                "back_url": reverse("purchases"),
+                "back_label": "Закупівлі",
+                "tabs": tabs,
+                "active_tab": "orders",
+                "lines": lines,
+                "line_add_url": reverse("purchase_line_add", kwargs={"pk": purchase_order.pk}),
+                "line_add_from_request_url": reverse(
+                    "purchase_pick_request_line_for_order",
+                    kwargs={"pk": purchase_order.pk},
+                ),
+                "actions": actions,
+            }
+        )
+        return context
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, "Готово! Збережено.")
+        return response
+
+    def get_success_url(self):
+        return reverse("purchase_detail", kwargs={"pk": self.object.pk})
+
+
+class PurchaseRequestDetailView(LoginRequiredMixin, UpdateView):
+    login_url = reverse_lazy("auth_login")
+    model = PurchaseRequest
+    form_class = PurchaseRequestEditForm
+    template_name = "materials/purchase_request_detail.html"
+    context_object_name = "purchase_request"
+
+    def get_queryset(self):
+        return PurchaseRequest.objects.select_related("warehouse")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        pr: PurchaseRequest = self.object
+        lines = list(pr.lines.select_related("material", "material_color").order_by("id"))
+
+        po_lines = list(
+            PurchaseOrderLine.objects.select_related("purchase_order", "purchase_order__supplier")
+            .filter(request_line__request_id=pr.id)
+            .order_by("id")
+        )
+        po_lines_by_request_line: dict[int, list[PurchaseOrderLine]] = {}
+        for po_line in po_lines:
+            if po_line.request_line_id is None:
+                continue
+            po_lines_by_request_line.setdefault(po_line.request_line_id, []).append(po_line)
+
+        line_action_items: dict[int, list[dict]] = {}
+        for line in lines:
+            if line.status in {PurchaseRequestLine.Status.DONE, PurchaseRequestLine.Status.CANCELLED}:
+                continue
+            line_action_items[line.id] = [
+                {
+                    "label": "Закрити",
+                    "url": reverse("purchase_request_line_set_status", kwargs={"line_pk": line.pk}),
+                    "method": "post",
+                    "icon": "check",
+                    "confirm": "Закрити позицію?",
+                    "extra_fields": {"status": PurchaseRequestLine.Status.DONE},
+                },
+                {"divider": True},
+                {
+                    "label": "Скасувати",
+                    "url": reverse("purchase_request_line_set_status", kwargs={"line_pk": line.pk}),
+                    "method": "post",
+                    "icon": "trash",
+                    "danger": True,
+                    "confirm": "Скасувати позицію?",
+                    "extra_fields": {"status": PurchaseRequestLine.Status.CANCELLED},
+                },
+            ]
+
+        actions = []
+        if pr.status not in {PurchaseRequest.Status.DONE, PurchaseRequest.Status.CANCELLED}:
+            actions.append(
+                {
+                    "label": "В роботу",
+                    "url": reverse("purchase_request_set_status", kwargs={"pk": pr.pk}),
+                    "method": "post",
+                    "extra_fields": {"status": PurchaseRequest.Status.IN_PROGRESS},
+                }
+            )
+            actions.append(
+                {
+                    "label": "Закрити",
+                    "url": reverse("purchase_request_set_status", kwargs={"pk": pr.pk}),
+                    "method": "post",
+                    "icon": "check",
+                    "confirm": "Закрити заявку?",
+                    "extra_fields": {"status": PurchaseRequest.Status.DONE},
+                }
+            )
+            actions.append({"divider": True})
+            actions.append(
+                {
+                    "label": "Скасувати",
+                    "url": reverse("purchase_request_set_status", kwargs={"pk": pr.pk}),
+                    "method": "post",
+                    "icon": "trash",
+                    "danger": True,
+                    "confirm": "Скасувати заявку?",
+                    "extra_fields": {"status": PurchaseRequest.Status.CANCELLED},
+                }
+            )
+
+        open_requests_count = PurchaseRequest.objects.filter(
+            status__in=[PurchaseRequest.Status.OPEN, PurchaseRequest.Status.IN_PROGRESS]
+        ).count()
+        tabs = [
+            {"id": "orders", "label": "Замовлення", "url": reverse("purchases")},
+            {"id": "requests", "label": "Заявки", "url": reverse("purchase_requests"), "count": open_requests_count},
+        ]
+
+        context.update(
+            {
+                "page_title": f"Заявка #{pr.id}",
+                "back_url": reverse("purchase_requests"),
+                "back_label": "Заявки",
+                "tabs": tabs,
+                "active_tab": "requests",
+                "actions": actions,
+                "lines": lines,
+                "po_lines_by_request_line": po_lines_by_request_line,
+                "line_action_items": line_action_items,
+                "line_add_url": reverse("purchase_request_line_add", kwargs={"pk": pr.pk}),
+            }
+        )
+        return context
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, "Готово! Збережено.")
+        return response
+
+    def get_success_url(self):
+        return reverse("purchase_request_detail", kwargs={"pk": self.object.pk})
+
+
 @login_required(login_url=reverse_lazy("auth_login"))
 def purchase_start_material(request):
     search_query = (request.GET.get("q") or "").strip()
@@ -851,46 +1026,6 @@ def purchase_add_lines(request, pk: int):
 
 
 @login_required(login_url=reverse_lazy("auth_login"))
-def purchase_detail(request, pk: int):
-    purchase_order = get_object_or_404(
-        PurchaseOrder.objects.select_related("supplier"),
-        pk=pk,
-    )
-    lines = list(
-        purchase_order.lines.select_related("material", "material_color", "supplier_offer").order_by("id")
-    )
-
-    tabs = [
-        {"id": "orders", "label": "Замовлення", "url": reverse("purchases")},
-        {"id": "requests", "label": "Заявки", "url": reverse("purchase_requests")},
-    ]
-
-    actions = [
-        {"label": "Змінити статус", "url": reverse("purchase_status_edit", kwargs={"pk": purchase_order.pk})},
-    ]
-
-    return render(
-        request,
-        "materials/purchase_detail.html",
-        {
-            "page_title": f"Замовлення #{purchase_order.id}",
-            "tabs": tabs,
-            "active_tab": "orders",
-            "back_url": reverse("purchases"),
-            "back_label": "Закупівлі",
-            "purchase_order": purchase_order,
-            "lines": lines,
-            "line_add_url": reverse("purchase_line_add", kwargs={"pk": purchase_order.pk}),
-            "line_add_from_request_url": reverse(
-                "purchase_pick_request_line_for_order",
-                kwargs={"pk": purchase_order.pk},
-            ),
-            "actions": actions,
-        },
-    )
-
-
-@login_required(login_url=reverse_lazy("auth_login"))
 def purchase_status_edit(request, pk: int):
     purchase_order = get_object_or_404(PurchaseOrder.objects.select_related("supplier"), pk=pk)
     if request.method == "POST":
@@ -1105,103 +1240,6 @@ def purchase_request_add(request):
             "back_url": reverse("purchase_requests"),
             "form": form,
             "submit_label": "Створити",
-        },
-    )
-
-
-@login_required(login_url=reverse_lazy("auth_login"))
-def purchase_request_detail(request, pk: int):
-    pr = get_object_or_404(PurchaseRequest.objects.select_related("warehouse"), pk=pk)
-    lines = list(
-        pr.lines.select_related("material", "material_color").order_by("id")
-    )
-    po_lines = list(
-        PurchaseOrderLine.objects.select_related("purchase_order", "purchase_order__supplier")
-        .filter(request_line__request_id=pr.id)
-        .order_by("id")
-    )
-    po_lines_by_request_line: dict[int, list[PurchaseOrderLine]] = {}
-    for po_line in po_lines:
-        if po_line.request_line_id is None:
-            continue
-        po_lines_by_request_line.setdefault(po_line.request_line_id, []).append(po_line)
-
-    line_action_items: dict[int, list[dict]] = {}
-    for line in lines:
-        if line.status in {PurchaseRequestLine.Status.DONE, PurchaseRequestLine.Status.CANCELLED}:
-            continue
-        line_action_items[line.id] = [
-            {
-                "label": "Закрити",
-                "url": reverse("purchase_request_line_set_status", kwargs={"line_pk": line.pk}),
-                "method": "post",
-                "icon": "check",
-                "confirm": "Закрити позицію?",
-                "extra_fields": {"status": PurchaseRequestLine.Status.DONE},
-            },
-            {"divider": True},
-            {
-                "label": "Скасувати",
-                "url": reverse("purchase_request_line_set_status", kwargs={"line_pk": line.pk}),
-                "method": "post",
-                "icon": "trash",
-                "danger": True,
-                "confirm": "Скасувати позицію?",
-                "extra_fields": {"status": PurchaseRequestLine.Status.CANCELLED},
-            },
-        ]
-
-    actions = []
-    if pr.status not in {PurchaseRequest.Status.DONE, PurchaseRequest.Status.CANCELLED}:
-        actions.append(
-            {
-                "label": "В роботу",
-                "url": reverse("purchase_request_set_status", kwargs={"pk": pr.pk}),
-                "method": "post",
-                "extra_fields": {"status": PurchaseRequest.Status.IN_PROGRESS},
-            }
-        )
-        actions.append(
-            {
-                "label": "Закрити",
-                "url": reverse("purchase_request_set_status", kwargs={"pk": pr.pk}),
-                "method": "post",
-                "icon": "check",
-                "confirm": "Закрити заявку?",
-                "extra_fields": {"status": PurchaseRequest.Status.DONE},
-            }
-        )
-        actions.append({"divider": True})
-        actions.append(
-            {
-                "label": "Скасувати",
-                "url": reverse("purchase_request_set_status", kwargs={"pk": pr.pk}),
-                "method": "post",
-                "icon": "trash",
-                "danger": True,
-                "confirm": "Скасувати заявку?",
-                "extra_fields": {"status": PurchaseRequest.Status.CANCELLED},
-            }
-        )
-    tabs = [
-        {"id": "orders", "label": "Замовлення", "url": reverse("purchases")},
-        {"id": "requests", "label": "Заявки", "url": reverse("purchase_requests")},
-    ]
-    return render(
-        request,
-        "materials/purchase_request_detail.html",
-        {
-            "page_title": f"Заявка #{pr.id}",
-            "tabs": tabs,
-            "active_tab": "requests",
-            "back_url": reverse("purchase_requests"),
-            "back_label": "Заявки",
-            "actions": actions,
-            "purchase_request": pr,
-            "lines": lines,
-            "po_lines_by_request_line": po_lines_by_request_line,
-            "line_action_items": line_action_items,
-            "line_add_url": reverse("purchase_request_line_add", kwargs={"pk": pr.pk}),
         },
     )
 

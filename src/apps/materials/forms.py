@@ -72,6 +72,18 @@ class PurchaseOrderForm(forms.ModelForm):
         }
 
 
+class PurchaseOrderEditForm(forms.ModelForm):
+    class Meta:
+        model = PurchaseOrder
+        fields = ["external_ref", "tracking_number", "expected_at", "notes"]
+        widgets = {
+            "external_ref": forms.TextInput(attrs={"class": FORM_INPUT}),
+            "tracking_number": forms.TextInput(attrs={"class": FORM_INPUT}),
+            "expected_at": forms.DateInput(attrs={"class": FORM_INPUT, "type": "date"}),
+            "notes": forms.Textarea(attrs={"class": FORM_TEXTAREA, "rows": 3}),
+        }
+
+
 class PurchaseOrderStartForm(forms.Form):
     supplier = forms.ModelChoiceField(
         queryset=Supplier.objects.filter(archived_at__isnull=True).order_by("name"),
@@ -225,6 +237,15 @@ class PurchaseRequestForm(forms.ModelForm):
         widgets = {
             "notes": forms.Textarea(attrs={"class": FORM_TEXTAREA, "rows": 3}),
             "status": forms.Select(attrs={"class": FORM_SELECT}),
+        }
+
+
+class PurchaseRequestEditForm(forms.ModelForm):
+    class Meta:
+        model = PurchaseRequest
+        fields = ["notes"]
+        widgets = {
+            "notes": forms.Textarea(attrs={"class": FORM_TEXTAREA, "rows": 3}),
         }
 
 

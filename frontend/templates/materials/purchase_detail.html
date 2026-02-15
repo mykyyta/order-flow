@@ -1,89 +1,87 @@
-{% extends "base_form_page.html" %}
+{% extends "base_detail_page.html" %}
 
-{% block form_content %}
+{% block page_title_text %}Замовлення #{{ purchase_order.id }}{% endblock %}
+
+{% block page_header_actions %}
+<a href="{{ line_add_from_request_url }}" class="btn-secondary">Додати з заявки</a>
+<a href="{{ line_add_url }}" class="btn-primary">Додати позицію</a>
+{% if actions %}
+{% include "partials/action_menu.html" with items=actions icon_only=True icon_style="horizontal" %}
+{% endif %}
+{% endblock %}
+
+{% block detail_layout %}{% endblock %}{# Single column on all screens #}
+
+{% block detail_content %}
 {% include "partials/tabs.html" with tabs=tabs active=active_tab variant="segmented" %}
 
-<div class="space-y-4 mt-3">
-    <div class="card">
-        <div class="px-4 py-3 border-b border-slate-100 flex items-start justify-between gap-3">
-            <div class="min-w-0">
-                <h3 class="text-sm font-semibold text-slate-900 truncate">
-                    Замовлення #{{ purchase_order.id }}
-                </h3>
-                <p class="mt-1 text-xs text-slate-500 truncate">
-                    {{ purchase_order.supplier.name }}
-                </p>
-            </div>
-            <div class="flex items-center gap-2 shrink-0">
-                <a href="{{ line_add_from_request_url }}" class="btn-secondary">Додати з заявки</a>
-                <a href="{{ line_add_url }}" class="btn-primary">Додати позицію</a>
-                {% if actions %}
-                {% include "partials/action_menu.html" with items=actions icon_only=True icon_style="horizontal" %}
-                {% endif %}
-            </div>
+<div class="card mt-3">
+    <div class="p-4 sm:p-5">
+        <div class="rounded-md bg-slate-50 px-3 py-2 text-sm text-slate-700">
+            Постачальник: <span class="font-medium">{{ purchase_order.supplier.name }}</span>
+            <span class="text-slate-400">·</span>
+            Статус: <span class="font-medium">{{ purchase_order.get_status_display }}</span>
         </div>
 
-        <div class="p-4 space-y-1">
-            {% include "partials/detail_field.html" with label="Статус" value=purchase_order.get_status_display badge=True %}
-            {% include "partials/detail_field.html" with label="Номер/посилання" value=purchase_order.external_ref muted=True %}
-            {% include "partials/detail_field.html" with label="Трек/ТТН" value=purchase_order.tracking_number muted=True %}
-            {% include "partials/detail_field.html" with label="Очікується" value=purchase_order.expected_at muted=True %}
-            {% include "partials/detail_field.html" with label="Створено" value=purchase_order.created_at muted=True %}
-            {% if purchase_order.notes %}
-            <div class="pt-2">
-                <p class="text-xs font-medium uppercase tracking-wider text-slate-400">Коментар</p>
-                <p class="mt-1 text-sm text-slate-600 whitespace-pre-line">{{ purchase_order.notes }}</p>
-            </div>
-            {% endif %}
-        </div>
+        <form method="post" class="mt-4 space-y-4">
+            {% csrf_token %}
+            {% include "partials/form_field.html" with field=form.external_ref label="Номер/посилання" %}
+            {% include "partials/form_field.html" with field=form.tracking_number label="Трек/ТТН" %}
+            {% include "partials/form_field.html" with field=form.expected_at label="Очікується" %}
+            {% include "partials/form_field.html" with field=form.notes label="Коментар" %}
+            <button type="submit" class="btn-primary">Зберегти</button>
+        </form>
     </div>
+</div>
 
-    <div class="card">
-        <div class="px-4 py-3 border-b border-slate-100">
-            <h3 class="text-sm font-semibold text-slate-900">Позиції</h3>
-        </div>
-        <div class="divide-y divide-slate-100">
-            {% for line in lines %}
-            <div class="px-4 py-3 space-y-1">
-                <div class="flex items-start justify-between gap-3">
-                    <div class="min-w-0">
-                        <p class="truncate text-sm font-medium text-slate-900">
-                            {{ line.material.name }}
-                            {% if line.material_color %}· {{ line.material_color.name }}{% endif %}
-                        </p>
-                        {% if line.supplier_offer %}
-                        <p class="text-xs text-slate-500">
-                            {{ line.supplier_offer.title }}
-                            {% if line.supplier_offer.url %}
-                                <span class="text-slate-400">·</span>
-                                <a href="{{ line.supplier_offer.url }}" target="_blank" rel="noreferrer" class="hover:underline">
-                                    Відкрити
-                                </a>
-                            {% endif %}
-                        </p>
+<div class="card mt-4">
+    <div class="px-4 py-3 border-b border-slate-100">
+        <h3 class="text-sm font-semibold text-slate-900">Позиції</h3>
+    </div>
+    <div class="divide-y divide-slate-100">
+        {% for line in lines %}
+        <div class="px-4 py-3 space-y-1">
+            <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                    <p class="truncate text-sm font-medium text-slate-900">
+                        {{ line.material.name }}
+                        {% if line.material_color %}· {{ line.material_color.name }}{% endif %}
+                    </p>
+                    {% if line.supplier_offer %}
+                    <p class="text-xs text-slate-500">
+                        {{ line.supplier_offer.title }}
+                        {% if line.supplier_offer.url %}
+                            <span class="text-slate-400">·</span>
+                            <a href="{{ line.supplier_offer.url }}" target="_blank" rel="noreferrer" class="hover:underline">
+                                Відкрити
+                            </a>
                         {% endif %}
-                        <p class="text-xs text-slate-500">
-                            {{ line.received_quantity }} / {{ line.quantity }} {{ line.unit }}
-                        </p>
-                        {% if line.notes %}
-                        <p class="text-xs text-slate-500 whitespace-pre-line">{{ line.notes }}</p>
-                        {% endif %}
-                    </div>
-                    <div class="shrink-0 flex items-center gap-2">
-                        {% if line.remaining_quantity > 0 %}
-                        <a href="{% url 'purchase_line_receive' purchase_order.id line.id %}" class="btn-secondary">
-                            Прийняти
-                        </a>
-                        {% else %}
-                        {% include "partials/badge.html" with label="Ок" variant="success" size="sm" %}
-                        {% endif %}
-                    </div>
+                    </p>
+                    {% endif %}
+                    <p class="text-xs text-slate-500">
+                        {{ line.received_quantity }} / {{ line.quantity }} {{ line.unit }}
+                    </p>
+                    {% if line.notes %}
+                    <p class="text-xs text-slate-500 whitespace-pre-line">{{ line.notes }}</p>
+                    {% endif %}
+                </div>
+                <div class="shrink-0 flex items-center gap-2">
+                    {% if line.remaining_quantity > 0 %}
+                    <a href="{% url 'purchase_line_receive' purchase_order.id line.id %}" class="btn-secondary">
+                        Прийняти
+                    </a>
+                    {% else %}
+                    {% include "partials/badge.html" with label="Ок" variant="success" size="sm" %}
+                    {% endif %}
                 </div>
             </div>
-            {% empty %}
-            {% include "partials/empty_state.html" with message="Поки що позицій немає." %}
-            {% endfor %}
         </div>
+        {% empty %}
+        {% include "partials/empty_state.html" with message="Поки що позицій немає." %}
+        {% endfor %}
     </div>
 </div>
 {% endblock %}
+
+{% block detail_sidebar %}{% endblock %}{# No sidebar #}
+
