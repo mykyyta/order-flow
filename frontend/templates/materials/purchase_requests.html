@@ -144,11 +144,6 @@
                 {% include "partials/badge.html" with label=line.get_status_display variant="primary" size="sm" %}
             {% endif %}
 
-            {% if line and pr.status != "done" and pr.status != "cancelled" and line.status != "done" and line.status != "cancelled" %}
-                <a href="{% url 'purchase_request_line_order' line.id %}" class="btn-secondary">
-                    Замовити
-                </a>
-            {% endif %}
         </div>
     </div>
 </div>

@@ -6,7 +6,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Prefetch, Q
-from django.http import HttpRequest
+from django.http import Http404, HttpRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
@@ -648,12 +648,32 @@ class PurchaseRequestDetailView(LoginRequiredMixin, UpdateView):
     template_name = "materials/purchase_request_form.html"
     context_object_name = "purchase_request"
 
+    def get_object(self, queryset=None) -> PurchaseRequest:
+        pr: PurchaseRequest = super().get_object(queryset=queryset)
+        line = pr.lines.select_related("material", "material_color").order_by("id").first()
+        if line is None:
+            # Should not happen. We enforce "1 line per request", but keep this strict.
+            raise Http404("Purchase request has no line.")
+        self._line = line
+        return pr
+
     def get_queryset(self):
         return PurchaseRequest.objects.select_related("warehouse")
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["line"] = self._line
+        return kwargs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         pr: PurchaseRequest = self.object
+        line = self._line
+
+        can_order = (
+            pr.status not in {PurchaseRequest.Status.DONE, PurchaseRequest.Status.CANCELLED}
+            and line.status not in {PurchaseRequestLine.Status.DONE, PurchaseRequestLine.Status.CANCELLED}
+        )
 
         context.update(
             {
@@ -661,6 +681,10 @@ class PurchaseRequestDetailView(LoginRequiredMixin, UpdateView):
                 "page_title_center": True,
                 "back_url": reverse("purchase_requests"),
                 "back_label": "Заявки",
+                "material": line.material,
+                "material_color": line.material_color,
+                "can_order": can_order,
+                "order_url": reverse("purchase_request_line_order", kwargs={"line_pk": line.pk}),
             }
         )
         return context

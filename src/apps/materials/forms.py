@@ -239,6 +239,16 @@ class PurchaseRequestForm(forms.ModelForm):
 
 
 class PurchaseRequestEditForm(forms.ModelForm):
+    requested_quantity = forms.DecimalField(
+        required=False,
+        min_value=Decimal("0.001"),
+        decimal_places=3,
+        widget=forms.NumberInput(
+            attrs={"class": FORM_INPUT, "step": "0.001", "min": "0.001", "placeholder": "Необов'язково"}
+        ),
+        label="Кількість",
+    )
+
     class Meta:
         model = PurchaseRequest
         fields = ["status", "notes"]
@@ -246,6 +256,18 @@ class PurchaseRequestEditForm(forms.ModelForm):
             "status": forms.Select(attrs={"class": FORM_SELECT}),
             "notes": forms.Textarea(attrs={"class": FORM_TEXTAREA, "rows": 3, "placeholder": "Необов'язково"}),
         }
+
+    def __init__(self, *args, line: PurchaseRequestLine, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self._line = line
+        self.fields["requested_quantity"].initial = line.requested_quantity
+
+    def save(self, commit: bool = True) -> PurchaseRequest:
+        pr: PurchaseRequest = super().save(commit=commit)
+        if commit:
+            self._line.requested_quantity = self.cleaned_data.get("requested_quantity")
+            self._line.save(update_fields=["requested_quantity", "unit", "updated_at"])
+        return pr
 
 
 class PurchaseRequestCreateForMaterialForm(forms.Form):

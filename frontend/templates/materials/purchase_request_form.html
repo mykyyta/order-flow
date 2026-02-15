@@ -3,11 +3,28 @@
 {% block form_content %}
 <form method="post" class="space-y-4">
     {% csrf_token %}
+    <div class="text-sm font-medium text-slate-900">
+        {{ material.name }}{% if material_color %}<span class="text-slate-400">·</span> {{ material_color.name }}{% endif %}
+    </div>
     {% include "partials/form_field.html" with field=form.status label="Статус" %}
+    <div>
+        {% include "partials/form_field.html" with field=form.requested_quantity label="Кількість" show_optional_hint=False %}
+        <div class="mt-1 text-xs text-slate-500">
+            Одиниця: {{ material.get_stock_unit_display }}
+        </div>
+    </div>
     {% include "partials/form_field.html" with field=form.notes label="Коментар" show_optional_hint=False %}
 
-    <button type="submit" class="btn-primary w-full min-h-[44px]">
-        {{ submit_label|default:"Зберегти" }}
-    </button>
+    <div class="grid grid-cols-2 gap-2">
+        <button type="submit" class="btn-primary w-full min-h-[44px]">
+            {{ submit_label|default:"Зберегти" }}
+        </button>
+        <a
+            href="{{ order_url }}"
+            class="btn-secondary w-full min-h-[44px] flex items-center justify-center {% if not can_order %}pointer-events-none opacity-40{% endif %}"
+        >
+            Замовити
+        </a>
+    </div>
 </form>
 {% endblock %}

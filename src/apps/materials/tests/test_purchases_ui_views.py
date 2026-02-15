@@ -166,20 +166,25 @@ def test_purchase_request_edit_renders_and_updates(client):
         requested_quantity=Decimal("2.000"),
         unit=MaterialUnit.PIECE,
     )
+    line = pr.lines.get()
+
     response = client.get(reverse("purchase_request_detail", kwargs={"pk": pr.pk}))
     assert response.status_code == 200
     assert "Статус".encode() in response.content
     assert "Коментар".encode() in response.content
+    assert reverse("purchase_request_line_order", kwargs={"line_pk": line.pk}).encode() in response.content
 
     response = client.post(
         reverse("purchase_request_detail", kwargs={"pk": pr.pk}),
-        data={"status": PurchaseRequest.Status.DONE, "notes": "Closed"},
+        data={"status": PurchaseRequest.Status.DONE, "requested_quantity": "3.000", "notes": "Closed"},
     )
     assert response.status_code == 302
     assert response["Location"] == reverse("purchase_requests")
     pr.refresh_from_db()
+    line.refresh_from_db()
     assert pr.status == PurchaseRequest.Status.DONE
     assert pr.notes == "Closed"
+    assert line.requested_quantity == Decimal("3.000")
 
 
 @pytest.mark.django_db(transaction=True)
