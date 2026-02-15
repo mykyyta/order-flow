@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import Prefetch, Q
+from django.db.models import Case, IntegerField, Prefetch, Q, Value, When
 from django.http import Http404, HttpRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
@@ -548,7 +548,22 @@ def purchases_list(request):
     status = (request.GET.get("status") or "").strip()
     search_query = (request.GET.get("q") or "").strip()
 
-    queryset = PurchaseOrder.objects.select_related("supplier").order_by("-created_at")
+    line_qs = PurchaseOrderLine.objects.select_related("material").order_by("id")
+    queryset = (
+        PurchaseOrder.objects.select_related("supplier")
+        .prefetch_related(Prefetch("lines", queryset=line_qs))
+        .annotate(
+            is_closed=Case(
+                When(
+                    status__in=[PurchaseOrder.Status.RECEIVED, PurchaseOrder.Status.CANCELLED],
+                    then=Value(1),
+                ),
+                default=Value(0),
+                output_field=IntegerField(),
+            )
+        )
+        .order_by("is_closed", "-created_at")
+    )
     if status:
         queryset = queryset.filter(status=status)
     if search_query:
@@ -564,6 +579,10 @@ def purchases_list(request):
 
     paginator = Paginator(queryset, 50)
     page_obj = paginator.get_page(request.GET.get("page"))
+
+    for po in page_obj.object_list:
+        # Unique material names, without colors. Used on the list card.
+        po.material_names = sorted({line.material.name for line in po.lines.all()})
 
     open_requests_count = PurchaseRequest.objects.filter(
         status__in=[PurchaseRequest.Status.OPEN, PurchaseRequest.Status.IN_PROGRESS]

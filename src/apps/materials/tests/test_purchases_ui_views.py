@@ -36,6 +36,44 @@ def test_purchases_list_renders_purchase_orders(client):
 
 
 @pytest.mark.django_db(transaction=True)
+def test_purchases_list_shows_materials_and_sorts_received_last(client):
+    user = UserFactory()
+    client.force_login(user, backend=AUTH_BACKEND)
+    supplier = Supplier.objects.create(name="Shop Sort")
+
+    alpha = Material.objects.create(name="Alpha", stock_unit=MaterialUnit.PIECE)
+    beta = Material.objects.create(name="Beta", stock_unit=MaterialUnit.PIECE)
+
+    po_open = PurchaseOrder.objects.create(supplier=supplier, status=PurchaseOrder.Status.DRAFT, created_by=user)
+    PurchaseOrderLine.objects.create(
+        purchase_order=po_open,
+        material=beta,
+        quantity=Decimal("1.000"),
+        unit=MaterialUnit.PIECE,
+    )
+    PurchaseOrderLine.objects.create(
+        purchase_order=po_open,
+        material=alpha,
+        quantity=Decimal("1.000"),
+        unit=MaterialUnit.PIECE,
+    )
+
+    po_done = PurchaseOrder.objects.create(supplier=supplier, status=PurchaseOrder.Status.RECEIVED, created_by=user)
+
+    response = client.get(reverse("purchases"))
+    assert response.status_code == 200
+
+    # Materials line should be unique and sorted alphabetically.
+    assert "Alpha, Beta".encode() in response.content
+
+    open_idx = response.content.find(f"Деталі замовлення #{po_open.id}".encode())
+    done_idx = response.content.find(f"Деталі замовлення #{po_done.id}".encode())
+    assert open_idx != -1
+    assert done_idx != -1
+    assert open_idx < done_idx
+
+
+@pytest.mark.django_db(transaction=True)
 def test_purchase_detail_renders_lines_and_receive_link(client):
     user = UserFactory()
     client.force_login(user, backend=AUTH_BACKEND)
