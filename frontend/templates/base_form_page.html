@@ -26,11 +26,17 @@ Optional context:
         <a href="{{ back_url }}" class="link-back">&larr; {{ back_label|default:"Назад" }}</a>
     </div>
     {% endif %}
+    {% if show_form_frame|default_if_none:True %}
     <div class="card">
         <div class="form-card-body">
-            {% block form_content %}{% endblock %}
+    {% endif %}
+
+    {% block form_content %}{% endblock %}
+
+    {% if show_form_frame|default_if_none:True %}
         </div>
     </div>
+    {% endif %}
     {% block form_page_footer %}{% endblock %}
 </div>
 {% endblock %}

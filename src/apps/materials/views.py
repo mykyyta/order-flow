@@ -619,6 +619,7 @@ class PurchaseOrderDetailView(LoginRequiredMixin, UpdateView):
                 "page_title_center": True,
                 "back_url": reverse("purchases"),
                 "back_label": "Закупівлі",
+                "show_form_frame": False,
                 "lines": lines,
                 "line_add_url": reverse("purchase_line_add", kwargs={"pk": purchase_order.pk}),
                 "line_add_from_request_url": reverse(
@@ -1117,6 +1118,7 @@ def purchase_line_add_choose(request, pk: int):
                 "page_title_center": True,
                 "back_url": reverse("purchase_detail", kwargs={"pk": purchase_order.pk}),
                 "back_label": "Замовлення",
+                "show_form_frame": False,
                 "purchase_order": purchase_order,
                 "tabs": tabs,
                 "active_tab": "new",
@@ -1148,6 +1150,7 @@ def purchase_line_add_choose(request, pk: int):
             "page_title_center": True,
             "back_url": reverse("purchase_detail", kwargs={"pk": purchase_order.pk}),
             "back_label": "Замовлення",
+            "show_form_frame": False,
             "purchase_order": purchase_order,
             "tabs": tabs,
             "active_tab": "requests",
