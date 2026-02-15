@@ -284,7 +284,7 @@ def test_purchase_detail_shows_add_from_request_button(client):
 
     response = client.get(reverse("purchase_detail", kwargs={"pk": po.pk}))
     assert response.status_code == 200
-    assert reverse("purchase_pick_request_line_for_order", kwargs={"pk": po.pk}).encode() in response.content
+    assert reverse("purchase_line_add_choose", kwargs={"pk": po.pk}).encode() in response.content
 
 
 @pytest.mark.django_db(transaction=True)

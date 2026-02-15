@@ -18,6 +18,7 @@ from apps.materials.views import (
     PurchaseOrderDetailView,
     purchase_line_add,
     purchase_line_fix_unit,
+    purchase_line_add_choose,
     purchase_line_receive,
     purchase_status_edit,
     purchase_start_material,
@@ -107,6 +108,7 @@ urlpatterns = [
     path("purchases/<int:pk>/status/edit/", purchase_status_edit, name="purchase_status_edit"),
     path("purchases/<int:pk>/status/", purchase_set_status, name="purchase_set_status"),
     path("purchases/<int:pk>/lines/add/", purchase_line_add, name="purchase_line_add"),
+    path("purchases/<int:pk>/lines/add/choose/", purchase_line_add_choose, name="purchase_line_add_choose"),
     path(
         "purchases/<int:pk>/from-request/",
         purchase_pick_request_line_for_order,

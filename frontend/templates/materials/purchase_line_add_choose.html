@@ -1,0 +1,162 @@
+{% extends "base_form_page.html" %}
+
+{% block form_content %}
+<div class="space-y-4">
+    {% include "partials/tabs.html" with tabs=tabs active=active_tab variant="segmented" %}
+
+    {% if mode == "new" %}
+    <form method="post" class="space-y-4">
+        {% csrf_token %}
+        {% if next_url %}
+        <input type="hidden" name="next" value="{{ next_url }}">
+        {% endif %}
+        {% include "partials/form_field.html" with field=form.material label="Матеріал" %}
+        {% include "partials/form_field.html" with field=form.material_color label="Колір" %}
+        {% include "partials/form_field.html" with field=form.quantity label="Кількість" %}
+        {% include "partials/form_field.html" with field=form.unit_price label="Ціна за одиницю" %}
+        {% include "partials/form_field.html" with field=form.notes label="Коментар" %}
+
+        <button type="submit" class="btn-primary w-full min-h-[44px]">
+            Додати
+        </button>
+    </form>
+    {% else %}
+    <div class="flex items-center justify-between gap-2" x-data="{ open: false }">
+        <div class="min-w-0">
+            <div class="text-sm font-medium text-slate-700 truncate">
+                Обрати з заявки
+            </div>
+            <div class="mt-0.5 text-xs text-slate-500 truncate">
+                Замовлення #{{ purchase_order.id }} · {{ purchase_order.supplier.name }}
+            </div>
+        </div>
+
+        <div class="relative flex items-center gap-2">
+            <button
+                type="button"
+                class="btn-secondary flex h-10 w-10 items-center justify-center px-0"
+                aria-label="Фільтри"
+                title="Фільтри"
+                @click="open = true"
+            >
+                <svg class="h-5 w-5" viewBox="0 0 24 24" aria-hidden="true" fill="none"
+                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 5h18M6 12h12M10 19h4"/>
+                </svg>
+            </button>
+            <a
+                href="{{ clear_url }}"
+                class="btn-secondary flex h-10 w-10 items-center justify-center px-0 {% if not search_query %}pointer-events-none opacity-40{% endif %}"
+                aria-label="Скинути"
+                title="Скинути"
+            >
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2"
+                     viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </a>
+
+            <div
+                x-show="open"
+                x-cloak
+                class="fixed inset-0 z-50 sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:z-[60]"
+                @keydown.escape.window="open = false"
+            >
+                <div
+                    class="fixed inset-0 bg-black/30 sm:hidden"
+                    aria-hidden="true"
+                    @click="open = false"
+                ></div>
+
+                <div
+                    class="fixed inset-x-0 bottom-0 w-full rounded-t-2xl border border-slate-200 bg-white shadow-2xl
+                           sm:static sm:mt-2 sm:w-[360px] sm:rounded-xl"
+                    @click.outside="open = false"
+                >
+                    <div class="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">
+                        <div class="text-sm font-semibold text-slate-900">Фільтри</div>
+                        <button
+                            type="button"
+                            class="btn-secondary flex h-9 w-9 items-center justify-center px-0"
+                            aria-label="Закрити"
+                            title="Закрити"
+                            @click="open = false"
+                        >
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2"
+                                 viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <form method="get" class="p-4 space-y-3">
+                        <input type="hidden" name="mode" value="requests">
+                        <div class="relative">
+                            <input
+                                type="search"
+                                name="q"
+                                value="{{ search_query }}"
+                                placeholder="Пошук: матеріал або колір"
+                                class="form-input w-full pl-9"
+                            >
+                            <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+                                 fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <button type="submit" class="btn-secondary w-full">
+                                Показати
+                            </button>
+                            <a href="{{ clear_url }}" class="btn-secondary w-full text-center">
+                                Скинути
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="divide-y divide-slate-100">
+            {% for line in page_obj.object_list %}
+            <a
+                href="{% url 'purchase_request_line_order' line.id %}?supplier={{ purchase_order.supplier_id }}&purchase_order={{ purchase_order.id }}"
+                class="block px-4 py-3 hover:bg-slate-50/80 transition-colors"
+                aria-label="Додати позицію з заявки #{{ line.request_id }}"
+            >
+                <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                        <div class="truncate text-sm font-medium text-slate-900">
+                            {{ line.material.name }}
+                            {% if line.material_color %}<span class="text-slate-400">·</span> {{ line.material_color.name }}{% endif %}
+                        </div>
+                        <div class="mt-0.5 text-xs text-slate-500 truncate">
+                            Заявка #{{ line.request_id }}
+                            <span class="text-slate-400">·</span>
+                            {% if line.requested_quantity %}{{ line.requested_quantity }} {{ line.unit }}{% else %}Кількість не вказана{% endif %}
+                        </div>
+                    </div>
+                    <div class="shrink-0">
+                        {% if line.status == "ordered" %}
+                            {% include "partials/badge.html" with label=line.get_status_display variant="primary" size="sm" %}
+                        {% else %}
+                            {% include "partials/badge.html" with label=line.get_status_display variant="info" size="sm" %}
+                        {% endif %}
+                    </div>
+                </div>
+            </a>
+            {% empty %}
+            {% include "partials/empty_state.html" with message="Немає відкритих позицій заявки." %}
+            {% endfor %}
+        </div>
+    </div>
+
+    {% include "partials/pagination.html" with page_obj=page_obj %}
+    {% endif %}
+</div>
+{% endblock %}
+

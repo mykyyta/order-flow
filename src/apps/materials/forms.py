@@ -74,8 +74,9 @@ class PurchaseOrderForm(forms.ModelForm):
 class PurchaseOrderEditForm(forms.ModelForm):
     class Meta:
         model = PurchaseOrder
-        fields = ["expected_at", "notes"]
+        fields = ["status", "expected_at", "notes"]
         widgets = {
+            "status": forms.Select(attrs={"class": FORM_SELECT}),
             "expected_at": forms.DateInput(attrs={"class": FORM_INPUT, "type": "date"}),
             "notes": forms.Textarea(attrs={"class": FORM_TEXTAREA, "rows": 3}),
         }

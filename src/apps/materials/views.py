@@ -11,7 +11,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_http_methods
 from django.views.generic import CreateView, ListView, UpdateView
 from django.db.models.functions import Lower
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
@@ -625,6 +625,7 @@ class PurchaseOrderDetailView(LoginRequiredMixin, UpdateView):
                     "purchase_pick_request_line_for_order",
                     kwargs={"pk": purchase_order.pk},
                 ),
+                "line_add_choose_url": reverse("purchase_line_add_choose", kwargs={"pk": purchase_order.pk}),
                 "actions": actions,
             }
         )
@@ -1071,6 +1072,89 @@ def purchase_pick_request_line_for_order(request, pk: int):
             "purchase_order": purchase_order,
             "page_obj": page_obj,
             "search_query": search_query,
+        },
+    )
+
+
+@login_required(login_url=reverse_lazy("auth_login"))
+@require_http_methods(["GET", "POST"])
+def purchase_line_add_choose(request, pk: int):
+    purchase_order = get_object_or_404(PurchaseOrder.objects.select_related("supplier"), pk=pk)
+    mode = (request.GET.get("mode") or "requests").strip()
+    if mode not in {"requests", "new"}:
+        mode = "requests"
+
+    base_url = reverse("purchase_line_add_choose", kwargs={"pk": purchase_order.pk})
+    tabs = [
+        {"id": "requests", "label": "З заявок", "url": f"{base_url}?mode=requests"},
+        {"id": "new", "label": "Нова позиція", "url": f"{base_url}?mode=new"},
+    ]
+
+    if mode == "new":
+        raw_next_url = (request.GET.get("next") or request.POST.get("next") or "").strip()
+        next_url = _safe_next_url(
+            request,
+            raw_next_url,
+            fallback=reverse("purchase_detail", kwargs={"pk": purchase_order.pk}),
+        )
+        if request.method == "POST":
+            form = PurchaseOrderLineForm(request.POST)
+            if form.is_valid():
+                line: PurchaseOrderLine = form.save(commit=False)
+                line.purchase_order = purchase_order
+                line.unit = line.material.stock_unit
+                line.save()
+                messages.success(request, "Готово! Позицію додано.")
+                return redirect(next_url)
+        else:
+            form = PurchaseOrderLineForm()
+
+        return render(
+            request,
+            "materials/purchase_line_add_choose.html",
+            {
+                "page_title": "Додати позицію",
+                "page_title_center": True,
+                "back_url": reverse("purchase_detail", kwargs={"pk": purchase_order.pk}),
+                "back_label": "Замовлення",
+                "purchase_order": purchase_order,
+                "tabs": tabs,
+                "active_tab": "new",
+                "mode": "new",
+                "form": form,
+                "next_url": next_url,
+            },
+        )
+
+    search_query = (request.GET.get("q") or "").strip()
+    queryset = (
+        PurchaseRequestLine.objects.select_related("request", "material", "material_color")
+        .exclude(status__in=[PurchaseRequestLine.Status.DONE, PurchaseRequestLine.Status.CANCELLED])
+        .order_by("-request__created_at", "id")
+    )
+    if search_query:
+        queryset = queryset.filter(
+            Q(material__name__icontains=search_query) | Q(material_color__name__icontains=search_query)
+        )
+
+    paginator = Paginator(queryset, 50)
+    page_obj = paginator.get_page(request.GET.get("page"))
+
+    return render(
+        request,
+        "materials/purchase_line_add_choose.html",
+        {
+            "page_title": "Додати позицію",
+            "page_title_center": True,
+            "back_url": reverse("purchase_detail", kwargs={"pk": purchase_order.pk}),
+            "back_label": "Замовлення",
+            "purchase_order": purchase_order,
+            "tabs": tabs,
+            "active_tab": "requests",
+            "mode": "requests",
+            "page_obj": page_obj,
+            "search_query": search_query,
+            "clear_url": f"{base_url}?mode=requests",
         },
     )
 

@@ -14,11 +14,7 @@
             </div>
         </div>
         <div class="flex items-center gap-2 shrink-0">
-            <a href="{{ line_add_from_request_url }}" class="btn-secondary">Додати з заявки</a>
-            <a href="{{ line_add_url }}" class="btn-primary">Додати позицію</a>
-            {% if actions %}
-            {% include "partials/action_menu.html" with items=actions icon_only=True icon_style="horizontal" %}
-            {% endif %}
+            <a href="{{ line_add_choose_url }}" class="btn-primary">Додати</a>
         </div>
     </div>
 
@@ -69,6 +65,7 @@
         <div class="p-4 sm:p-5">
             <form method="post" class="space-y-4">
                 {% csrf_token %}
+                {% include "partials/form_field.html" with field=form.status label="Статус" %}
                 {% include "partials/form_field.html" with field=form.expected_at label="Очікується" %}
                 {% include "partials/form_field.html" with field=form.notes label="Коментар" %}
                 <button type="submit" class="btn-primary">Зберегти</button>
@@ -77,4 +74,3 @@
     </div>
 </div>
 {% endblock %}
-
