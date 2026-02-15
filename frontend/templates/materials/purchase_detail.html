@@ -1,93 +1,80 @@
-{% extends "base_detail_page.html" %}
+{% extends "base_form_page.html" %}
 
-{% block page_title_text %}Замовлення #{{ purchase_order.id }}{% endblock %}
-
-{% block page_header_actions %}
-<a href="{{ line_add_from_request_url }}" class="btn-secondary">Додати з заявки</a>
-<a href="{{ line_add_url }}" class="btn-primary">Додати позицію</a>
-{% if actions %}
-{% include "partials/action_menu.html" with items=actions icon_only=True icon_style="horizontal" %}
-{% endif %}
-{% endblock %}
-
-{% block detail_layout %}{% endblock %}{# Single column on all screens #}
-
-{% block detail_content %}
-{% include "partials/tabs.html" with tabs=tabs active=active_tab variant="segmented" %}
-
-<div class="card mt-3">
-    <div class="p-4 sm:p-5">
-        <div class="rounded-md bg-slate-50 px-3 py-2 text-sm text-slate-700">
-            Постачальник: <span class="font-medium">{{ purchase_order.supplier.name }}</span>
-            <span class="text-slate-400">·</span>
-            Статус: <span class="font-medium">{{ purchase_order.get_status_display }}</span>
-        </div>
-
-        <form method="post" class="mt-4 space-y-4">
-            {% csrf_token %}
-            {% include "partials/form_field.html" with field=form.external_ref label="Номер/посилання" %}
-            {% include "partials/form_field.html" with field=form.tracking_number label="Трек/ТТН" %}
-            {% include "partials/form_field.html" with field=form.expected_at label="Очікується" %}
-            {% include "partials/form_field.html" with field=form.notes label="Коментар" %}
-            <button type="submit" class="btn-primary">Зберегти</button>
-        </form>
-    </div>
-</div>
-
-<div class="card mt-4">
-    <div class="px-4 py-3 border-b border-slate-100">
-        <h3 class="text-sm font-semibold text-slate-900">Позиції</h3>
-    </div>
-    <div class="divide-y divide-slate-100">
-        {% for line in lines %}
-        <div class="px-4 py-3 space-y-1">
-            <div class="flex items-start justify-between gap-3">
-                <div class="min-w-0">
-                    <p class="truncate text-sm font-medium text-slate-900">
-                        {{ line.material.name }}
-                        {% if line.material_color %}· {{ line.material_color.name }}{% endif %}
-                    </p>
-                    {% if line.supplier_offer %}
-                    <p class="text-xs text-slate-500">
-                        {{ line.supplier_offer.title }}
-                        {% if line.supplier_offer.url %}
-                            <span class="text-slate-400">·</span>
-                            <a href="{{ line.supplier_offer.url }}" target="_blank" rel="noreferrer" class="hover:underline">
-                                Відкрити
-                            </a>
-                        {% endif %}
-                    </p>
-                    {% endif %}
-                    <p class="text-xs text-slate-500">
-                        {{ line.received_quantity }} / {{ line.quantity }} {{ line.unit }}
-                    </p>
-                    {% if line.notes %}
-                    <p class="text-xs text-slate-500 whitespace-pre-line">{{ line.notes }}</p>
-                    {% endif %}
-                </div>
-                <div class="shrink-0 flex items-center gap-2">
-                    {% if line.unit != line.material.stock_unit and line.received_quantity == 0 %}
-                        <form method="post" action="{% url 'purchase_line_fix_unit' purchase_order.id line.id %}" class="m-0">
-                            {% csrf_token %}
-                            <button type="submit" class="btn-secondary">
-                                Виправити одиницю
-                            </button>
-                        </form>
-                    {% elif line.remaining_quantity > 0 %}
-                        <a href="{% url 'purchase_line_receive' purchase_order.id line.id %}" class="btn-secondary">
-                            Прийняти
-                        </a>
-                    {% else %}
-                        {% include "partials/badge.html" with label="Ок" variant="success" size="sm" %}
-                    {% endif %}
-                </div>
+{% block form_content %}
+<div class="space-y-4">
+    <div class="flex items-start justify-between gap-3">
+        <div class="min-w-0">
+            <div class="truncate text-sm font-semibold text-slate-900">
+                Замовлення #{{ purchase_order.id }}
+            </div>
+            <div class="mt-0.5 text-xs text-slate-500 truncate">
+                {{ purchase_order.supplier.name }}
+                <span class="text-slate-400">·</span>
+                {{ purchase_order.get_status_display }}
             </div>
         </div>
-        {% empty %}
-        {% include "partials/empty_state.html" with message="Поки що позицій немає." %}
-        {% endfor %}
+        <div class="flex items-center gap-2 shrink-0">
+            <a href="{{ line_add_from_request_url }}" class="btn-secondary">Додати з заявки</a>
+            <a href="{{ line_add_url }}" class="btn-primary">Додати позицію</a>
+            {% if actions %}
+            {% include "partials/action_menu.html" with items=actions icon_only=True icon_style="horizontal" %}
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="divide-y divide-slate-100">
+            {% for line in lines %}
+            <div class="px-4 py-3">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0 flex-1">
+                        <div class="truncate text-sm font-medium text-slate-900">
+                            {{ line.material.name }}
+                            {% if line.material_color %}<span class="text-slate-400">·</span> {{ line.material_color.name }}{% endif %}
+                            <span class="text-slate-400">·</span>
+                            <span class="font-semibold tabular-nums">{{ line.quantity }}</span> {{ line.unit }}
+                        </div>
+                        {% if line.supplier_offer %}
+                        <div class="mt-0.5 text-xs text-slate-500 truncate">
+                            {{ line.supplier_offer.title }}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="shrink-0 flex items-center gap-2">
+                        {% if line.unit != line.material.stock_unit and line.received_quantity == 0 %}
+                            <form method="post" action="{% url 'purchase_line_fix_unit' purchase_order.id line.id %}" class="m-0">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-secondary">
+                                    Виправити одиницю
+                                </button>
+                            </form>
+                        {% elif line.remaining_quantity > 0 %}
+                            <a href="{% url 'purchase_line_receive' purchase_order.id line.id %}" class="btn-secondary">
+                                Прийняти
+                            </a>
+                        {% else %}
+                            {% include "partials/badge.html" with label="Ок" variant="success" size="sm" %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            {% include "partials/empty_state.html" with message="Поки що позицій немає." %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="p-4 sm:p-5">
+            <form method="post" class="space-y-4">
+                {% csrf_token %}
+                {% include "partials/form_field.html" with field=form.expected_at label="Очікується" %}
+                {% include "partials/form_field.html" with field=form.notes label="Коментар" %}
+                <button type="submit" class="btn-primary">Зберегти</button>
+            </form>
+        </div>
     </div>
 </div>
 {% endblock %}
 
-{% block detail_sidebar %}{% endblock %}{# No sidebar #}

@@ -609,14 +609,6 @@ class PurchaseOrderDetailView(LoginRequiredMixin, UpdateView):
             purchase_order.lines.select_related("material", "material_color", "supplier_offer").order_by("id")
         )
 
-        open_requests_count = PurchaseRequest.objects.filter(
-            status__in=[PurchaseRequest.Status.OPEN, PurchaseRequest.Status.IN_PROGRESS]
-        ).count()
-        tabs = [
-            {"id": "orders", "label": "Замовлення", "url": reverse("purchases")},
-            {"id": "requests", "label": "Заявки", "url": reverse("purchase_requests"), "count": open_requests_count},
-        ]
-
         actions = [
             {"label": "Змінити статус", "url": reverse("purchase_status_edit", kwargs={"pk": purchase_order.pk})},
         ]
@@ -624,10 +616,9 @@ class PurchaseOrderDetailView(LoginRequiredMixin, UpdateView):
         context.update(
             {
                 "page_title": f"Замовлення #{purchase_order.id}",
+                "page_title_center": True,
                 "back_url": reverse("purchases"),
                 "back_label": "Закупівлі",
-                "tabs": tabs,
-                "active_tab": "orders",
                 "lines": lines,
                 "line_add_url": reverse("purchase_line_add", kwargs={"pk": purchase_order.pk}),
                 "line_add_from_request_url": reverse(
