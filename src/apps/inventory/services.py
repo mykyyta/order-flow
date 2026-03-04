@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, TypedDict
 
 from django.db import transaction
+from django.db.models import Sum
 from django.utils import timezone
 
 from apps.catalog.models import Variant
@@ -13,6 +14,7 @@ from apps.inventory.models import (
     ProductStockTransferLine,
     ProductStockMovement,
     ProductStock,
+    ProductStockReservation,
     WIPStockMovement,
     WIPStockRecord,
 )
@@ -52,6 +54,120 @@ def get_stock_quantity(
         .first()
     )
     return record.quantity if record else 0
+
+
+def get_reserved_stock_quantity(
+    *,
+    warehouse_id: WarehouseId,
+    variant_id: VariantId,
+) -> int:
+    total = (
+        ProductStockReservation.objects.filter(
+            warehouse_id=warehouse_id,
+            variant_id=variant_id,
+            status=ProductStockReservation.Status.ACTIVE,
+        ).aggregate(total=Sum("quantity"))["total"]
+        or 0
+    )
+    return int(total)
+
+
+def get_available_stock_quantity(
+    *,
+    warehouse_id: WarehouseId,
+    variant_id: VariantId,
+) -> int:
+    stock_qty = get_stock_quantity(warehouse_id=warehouse_id, variant_id=variant_id)
+    reserved_qty = get_reserved_stock_quantity(warehouse_id=warehouse_id, variant_id=variant_id)
+    return max(stock_qty - reserved_qty, 0)
+
+
+@transaction.atomic
+def reserve_stock_up_to(
+    *,
+    warehouse_id: WarehouseId,
+    sales_order_line_id: int,
+    variant_id: VariantId,
+    quantity: int,
+    notes: str = "",
+) -> int:
+    if quantity < 0:
+        raise ValueError("Quantity must be greater than or equal to 0")
+
+    stock = (
+        ProductStock.objects.select_for_update()
+        .filter(warehouse_id=warehouse_id, variant_id=variant_id)
+        .first()
+    )
+    stock_qty = stock.quantity if stock else 0
+
+    reservation = (
+        ProductStockReservation.objects.select_for_update()
+        .filter(
+            warehouse_id=warehouse_id,
+            sales_order_line_id=sales_order_line_id,
+            variant_id=variant_id,
+            status=ProductStockReservation.Status.ACTIVE,
+        )
+        .first()
+    )
+
+    other_active_reservations = list(
+        ProductStockReservation.objects.select_for_update()
+        .filter(
+            warehouse_id=warehouse_id,
+            variant_id=variant_id,
+            status=ProductStockReservation.Status.ACTIVE,
+        )
+        .exclude(sales_order_line_id=sales_order_line_id)
+        .values_list("quantity", flat=True)
+    )
+    other_reserved_qty = sum(int(q) for q in other_active_reservations)
+    available_for_line = max(stock_qty - other_reserved_qty, 0)
+    reserved_qty = min(int(quantity), available_for_line)
+
+    if reserved_qty == 0:
+        if reservation is not None:
+            reservation.status = ProductStockReservation.Status.RELEASED
+            reservation.quantity = 0
+            reservation.notes = notes
+            reservation.save(update_fields=["status", "quantity", "notes", "updated_at"])
+        return 0
+
+    if reservation is None:
+        ProductStockReservation.objects.create(
+            warehouse_id=warehouse_id,
+            sales_order_line_id=sales_order_line_id,
+            variant_id=variant_id,
+            status=ProductStockReservation.Status.ACTIVE,
+            quantity=reserved_qty,
+            notes=notes,
+        )
+        return reserved_qty
+
+    if reservation.quantity != reserved_qty or reservation.notes != notes:
+        reservation.quantity = reserved_qty
+        reservation.notes = notes
+        reservation.save(update_fields=["quantity", "notes", "updated_at"])
+    return reserved_qty
+
+
+@transaction.atomic
+def release_reservations_for_sales_order_line(*, sales_order_line_id: int) -> int:
+    updated = ProductStockReservation.objects.select_for_update().filter(
+        sales_order_line_id=sales_order_line_id,
+        status=ProductStockReservation.Status.ACTIVE,
+    ).update(status=ProductStockReservation.Status.RELEASED, updated_at=timezone.now())
+    return int(updated)
+
+
+@transaction.atomic
+def consume_reservations_for_sales_order_line(*, sales_order_line_id: int) -> int:
+    updated = ProductStockReservation.objects.select_for_update().filter(
+        sales_order_line_id=sales_order_line_id,
+        status=ProductStockReservation.Status.ACTIVE,
+    ).update(status=ProductStockReservation.Status.CONSUMED, updated_at=timezone.now())
+    return int(updated)
 
 
 @transaction.atomic
@@ -124,7 +240,8 @@ def remove_from_stock(
         secondary_material_color_id=secondary_material_color_id,
     )
     record = (
-        ProductStock.objects.for_warehouse(stock_key["warehouse_id"])
+        ProductStock.objects.select_for_update()
+        .for_warehouse(stock_key["warehouse_id"])
         .for_variant(stock_key["variant_id"])
         .first()
     )
@@ -133,6 +250,30 @@ def remove_from_stock(
 
     if record.quantity < int(quantity):
         raise ValueError(f"Недостатньо на складі: є {record.quantity}, потрібно {int(quantity)}")
+
+    reserved_total = get_reserved_stock_quantity(
+        warehouse_id=WarehouseId(stock_key["warehouse_id"]),
+        variant_id=VariantId(stock_key["variant_id"]),
+    )
+    reserved_for_line = 0
+    if sales_order_line is not None:
+        reserved_for_line = int(
+            ProductStockReservation.objects.select_for_update()
+            .filter(
+                warehouse_id=stock_key["warehouse_id"],
+                variant_id=stock_key["variant_id"],
+                sales_order_line_id=sales_order_line.id,
+                status=ProductStockReservation.Status.ACTIVE,
+            )
+            .aggregate(total=Sum("quantity"))["total"]
+            or 0
+        )
+        if reserved_for_line < int(quantity):
+            raise ValueError("Недостатньо заброньовано для списання.")
+
+    reserved_other = max(int(reserved_total) - int(reserved_for_line), 0)
+    if record.quantity - reserved_other < int(quantity):
+        raise ValueError("Недостатньо доступного на складі (частина заброньована).")
 
     record.quantity -= int(quantity)
     record.save(update_fields=["quantity"])

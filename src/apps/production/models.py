@@ -37,6 +37,7 @@ class ProductionOrder(models.Model):
     is_etsy = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     finished_at = models.DateTimeField(blank=True, null=True)
+    materials_consumed_at = models.DateTimeField(blank=True, null=True)
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,

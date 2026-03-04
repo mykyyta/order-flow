@@ -8,6 +8,7 @@ from django.db import models, transaction
 from django.utils import timezone
 
 from apps.catalog.models import BundleComponent, ProductMaterial
+from apps.catalog.models import Variant
 from apps.materials.models import (
     GoodsReceipt,
     GoodsReceiptLine,
@@ -30,6 +31,14 @@ if TYPE_CHECKING:
 class MaterialRequirement:
     material_id: int
     material_name: str
+    unit: str
+    quantity: Decimal
+
+
+@dataclass(frozen=True)
+class VariantMaterialRequirement:
+    material_id: int
+    material_color_id: int | None
     unit: str
     quantity: Decimal
 
@@ -73,6 +82,58 @@ def _iter_line_product_quantities(*, line: SalesOrderLine) -> list[tuple[int, De
         (component.component_id, Decimal(line.quantity * component.quantity))
         for component in bundle_components
     ]
+
+
+def calculate_material_requirements_for_variant(
+    *,
+    variant: Variant,
+    quantity: int,
+) -> list[VariantMaterialRequirement]:
+    if quantity <= 0:
+        raise ValueError("Quantity must be greater than 0")
+
+    totals: dict[tuple[int, int | None, str], Decimal] = {}
+    for norm in ProductMaterial.objects.filter(
+        product_id=variant.product_id,
+        quantity_per_unit__isnull=False,
+    ):
+        # unit is required when quantity_per_unit is set (model constraint)
+        material_color_id: int | None = None
+        if norm.role == ProductMaterial.Role.PRIMARY:
+            material_color_id = variant.primary_material_color_id
+        elif norm.role == ProductMaterial.Role.SECONDARY:
+            material_color_id = variant.secondary_material_color_id
+
+        key = (norm.material_id, material_color_id, norm.unit)
+        qty = (norm.quantity_per_unit or Decimal("0")) * Decimal(quantity)
+        totals[key] = totals.get(key, Decimal("0")) + qty
+
+    requirements = [
+        VariantMaterialRequirement(
+            material_id=material_id,
+            material_color_id=material_color_id,
+            unit=unit,
+            quantity=qty.quantize(Decimal("0.001")),
+        )
+        for (material_id, material_color_id, unit), qty in totals.items()
+    ]
+    return sorted(requirements, key=lambda item: (item.material_id, item.material_color_id or 0, item.unit))
+
+
+def get_material_stock_quantity(
+    *,
+    warehouse_id: int,
+    material_id: int,
+    unit: str,
+    material_color_id: int | None = None,
+) -> Decimal:
+    record = (
+        MaterialStock.objects.for_warehouse(warehouse_id)
+        .for_material(material_id)
+        .filter(material_color_id=material_color_id, unit=unit)
+        .first()
+    )
+    return record.quantity if record else Decimal("0")
 
 
 @transaction.atomic
@@ -143,7 +204,8 @@ def remove_material_stock(
         raise ValueError(f"Одиниця не відповідає одиниці складу матеріалу ({expected}).")
 
     stock_record = (
-        MaterialStock.objects.for_warehouse(warehouse_id)
+        MaterialStock.objects.select_for_update()
+        .for_warehouse(warehouse_id)
         .for_material(material.id)
         .filter(material_color=material_color, unit=unit)
         .first()

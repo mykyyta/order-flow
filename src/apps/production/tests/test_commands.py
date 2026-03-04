@@ -142,3 +142,36 @@ def test_bootstrap_local_creates_admin_user_and_catalog():
     assert MaterialColor.objects.exists()
     assert Supplier.objects.exists()
     assert SupplierMaterialOffer.objects.exists()
+
+
+@pytest.mark.django_db
+def test_bootstrap_local_is_idempotent_with_archived_duplicate_offers():
+    call_command(
+        "bootstrap_local",
+        "--username",
+        "local_tester_2",
+        "--password",
+        "local-pass-12345",
+        "--orders",
+        "0",
+    )
+
+    offer = SupplierMaterialOffer.objects.first()
+    SupplierMaterialOffer.objects.create(
+        supplier=offer.supplier,
+        material=offer.material,
+        material_color=offer.material_color,
+        unit=offer.unit,
+        title="Archived dup",
+        archived_at=offer.created_at,
+    )
+
+    call_command(
+        "bootstrap_local",
+        "--username",
+        "local_tester_2",
+        "--password",
+        "local-pass-12345",
+        "--orders",
+        "0",
+    )

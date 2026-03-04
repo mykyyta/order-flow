@@ -160,3 +160,29 @@ class SalesOrderLineComponentSelection(models.Model):
         if self.variant:
             return f"{self.component.name} -> {self.variant}"
         return f"{self.component.name}"
+
+
+class SalesOrderLineBlocker(models.Model):
+    class Code(models.TextChoices):
+        MISSING_MATERIALS = "missing_materials", "Немає матеріалів"
+        MANUAL_REQUIRED = "manual_required", "Потрібне рішення"
+
+    sales_order_line = models.ForeignKey(
+        SalesOrderLine,
+        on_delete=models.CASCADE,
+        related_name="blockers",
+    )
+    code = models.CharField(max_length=32, choices=Code.choices)
+    details = models.JSONField(default=dict, blank=True)
+    is_active = models.BooleanField(default=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["sales_order_line", "is_active"], name="sales_blocker_line_active_idx"),
+        ]
+        ordering = ("-created_at",)
+
+    def __str__(self) -> str:
+        return f"{self.sales_order_line_id}: {self.code} ({'active' if self.is_active else 'inactive'})"

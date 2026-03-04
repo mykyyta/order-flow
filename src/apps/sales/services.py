@@ -226,6 +226,10 @@ def _iter_line_variant_requirements(*, line: SalesOrderLine) -> list[tuple[int, 
     return requirements
 
 
+def get_sales_order_line_variant_requirements(*, line: SalesOrderLine) -> list[tuple[int, int]]:
+    return _iter_line_variant_requirements(line=line)
+
+
 def _resolve_quantity_to_produce(
     *,
     variant_id: int,

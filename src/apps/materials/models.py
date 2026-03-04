@@ -121,6 +121,13 @@ class SupplierMaterialOffer(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["supplier", "material", "material_color", "unit"],
+                condition=models.Q(archived_at__isnull=True),
+                name="materials_supplier_offer_unique_active",
+            ),
+        ]
         ordering = ("supplier__name", "material__name", "-created_at")
 
     def clean(self) -> None:

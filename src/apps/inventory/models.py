@@ -242,3 +242,48 @@ class ProductStockTransferLine(models.Model):
 
     def __str__(self) -> str:
         return f"{self.transfer_id}: {self.variant_id} x {self.quantity}"
+
+
+class ProductStockReservation(models.Model):
+    class Status(models.TextChoices):
+        ACTIVE = "active", "Активна"
+        CONSUMED = "consumed", "Використана"
+        RELEASED = "released", "Скасована"
+
+    warehouse = models.ForeignKey(
+        "warehouses.Warehouse",
+        on_delete=models.PROTECT,
+        related_name="product_stock_reservations",
+    )
+    variant = models.ForeignKey(
+        "catalog.Variant",
+        on_delete=models.PROTECT,
+        related_name="product_stock_reservations",
+    )
+    sales_order_line = models.ForeignKey(
+        "sales.SalesOrderLine",
+        on_delete=models.CASCADE,
+        related_name="stock_reservations",
+    )
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.ACTIVE, db_index=True)
+    quantity = models.PositiveIntegerField()
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["warehouse", "variant", "sales_order_line"],
+                condition=models.Q(status="active"),
+                name="inventory_one_active_reservation_per_line_variant_wh",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["sales_order_line", "status"], name="inv_res_line_status_idx"),
+            models.Index(fields=["warehouse", "variant", "status"], name="inv_res_key_status_idx"),
+        ]
+        ordering = ("-created_at",)
+
+    def __str__(self) -> str:
+        return f"{self.sales_order_line_id}: {self.variant_id} x {self.quantity} ({self.status})"

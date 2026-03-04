@@ -3,6 +3,7 @@
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
+from django.utils import timezone
 
 from apps.catalog.models import Product
 from apps.materials.models import (
@@ -137,51 +138,67 @@ class Command(BaseCommand):
         woolberry, _ = Supplier.objects.get_or_create(name="Woolberry")
         rozetka, _ = Supplier.objects.get_or_create(name="Rozetka")
 
-        SupplierMaterialOffer.objects.get_or_create(
+        self._ensure_offer(
             supplier=woolberry,
             material=felt,
             material_color=felt_black,
             unit=felt.stock_unit,
-            defaults={
-                "title": "Повсть чорна (Woolberry)",
-                "url": "",
-                "sku": "",
-                "price_per_unit": None,
-            },
+            title="Повсть чорна (Woolberry)",
         )
-        SupplierMaterialOffer.objects.get_or_create(
+        self._ensure_offer(
             supplier=woolberry,
             material=felt,
             material_color=felt_white,
             unit=felt.stock_unit,
-            defaults={
-                "title": "Повсть біла (Woolberry)",
-                "url": "",
-                "sku": "",
-                "price_per_unit": None,
-            },
+            title="Повсть біла (Woolberry)",
         )
-        SupplierMaterialOffer.objects.get_or_create(
+        self._ensure_offer(
             supplier=rozetka,
             material=leather,
             material_color=leather_black,
             unit=leather.stock_unit,
-            defaults={
-                "title": "Шкіра чорна (Rozetka)",
-                "url": "",
-                "sku": "",
-                "price_per_unit": None,
-            },
+            title="Шкіра чорна (Rozetka)",
         )
-        SupplierMaterialOffer.objects.get_or_create(
+        self._ensure_offer(
             supplier=rozetka,
             material=glue,
             material_color=None,
             unit=glue.stock_unit,
-            defaults={
-                "title": "Клей (Rozetka)",
-                "url": "",
-                "sku": "",
-                "price_per_unit": None,
-            },
+            title="Клей (Rozetka)",
         )
+
+    def _ensure_offer(
+        self,
+        *,
+        supplier: Supplier,
+        material: Material,
+        material_color: MaterialColor | None,
+        unit: str,
+        title: str,
+    ) -> SupplierMaterialOffer:
+        """Idempotent offer upsert that tolerates historic duplicates."""
+        qs = SupplierMaterialOffer.objects.filter(
+            supplier=supplier,
+            material=material,
+            material_color=material_color,
+            unit=unit,
+            archived_at__isnull=True,
+        )
+        offer = qs.order_by("-id").first()
+        if offer is None:
+            return SupplierMaterialOffer.objects.create(
+                supplier=supplier,
+                material=material,
+                material_color=material_color,
+                unit=unit,
+                title=title,
+                url="",
+                sku="",
+                price_per_unit=None,
+            )
+
+        qs.exclude(id=offer.id).update(archived_at=timezone.now(), updated_at=timezone.now())
+        if offer.title != title:
+            offer.title = title
+            offer.save(update_fields=["title", "updated_at"])
+        return offer
